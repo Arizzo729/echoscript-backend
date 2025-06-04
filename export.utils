@@ -1,0 +1,47 @@
+import os
+from docx import Document
+from fpdf import FPDF
+import json
+
+# Simulated transcript store (replace with DB or cache)
+TRANSCRIPTS = {
+    "test123": {
+        "title": "Meeting with Client",
+        "text": "Hello, this is a sample transcript. Welcome to EchoScript.",
+        "language": "en",
+        "speakers": ["Speaker 1", "Speaker 2"]
+    }
+}
+
+def generate_export_file(transcript_id, format):
+    if transcript_id not in TRANSCRIPTS:
+        raise ValueError("Transcript not found.")
+
+    transcript = TRANSCRIPTS[transcript_id]
+    export_dir = "exports"
+    os.makedirs(export_dir, exist_ok=True)
+    path = os.path.join(export_dir, f"{transcript_id}.{format}")
+
+    if format == "txt":
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(transcript["text"])
+
+    elif format == "docx":
+        doc = Document()
+        doc.add_heading(transcript["title"], level=1)
+        doc.add_paragraph(transcript["text"])
+        doc.save(path)
+
+    elif format == "pdf":
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        for line in transcript["text"].splitlines():
+            pdf.multi_cell(0, 10, line)
+        pdf.output(path)
+
+    elif format == "json":
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(transcript, f, indent=2)
+
+    return path
