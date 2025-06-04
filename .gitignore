@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+.venv311/
+
+# Logs
+*.log
+logs/
+*.sqlite3
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PyInstaller
+*.spec
+
+# Environment/config
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Git large files
+*.pt
+*.ckpt
+*.weights
+
+# Docker
+__pycache__/
+docker-compose.override.yml
+*.pid
+
+# Node (in case of hybrid)
+node_modules/
+
+# Backup files
+*.bak
+*.tmp
