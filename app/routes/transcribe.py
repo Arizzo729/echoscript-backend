@@ -67,7 +67,10 @@ async def transcribe_audio(
         sf.write(tmp_path, reduced_noise, 16000)
 
         # Step 2: Transcription
-        model, metadata = whisperx.load_model(model_size, device, compute_type=safe_compute_type())
+           # Step 2: Transcription
+        model = whisperx.load_model(model_size, device)
+        metadata = {"language": lang}  # <- FIXED INDENTATION
+
         result = model.transcribe(tmp_path, language=None if language == "auto" else language)
         segments = result["segments"]
         transcript = result["text"]

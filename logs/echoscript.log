@@ -1,0 +1,11 @@
+[2025-06-04 20:45:35] INFO: ✅ Logger initialized for EchoScript.AI
+[2025-06-04 20:45:35] ERROR: ❌ Redis connection failed: Error 111 connecting to localhost:6379. Connection refused.
+[2025-06-04 20:46:15] INFO: ✅ WhisperX 'medium' model loaded (cpu, float32)
+[2025-06-04 21:11:27] INFO: ✅ Logger initialized for EchoScript.AI
+[2025-06-04 21:11:27] ERROR: ❌ Redis connection failed: Error 111 connecting to localhost:6379. Connection refused.
+[2025-06-04 21:12:09] INFO: ✅ WhisperX 'medium' model loaded (cuda, float16)
+[2025-06-04 21:39:42] INFO: ✅ Logger initialized for EchoScript.AI
+[2025-06-04 21:39:42] ERROR: ❌ Redis connection failed: Error 111 connecting to localhost:6379. Connection refused.
+[2025-06-04 21:40:22] INFO: ✅ WhisperX 'medium' model loaded (cuda, float16)
+[2025-06-04 22:22:51] INFO: ✅ Logger initialized for EchoScript.AI
+[2025-06-04 22:22:51] ERROR: ❌ Redis connection failed: Error 111 connecting to localhost:6379. Connection refused.

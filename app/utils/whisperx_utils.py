@@ -2,7 +2,6 @@
 
 import whisperx
 import torch
-import tempfile
 import os
 from app.config import HF_TOKEN
 from app.utils.logger import logger
@@ -16,8 +15,8 @@ align_cache = {}
 def load_whisperx_model(model_size: str = "medium", lang: str = "en"):
     if model_size not in model_cache:
         try:
-            model, metadata = whisperx.load_model(model_size, device)
-            model_cache[model_size] = (model, metadata)
+            model = whisperx.load_model(model_size, device)
+            model_cache[model_size] = model
             logger.info(f"✅ WhisperX model loaded: {model_size}")
         except Exception as e:
             logger.error(f"❌ Failed to load WhisperX model: {e}")
@@ -44,14 +43,15 @@ def transcribe_with_whisperx(file_path: str, model_size: str = "medium", lang: s
         logger.info(f"🔊 Audio loaded for transcription: {file_path}")
 
         # Load models
-        model, metadata = load_whisperx_model(model_size, lang)
+        model = load_whisperx_model(model_size, lang)
         align_model = load_alignment_model(lang)
 
         # Transcribe
         result = model.transcribe(audio, language=lang)
         logger.info(f"🧠 Raw transcription complete")
 
-        # Align words
+        # Align words (metadata is not returned anymore — so we provide lang manually if needed)
+        metadata = {"language": lang}
         result_aligned = whisperx.align(result["segments"], align_model, audio, metadata, device)
         logger.info(f"🧩 Word alignment complete")
 
@@ -67,5 +67,6 @@ def transcribe_with_whisperx(file_path: str, model_size: str = "medium", lang: s
             "error": "Transcription failed.",
             "detail": str(e)
         }
+
 
 
