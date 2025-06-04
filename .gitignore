@@ -43,7 +43,6 @@ Thumbs.db
 *.weights
 
 # Docker
-__pycache__/
 docker-compose.override.yml
 *.pid
 
@@ -53,3 +52,4 @@ node_modules/
 # Backup files
 *.bak
 *.tmp
+
