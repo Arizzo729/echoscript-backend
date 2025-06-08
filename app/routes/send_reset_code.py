@@ -23,3 +23,4 @@ async def send_reset_code(data: ResetRequest):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
