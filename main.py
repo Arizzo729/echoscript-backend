@@ -13,7 +13,12 @@ import shutil
 load_dotenv()
 DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "en")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
-DEVICE = "cuda" if shutil.which("nvidia-smi") else "cpu"
+
+import torch
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+COMPUTE_TYPE = "float16" if DEVICE == "cuda" else "int8"  # Or use "float32" for maximum compatibility
+
+
 
 # ==== App setup ====
 app = FastAPI()
@@ -39,7 +44,8 @@ class TranscriptionResponse(BaseModel):
 
 # ==== WhisperX Model Load ====
 logger.info(f"Loading WhisperX model: {WHISPER_MODEL} on {DEVICE}")
-model = whisperx.load_model(WHISPER_MODEL, device=DEVICE)
+model = whisperx.load_model(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
+
 
 # ==== POST: Transcription ====
 @app.post("/api/transcribe", response_model=TranscriptionResponse)
