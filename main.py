@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import whisperx
-from whisperx import TranscriptionOptions
 import tempfile
 import logging
 import os
@@ -67,17 +66,13 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         logger.info(f"Transcribing file: {file.filename}")
 
-        options = TranscriptionOptions(
-            language=language,
+        result = model.transcribe(
+            audio=tmp_path,
             batch_size=16,
+            language=language,
             condition_on_previous_text=True,
-            without_timestamps=False,
-            max_new_tokens=128,
-            clip_timestamps=None,
-            hallucination_silence_threshold=0.6
+            without_timestamps=False
         )
-
-        result = model.transcribe(audio=tmp_path, transcription_options=options)
 
         transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
         return TranscriptionResponse(
@@ -98,3 +93,4 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
+
