@@ -1,5 +1,3 @@
-# ---- EchoScript.AI Backend: routes/transcribe.py ----
-
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from typing import Optional
 from uuid import uuid4
@@ -39,8 +37,12 @@ async def transcribe_audio(
         reduced_noise = nr.reduce_noise(y=y, sr=sr)
         sf.write(tmp_path, reduced_noise, 16000)
 
+        logging.info("[Transcribe] Noise reduction complete.")
+
         # -- Step 2: Transcribe with Whisper CLI via automation service --
         transcript = await transcribeFile(tmp_path, langCode=language, model=model_size)
+
+        logging.info("[Transcribe] Whisper transcription complete.")
 
         # -- Step 3: AI Enhancement via GPT --
         final_output = await apply_gpt_cleanup(
@@ -94,3 +96,4 @@ async def apply_gpt_cleanup(text, summarize=False, fillers=False, label=False, e
     except Exception as e:
         logging.warning(f"[GPT Cleanup] ⚠️ GPT failed: {e}")
         return text
+
