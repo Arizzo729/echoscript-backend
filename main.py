@@ -37,8 +37,8 @@ def health():
 # === Model Load ===
 logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
-    model = whisperx.load_model(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
-    logger.info("Model loaded successfully.")
+    model, metadata = whisperx.load_model(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
+
 except Exception as e:
     logger.error(f"Failed to load model: {e}")
     raise RuntimeError("Model failed to load during startup.")
@@ -62,7 +62,8 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
             tmp_path = tmp.name
 
         logger.info(f"Transcribing file: {file.filename}")
-        result = model.transcribe(tmp_path, batch_size=16, language=language)
+        result = model.transcribe(tmp_path, batch_size=16, language=language, condition_on_previous_text=True, without_timestamps=False)
+
 
         transcript = "\n".join([seg["text"].strip() for seg in result["segments"]])
         return TranscriptionResponse(
