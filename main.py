@@ -1,11 +1,11 @@
-from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import whisperx
+from whisperx import TranscriptionOptions
 import tempfile
 import logging
-import shutil
 import os
 import torch
 
@@ -38,7 +38,7 @@ def health():
 logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
     model, metadata = whisperx.load_model(
-        WHISPER_MODEL,
+        model=WHISPER_MODEL,
         device=DEVICE,
         compute_type=COMPUTE_TYPE
     )
@@ -66,15 +66,20 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
             tmp_path = tmp.name
 
         logger.info(f"Transcribing file: {file.filename}")
-        result = model.transcribe(
-            tmp_path,
-            batch_size=16,
+
+        options = TranscriptionOptions(
             language=language,
+            batch_size=16,
             condition_on_previous_text=True,
-            without_timestamps=False
+            without_timestamps=False,
+            max_new_tokens=128,
+            clip_timestamps=None,
+            hallucination_silence_threshold=0.6
         )
 
-        transcript = "\n".join([seg["text"].strip() for seg in result["segments"]])
+        result = model.transcribe(audio=tmp_path, transcription_options=options)
+
+        transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
         return TranscriptionResponse(
             transcript=transcript,
             language=result.get("language", language),
