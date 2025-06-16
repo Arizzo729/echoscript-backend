@@ -37,7 +37,7 @@ def health():
 logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
     model, metadata = whisperx.load_model(
-        model=WHISPER_MODEL,
+        whisper_arch=WHISPER_MODEL,
         device=DEVICE,
         compute_type=COMPUTE_TYPE
     )
@@ -93,4 +93,3 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
-
