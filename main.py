@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from faster_whisper.transcribe import TranscriptionOptions
 import whisperx
 import tempfile
 import logging
@@ -25,7 +26,10 @@ app = FastAPI()
 # === CORS ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 # === Health Check ===
@@ -68,22 +72,17 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         logger.info("2: File saved to temp")
 
-      from faster_whisper.transcribe import TranscriptionOptions
-
-options = TranscriptionOptions(
-    language=language,
-    batch_size=16,
-    condition_on_previous_text=True,
-    without_timestamps=False,
-    max_new_tokens=128,
-    clip_timestamps=None,
-    hallucination_silence_threshold=0.6
-)
-
-result = model.transcribe(audio=tmp_path, transcription_options=options)
-
+        options = TranscriptionOptions(
+            language=language,
+            batch_size=16,
+            condition_on_previous_text=True,
+            without_timestamps=False,
+            max_new_tokens=128,
+            clip_timestamps=None,
+            hallucination_silence_threshold=0.6
         )
 
+        result = model.transcribe(audio=tmp_path, transcription_options=options)
         logger.info("3: Transcription complete")
 
         transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
@@ -105,3 +104,4 @@ result = model.transcribe(audio=tmp_path, transcription_options=options)
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
+
