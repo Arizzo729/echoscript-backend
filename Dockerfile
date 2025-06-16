@@ -23,8 +23,9 @@ COPY requirements.txt .
 
 # Install Python packages
 RUN pip install --upgrade pip setuptools wheel \
- && pip install --no-cache-dir -r requirements.txt \
- --extra-index-url https://download.pytorch.org/whl/cpu
+ && pip install --no-cache-dir torch==2.2.2+cpu torchaudio==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir -r requirements.txt
+
 
 
 # Copy all remaining source files
