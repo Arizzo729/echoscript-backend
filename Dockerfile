@@ -2,38 +2,37 @@
 FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Create working directory
+# Set work directory
 WORKDIR /app
 
-# Install OS-level dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libsndfile1 \
     libglib2.0-0 \
     git \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirement files first for caching
+# Copy requirement files first for layer caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --upgrade pip \
+# Install Python packages
+RUN pip install --upgrade pip setuptools wheel \
  && pip install --no-cache-dir -r requirements.txt \
  --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Copy project files
+
+# Copy all remaining source files
 COPY . .
 
-# Expose port
+# Expose the default FastAPI port
 EXPOSE 8000
 
-# Start server
+# Start the Uvicorn server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
-
 
