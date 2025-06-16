@@ -21,10 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirement files first for layer caching
 COPY requirements.txt .
 
-# Install Python packages
+# Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel \
- && pip install --no-cache-dir torch==2.2.2+cpu torchaudio==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cpu \
  && pip install --no-cache-dir -r requirements.txt
+
 
 
 
