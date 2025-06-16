@@ -34,14 +34,18 @@ app.add_middleware(
 def health():
     return {"status": "ok", "device": DEVICE}
 
-# === Model Load ===
+# === Load WhisperX Model ===
 logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
-    model, metadata = whisperx.load_model(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
-
+    model, metadata = whisperx.load_model(
+        WHISPER_MODEL,
+        device=DEVICE,
+        compute_type=COMPUTE_TYPE
+    )
+    logger.info("WhisperX model loaded successfully.")
 except Exception as e:
-    logger.error(f"Failed to load model: {e}")
-    raise RuntimeError("Model failed to load during startup.")
+    logger.exception("Failed to load model:")
+    raise RuntimeError(f"Model failed to load during startup: {e}")
 
 # === Schema ===
 class TranscriptionResponse(BaseModel):
@@ -62,8 +66,13 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
             tmp_path = tmp.name
 
         logger.info(f"Transcribing file: {file.filename}")
-        result = model.transcribe(tmp_path, batch_size=16, language=language, condition_on_previous_text=True, without_timestamps=False)
-
+        result = model.transcribe(
+            tmp_path,
+            batch_size=16,
+            language=language,
+            condition_on_previous_text=True,
+            without_timestamps=False
+        )
 
         transcript = "\n".join([seg["text"].strip() for seg in result["segments"]])
         return TranscriptionResponse(
@@ -71,6 +80,7 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
             language=result.get("language", language),
             confidence=0.95
         )
+
     except Exception as e:
         logger.exception("Transcription failed")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
@@ -83,5 +93,3 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
-
-
