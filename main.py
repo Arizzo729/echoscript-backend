@@ -68,12 +68,20 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         logger.info("2: File saved to temp")
 
-        result = model.transcribe(
-            audio=tmp_path,
-            batch_size=16,
-            language=language,
-            condition_on_previous_text=True,
-            without_timestamps=False
+      from faster_whisper.transcribe import TranscriptionOptions
+
+options = TranscriptionOptions(
+    language=language,
+    batch_size=16,
+    condition_on_previous_text=True,
+    without_timestamps=False,
+    max_new_tokens=128,
+    clip_timestamps=None,
+    hallucination_silence_threshold=0.6
+)
+
+result = model.transcribe(audio=tmp_path, transcription_options=options)
+
         )
 
         logger.info("3: Transcription complete")
