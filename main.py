@@ -60,11 +60,13 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
     tmp_path = None
     try:
+        logger.info("1: File received")
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        logger.info(f"Transcribing file: {file.filename}")
+        logger.info("2: File saved to temp")
 
         result = model.transcribe(
             audio=tmp_path,
@@ -74,6 +76,8 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
             without_timestamps=False
         )
 
+        logger.info("3: Transcription complete")
+
         transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
         return TranscriptionResponse(
             transcript=transcript,
@@ -82,7 +86,7 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
         )
 
     except Exception as e:
-        logger.exception("Transcription failed")
+        logger.exception("Transcription failed with exception:")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
     finally:
         if tmp_path and os.path.exists(tmp_path):
