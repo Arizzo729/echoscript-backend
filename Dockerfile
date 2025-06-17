@@ -1,5 +1,5 @@
 # Use official lightweight Python image
-FROM python:3.13.5-slim
+FROM python:3.11-slim
 
 # Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavutil-dev \
     libswscale-dev \
     libavfilter-dev \
-    libavresample-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 
 # Pre-copy requirements for caching
 COPY requirements.txt .
