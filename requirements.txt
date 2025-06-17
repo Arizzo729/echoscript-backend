@@ -1,5 +1,5 @@
 # Reformatting the requirements into a DataFrame without using '\n' as a separator
-raw_lines = [
+raw_lines == [
     "# Core AI stack",
     "torch==2.7.1+cu128",
     "torchaudio==2.7.1",
