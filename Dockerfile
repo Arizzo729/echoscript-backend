@@ -18,15 +18,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     git \
     curl \
+    build-essential \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Pre-copy requirements for caching
 COPY requirements.txt .
 
+# Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel \
  && pip install torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cpu \
  && pip install --no-cache-dir -r requirements.txt
-
 
 # Copy source code
 COPY . .
@@ -34,7 +35,8 @@ COPY . .
 # Expose app port
 EXPOSE 8000
 
-# Launch API server
+# Start FastAPI server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
 
 
