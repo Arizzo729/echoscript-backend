@@ -26,10 +26,7 @@ app = FastAPI()
 # === CORS ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
 )
 
 # === Health Check ===
@@ -37,13 +34,25 @@ app.add_middleware(
 def health():
     return {"status": "ok", "device": DEVICE}
 
+# === Define Transcription Options ===
+transcription_options = TranscriptionOptions(
+    language=DEFAULT_LANGUAGE,
+    batch_size=16,
+    condition_on_previous_text=True,
+    without_timestamps=False,
+    max_new_tokens=128,
+    clip_timestamps=None,
+    hallucination_silence_threshold=0.6
+)
+
 # === Load WhisperX Model ===
 logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
     model, metadata = whisperx.load_model(
         whisper_arch=WHISPER_MODEL,
         device=DEVICE,
-        compute_type=COMPUTE_TYPE
+        compute_type=COMPUTE_TYPE,
+        asr_options=transcription_options  # ✅ FIXED HERE
     )
     logger.info("WhisperX model loaded successfully.")
 except Exception as e:
@@ -72,17 +81,8 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         logger.info("2: File saved to temp")
 
-        options = TranscriptionOptions(
-            language=language,
-            batch_size=16,
-            condition_on_previous_text=True,
-            without_timestamps=False,
-            max_new_tokens=128,
-            clip_timestamps=None,
-            hallucination_silence_threshold=0.6
-        )
+        result = model.transcribe(audio=tmp_path)
 
-        result = model.transcribe(audio=tmp_path, transcription_options=options)
         logger.info("3: Transcription complete")
 
         transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
