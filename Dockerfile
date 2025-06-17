@@ -28,7 +28,6 @@ RUN pip install --upgrade pip setuptools wheel \
  && pip install torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cpu \
  && pip install --no-cache-dir -r requirements.txt
 
-
 # Copy source code
 COPY . .
 
@@ -37,6 +36,4 @@ EXPOSE 8000
 
 # Start FastAPI server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
 
