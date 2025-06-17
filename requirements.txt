@@ -1,6 +1,4 @@
-# Reformatting the requirements into a DataFrame without using '\n' as a separator
-raw_lines == [
-    "# Core AI stack",
+
     "torch==2.7.1+cu128",
     "torchaudio==2.7.1",
     "torchvision==0.22.1",
@@ -65,12 +63,4 @@ raw_lines == [
     "# Deployment tools",
     "setuptools==80.9.0",
     "wheel==0.45.1"
-]
-
-# Create DataFrame and display
-import pandas as pd
-import ace_tools as tools
-
-requirements_df = pd.DataFrame(raw_lines, columns=["Requirement"])
-tools.display_dataframe_to_user(name="Updated requirements.txt", dataframe=requirements_df)
 
