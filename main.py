@@ -2,8 +2,7 @@ from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from faster_whisper.transcribe import TranscriptionOptions
-import whisperx
+from faster_whisper import WhisperModel
 import tempfile
 import logging
 import os
@@ -34,27 +33,15 @@ app.add_middleware(
 def health():
     return {"status": "ok", "device": DEVICE}
 
-# === Define Transcription Options ===
-transcription_options = TranscriptionOptions(
-    language=DEFAULT_LANGUAGE,
-    batch_size=16,
-    condition_on_previous_text=True,
-    without_timestamps=False,
-    max_new_tokens=128,
-    clip_timestamps=None,
-    hallucination_silence_threshold=0.6
-)
-
-# === Load WhisperX Model ===
-logger.info(f"Loading WhisperX model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
+# === Load Faster-Whisper Model ===
+logger.info(f"Loading Faster-Whisper model '{WHISPER_MODEL}' on '{DEVICE}' with '{COMPUTE_TYPE}'")
 try:
-    model, metadata = whisperx.load_model(
-        whisper_arch=WHISPER_MODEL,
+    model = WhisperModel(
+        model_size_or_path=WHISPER_MODEL,
         device=DEVICE,
-        compute_type=COMPUTE_TYPE,
-        asr_options=transcription_options  # ✅ FIXED HERE
+        compute_type=COMPUTE_TYPE
     )
-    logger.info("WhisperX model loaded successfully.")
+    logger.info("Faster-Whisper model loaded successfully.")
 except Exception as e:
     logger.exception("Failed to load model:")
     raise RuntimeError(f"Model failed to load during startup: {e}")
@@ -81,14 +68,14 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         logger.info("2: File saved to temp")
 
-        result = model.transcribe(audio=tmp_path)
+        segments, info = model.transcribe(tmp_path, language=language, beam_size=5)
+        transcript = "\n".join([seg.text.strip() for seg in segments])
 
         logger.info("3: Transcription complete")
 
-        transcript = "\n".join([seg["text"].strip() for seg in result.get("segments", [])])
         return TranscriptionResponse(
             transcript=transcript,
-            language=result.get("language", language),
+            language=info.get("language", language),
             confidence=0.95
         )
 
@@ -104,4 +91,5 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
+
 
