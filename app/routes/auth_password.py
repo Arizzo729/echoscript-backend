@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 import random
 import string
-from app.auth_utils import hash_password
+from app.auth_utils import hash_password  # Updated with passlib
 from app.utils.logger import logger  # optional
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 reset_tokens = {}
 users = {
     "user@example.com": {
-        "password": "hashed_pw",
+        "password": "$2b$12$examplehashedpasswordstring",  # hashed password example
         "verified": True
     }
 }
@@ -58,7 +58,7 @@ def verify_reset(data: VerifyReset):
     if reset_tokens.get(data.email) != data.code:
         raise HTTPException(status_code=401, detail="Invalid reset code")
 
-    # Replace this with database user update logic
+    # Hash and save new password securely
     users[data.email]["password"] = hash_password(data.new_password)
 
     # Cleanup
