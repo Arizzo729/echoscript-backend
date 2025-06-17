@@ -75,7 +75,7 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 
         return TranscriptionResponse(
             transcript=transcript,
-            language=info.get("language", language),
+            language=info.language or language,
             confidence=0.95
         )
 
