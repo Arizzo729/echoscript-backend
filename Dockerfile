@@ -26,8 +26,11 @@ COPY requirements.txt .
 
 # Install dependencies including stable, compatible Torch stack
 RUN pip install --upgrade pip setuptools wheel \
- && pip install torch==2.5.0+cpu torchaudio==2.5.0+cpu torchvision==0.17.1+cpu --index-url https://download.pytorch.org/whl/cpu \
+ && pip install torch==2.7.1+cu128 torchaudio==2.7.1 torchvision==0.22.1 -f https://download.pytorch.org/whl/torch/ \
  && pip install --no-cache-dir -r requirements.txt
+
+
+
 
 # Copy source code
 COPY . .
