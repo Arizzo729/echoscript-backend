@@ -4,7 +4,6 @@ torchaudio==2.7.1
 torchvision==0.22.1
 faster-whisper==1.0.0
 ctranslate2==4.6.0
-stripe==8.9.0
 
 
 # Optional Speaker diarization (comment if not needed)
