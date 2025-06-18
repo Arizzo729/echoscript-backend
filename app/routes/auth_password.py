@@ -51,3 +51,4 @@ def verify_reset(data: VerifyReset, request: Request, db: Session = Depends(get_
         logger.error(f"[Reset Error] Unexpected failure: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error during password reset.")
 
+

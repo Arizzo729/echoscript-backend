@@ -8,7 +8,7 @@ from app.utils.logger import logger
 
 router = APIRouter(prefix="/api/user", tags=["User"])
 
-# === Schema ===
+# === Request Schema ===
 class AvatarUpdateRequest(BaseModel):
     avatar_url: HttpUrl
 
@@ -19,34 +19,42 @@ def update_avatar(
     authorization: str = Header(..., description="Bearer token"),
     db: Session = Depends(get_db)
 ):
-    if not authorization.startswith("Bearer "):
-        logger.warning("🚫 Missing or invalid auth header.")
+    # === Validate Authorization Header ===
+    if not authorization.lower().startswith("bearer "):
+        logger.warning("🚫 Invalid or missing Authorization header.")
         raise HTTPException(status_code=401, detail="Missing or invalid token.")
 
+    token = authorization.split(" ")[1]
     try:
-        token_str = authorization.split(" ")[1]
-        token_data = decode_token(token_str)
+        token_data = decode_token(token)
+        user_email = token_data.get("sub")
+        if not user_email:
+            logger.warning("🚫 Token missing 'sub' claim.")
+            raise HTTPException(status_code=401, detail="Invalid token payload.")
+    except Exception as e:
+        logger.warning(f"❌ Token decoding failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
-        if not token_data or "sub" not in token_data:
-            logger.warning("🚫 Token decode failed or malformed.")
-            raise HTTPException(status_code=401, detail="Invalid token.")
+    # === Fetch and Validate User ===
+    user = db.query(User).filter(User.email == user_email).first()
+    if not user:
+        logger.warning(f"❌ User not found for email: {user_email}")
+        raise HTTPException(status_code=404, detail="User not found.")
 
-        user = db.query(User).filter(User.email == token_data["sub"]).first()
-        if not user:
-            logger.warning(f"🚫 User not found for email: {token_data['sub']}")
-            raise HTTPException(status_code=404, detail="User not found.")
+    if not getattr(user, "is_verified", False):
+        logger.warning(f"🚫 Unverified user attempted avatar update: {user.email}")
+        raise HTTPException(status_code=403, detail="Email not verified.")
 
-        if not getattr(user, "is_verified", False):
-            logger.warning(f"🚫 Unverified user: {user.email}")
-            raise HTTPException(status_code=403, detail="Email not verified.")
-
-        user.avatar = data.avatar_url
+    # === Update Avatar ===
+    try:
+        user.avatar = str(data.avatar_url)
         db.commit()
-
         logger.info(f"✅ Avatar updated for {user.email}")
         return {"status": "success", "avatar": user.avatar}
 
     except Exception as e:
-        logger.error(f"❌ Avatar update failed: {e}")
+        db.rollback()
+        logger.exception(f"❌ Failed to update avatar for {user.email}: {e}")
         raise HTTPException(status_code=500, detail="Avatar update failed.")
+
 

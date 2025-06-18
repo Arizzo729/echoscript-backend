@@ -1,6 +1,6 @@
-# === routes/auth/signup.py — EchoScript.AI User Signup & Email Verification ===
+# === routes/auth/signup.py — EchoScript.AI Signup & Verification ===
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.db import get_db
@@ -9,8 +9,7 @@ from app.auth_utils import hash_password
 from app.utils.logger import logger
 from app.utils.send_email import send_email
 from app.config import redis_client
-
-import random
+import random, string
 from uuid import uuid4
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -20,21 +19,22 @@ class SignUpRequest(BaseModel):
     email: EmailStr
     password: str
 
-# === Signup Route ===
+# === Signup Endpoint ===
 @router.post("/signup")
-def signup(data: SignUpRequest, db: Session = Depends(get_db)):
-    try:
-        # Check for existing account
-        if db.query(User).filter(User.email == data.email).first():
-            logger.info(f"[Signup] Duplicate registration attempt: {data.email}")
-            raise HTTPException(status_code=400, detail="Email already registered.")
+def signup(data: SignUpRequest, request: Request, db: Session = Depends(get_db)):
+    email = data.email.strip().lower()
 
-        # Create hashed password
+    # === Duplicate Check ===
+    if db.query(User).filter(User.email == email).first():
+        logger.info(f"[Signup] Duplicate: {email}")
+        raise HTTPException(status_code=400, detail="Email already registered.")
+
+    try:
+        # === Create user ===
         hashed_pw = hash_password(data.password)
 
-        # Initialize user
         new_user = User(
-            email=data.email,
+            email=email,
             password=hashed_pw,
             is_verified=False,
             is_active=True,
@@ -43,45 +43,50 @@ def signup(data: SignUpRequest, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        logger.info(f"[Signup] ✅ Registered: {data.email}")
+        logger.info(f"[Signup] ✅ Registered: {email}")
 
-        # Generate verification code (6-digit numeric)
+        # === Generate Verification Code ===
         try:
             code = str(random.randint(100000, 999999))
         except Exception:
-            code = uuid4().hex[:6]
+            code = ''.join(random.choices(string.digits, k=6))
 
-        redis_key = f"verify:{data.email}"
-        redis_result = redis_client.setex(redis_key, 900, code)
-        if not redis_result:
-            logger.error(f"[Redis] ❌ Failed to cache verification code for {data.email}")
-            raise HTTPException(status_code=500, detail="Internal error. Try again shortly.")
+        redis_key = f"verify:{email}"
+        if not redis_client.setex(redis_key, 900, code):
+            raise RuntimeError("Failed to cache verification code")
 
-        logger.info(f"[Verify] Code for {data.email} → {code}")
+        logger.info(f"[Verify] Code sent → {email} ({code})")
 
-        # Email the code
+        # === Send Email ===
         subject = "Verify Your EchoScript.AI Account"
-        content = f"""Hello,
+        content = f"""
+Hello 👋,
 
-Welcome to EchoScript.AI! Your verification code is: {code}
+Thanks for signing up with EchoScript.AI!
 
-This code is valid for 15 minutes.
+Your verification code is: **{code}**
 
-Thanks,
-EchoScript.AI Team"""
+This code will expire in 15 minutes.
 
-        email_result = send_email(to=data.email, subject=subject, content=content)
-        if email_result.get("status") != "success":
-            raise Exception(email_result.get("message", "Failed to send email"))
+If you didn’t create this account, you can ignore this email.
+
+— The EchoScript.AI Team
+        """.strip()
+
+        email_status = send_email(to=email, subject=subject, content=content)
+        if email_status.get("status") != "success":
+            raise RuntimeError(f"Email failed: {email_status.get('message')}")
 
         return {
             "status": "ok",
-            "message": "Signup successful. Please check your email to verify your account."
+            "message": "Signup successful. Check your email for the verification code."
         }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"[Signup Error] {e}")
+        logger.error(f"[Signup Error] {email} — {e}")
         raise HTTPException(status_code=500, detail="Signup failed. Please try again.")
+
 

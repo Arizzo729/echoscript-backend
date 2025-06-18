@@ -6,14 +6,13 @@ from typing import Literal
 from app.utils.gpt_logic import summarize_transcript
 from app.utils.redis_client import redis_client
 from app.utils.logger import logger
-import hashlib
-import zlib
+import hashlib, zlib
 
 router = APIRouter(prefix="/summary", tags=["Summarization"])
 
 # === Request Schema ===
 class SummaryRequest(BaseModel):
-    transcript: str = Field(..., description="Full transcript to summarize")
+    transcript: str = Field(..., min_length=10, description="Transcript to summarize")
     tone: Literal["default", "friendly", "formal", "bullet", "action"] = "default"
     length: Literal["short", "medium", "long"] = "medium"
 
@@ -24,44 +23,47 @@ class SummaryResponse(BaseModel):
     tone: str
     length: str
 
-# === Route Logic ===
+# === Summarization Endpoint ===
 @router.post("/", response_model=SummaryResponse)
 async def summarize(req: SummaryRequest):
     transcript = req.transcript.strip()
 
     if not transcript:
-        logger.warning("[Summary] Empty transcript rejected.")
+        logger.warning("[Summary] ❌ Empty input rejected.")
         raise HTTPException(status_code=400, detail="Transcript is empty.")
 
     if len(transcript.split()) < 10:
-        logger.warning("[Summary] Transcript too short to summarize meaningfully.")
+        logger.warning("[Summary] ❌ Too short to summarize.")
         raise HTTPException(status_code=400, detail="Transcript too short to summarize.")
 
-    # Generate a consistent secure hash key
+    if len(transcript.split()) > 10000:
+        logger.warning("[Summary] ⚠️ Input too large.")
+        raise HTTPException(status_code=413, detail="Transcript too long to summarize.")
+
     digest = hashlib.sha256(transcript.encode("utf-8")).hexdigest()
     cache_key = f"summary:{digest}:{req.tone}:{req.length}"
 
     try:
-        # Check Redis cache
+        # === Check cache ===
         cached = redis_client.get(cache_key)
         if cached:
-            logger.info(f"[Summary] ✅ Served from cache — tone='{req.tone}', length='{req.length}'")
             summary = zlib.decompress(cached).decode("utf-8")
+            logger.info(f"[Summary] ✅ Returned cached — tone={req.tone}, length={req.length}")
             return SummaryResponse(summary=summary, cached=True, tone=req.tone, length=req.length)
 
-        # Generate new summary
-        summary = summarize_transcript(
+        # === Generate summary ===
+        summary = await summarize_transcript(
             text=transcript,
             tone=req.tone,
             length=req.length
         )
 
-        # Compress + cache for 1 hour
+        # === Cache result ===
         redis_client.setex(cache_key, 3600, zlib.compress(summary.encode("utf-8")))
-        logger.info(f"[Summary] ✨ Generated summary — tone='{req.tone}', length='{req.length}'")
+        logger.info(f"[Summary] 🧠 GPT summary generated — tone={req.tone}, length={req.length}")
 
         return SummaryResponse(summary=summary, cached=False, tone=req.tone, length=req.length)
 
     except Exception as e:
-        logger.error(f"[Summary Error] Failed: {e}")
-        raise HTTPException(status_code=500, detail="Summary generation failed.")
+        logger.error(f"[Summary Error] ❌ GPT failed: {e}")
+        raise HTTPException(status_code=500, detail="Summary generation failed. Please try again later.")

@@ -8,40 +8,49 @@ from app.utils.logger import logger
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# === Request Schema ===
 class VerifyCodeInput(BaseModel):
     email: EmailStr
     code: constr(min_length=4, max_length=12)
 
+# === Email Verification Endpoint ===
 @router.post("/verify-email")
 def verify_email(data: VerifyCodeInput, db: Session = Depends(get_db)):
-    redis_key = f"verify:{data.email}"
+    email = data.email.lower().strip()
+    redis_key = f"verify:{email}"
+
     try:
         stored_code = redis_client.get(redis_key)
         if not stored_code:
+            logger.warning(f"[Verify ❌] Code expired or missing for {email}")
             raise HTTPException(status_code=400, detail="Verification code expired or not found.")
 
         if stored_code.decode("utf-8") != data.code:
+            logger.warning(f"[Verify ❌] Invalid code attempt for {email}")
             raise HTTPException(status_code=401, detail="Invalid verification code.")
 
-        user = db.query(User).filter_by(email=data.email).first()
+        user = db.query(User).filter_by(email=email).first()
         if not user:
+            logger.warning(f"[Verify ❌] No user found for email: {email}")
             raise HTTPException(status_code=404, detail="User not found.")
 
-        if getattr(user, "is_verified", None) is True:
-            logger.info(f"[Verify] Email already verified: {data.email}")
+        if user.is_verified:
+            logger.info(f"[Verify ✅] Already verified: {email}")
             return {"status": "ok", "message": "Email already verified."}
 
+        # Update verification flag
         user.is_verified = True
         db.commit()
-
-        # Cleanup
         redis_client.delete(redis_key)
-        logger.info(f"✅ Email verified: {data.email}")
 
+        logger.info(f"[Verify ✅] Email verified successfully: {email}")
         return {"status": "ok", "message": "Email verified successfully."}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[Verify Error] {e}")
-        raise HTTPException(status_code=500, detail="Verification failed. Please try again.")
+        logger.error(f"[Verify ❌] Internal error for {email}: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed. Please try again later.")
+
 
 

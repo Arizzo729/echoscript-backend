@@ -1,6 +1,4 @@
-# assistant.py — EchoScript.AI Smart Assistant Route
-
-from fastapi import APIRouter, HTTPException
+#from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal, Dict
 from uuid import uuid4
