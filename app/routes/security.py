@@ -1,35 +1,67 @@
 # app/routes/security/2fa.py — EchoScript.AI 2FA Toggle API
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
-from uuid import UUID
+from sqlalchemy.orm import Session
+from app.db import get_db
+from app.models import User
+from app.auth_utils import decode_token
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/api/security", tags=["Security"])
 
-# ⚠️ TEMP: In-memory user 2FA toggle map (use DB/session in production)
-user_2fa_store = {
-    "default": False  # Replace with per-user entry in production
-}
-
+# === Request Schema ===
 class TwoFAUpdate(BaseModel):
-    user_id: str = "default"
     enable: bool
 
-# === Get Current 2FA Status ===
+# === Get 2FA Status ===
 @router.get("/2fa-status")
-async def get_2fa_status(user_id: str = "default"):
-    enabled = user_2fa_store.get(user_id, False)
-    return {"enabled": enabled}
-
-# === Enable/Disable 2FA ===
-@router.post("/2fa-toggle")
-async def toggle_2fa(update: TwoFAUpdate):
+def get_2fa_status(
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)
+):
     try:
-        user_2fa_store[update.user_id] = update.enable
-        # TODO: Integrate with auth/session store for real persistence
-        return {
-            "status": "success",
-            "enabled": update.enable
-        }
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid token.")
+
+        token = decode_token(authorization.split(" ")[1])
+        if not token or "sub" not in token:
+            raise HTTPException(status_code=401, detail="Invalid token.")
+
+        user = db.query(User).filter_by(email=token["sub"]).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        return {"enabled": user.enable_2fa if hasattr(user, "enable_2fa") else False}
     except Exception as e:
-        raise HTTPException(status_code=500, detail="2FA update failed.")
+        logger.error(f"[2FA Status] Error: {e}")
+        raise HTTPException(status_code=500, detail="Could not retrieve 2FA status.")
+
+# === Toggle 2FA ===
+@router.post("/2fa-toggle")
+def toggle_2fa(
+    data: TwoFAUpdate,
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid token.")
+
+        token = decode_token(authorization.split(" ")[1])
+        if not token or "sub" not in token:
+            raise HTTPException(status_code=401, detail="Invalid token.")
+
+        user = db.query(User).filter_by(email=token["sub"]).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        user.enable_2fa = data.enable
+        db.commit()
+        logger.info(f"[2FA] User {user.email} → 2FA {'ENABLED' if data.enable else 'DISABLED'}")
+
+        return {"status": "success", "enabled": data.enable}
+    except Exception as e:
+        logger.error(f"[2FA Toggle] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update 2FA setting.")
+

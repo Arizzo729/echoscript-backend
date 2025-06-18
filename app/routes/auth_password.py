@@ -1,67 +1,53 @@
-# routes/password_reset.py — EchoScript.AI Secure Password Reset
+# === routes/auth/verify_reset.py — EchoScript.AI Secure Password Reset Verification ===
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
-import random
-import string
-from app.auth_utils import hash_password  # Updated with passlib
-from app.utils.logger import logger  # optional
+from fastapi import APIRouter, HTTPException, Depends, Request
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr, constr
+from app.db import get_db
+from app.models import User
+from app.auth_utils import hash_password
+from app.utils.logger import logger
+from app.config import redis_client
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# In-memory temporary store (swap with DB/Redis later)
-reset_tokens = {}
-users = {
-    "user@example.com": {
-        "password": "$2b$12$examplehashedpasswordstring",  # hashed password example
-        "verified": True
-    }
-}
-
-# --- Mock Email Sender ---
-def send_email(to: str, subject: str, body: str):
-    logger.info(f"[Email] → {to}: {subject}\n{body}")
-    # TODO: Replace with actual SendGrid/Mailgun later
-
-# --- Schemas ---
-
-class ResetRequest(BaseModel):
-    email: EmailStr
-
 class VerifyReset(BaseModel):
     email: EmailStr
-    code: str
-    new_password: str
-
-# --- Request Reset Code ---
-
-@router.post("/send-reset-code")
-def send_reset_code(data: ResetRequest):
-    if data.email not in users:
-        raise HTTPException(status_code=404, detail="Email not found")
-
-    code = ''.join(random.choices(string.digits, k=6))
-    reset_tokens[data.email] = code
-
-    send_email(
-        to=data.email,
-        subject="Your EchoScript.AI Reset Code",
-        body=f"Your verification code is: {code}"
-    )
-
-    return {"status": "code_sent"}
-
-# --- Verify Reset Code & Set New Password ---
+    code: constr(min_length=4, max_length=10)
+    new_password: constr(min_length=8, max_length=64)
 
 @router.post("/verify-reset")
-def verify_reset(data: VerifyReset):
-    if reset_tokens.get(data.email) != data.code:
-        raise HTTPException(status_code=401, detail="Invalid reset code")
+def verify_reset(data: VerifyReset, request: Request, db: Session = Depends(get_db)):
+    try:
+        ip = request.client.host
 
-    # Hash and save new password securely
-    users[data.email]["password"] = hash_password(data.new_password)
+        # Validate reset code
+        key = f"reset:{data.email}"
+        stored_code = redis_client.get(key)
+        if not stored_code:
+            logger.warning(f"[Reset] Code expired for {data.email} from IP {ip}")
+            raise HTTPException(status_code=410, detail="Reset code expired or invalid.")
+        if stored_code.decode() != data.code:
+            logger.warning(f"[Reset] Invalid code attempt for {data.email} from IP {ip}")
+            raise HTTPException(status_code=401, detail="Invalid reset code.")
 
-    # Cleanup
-    reset_tokens.pop(data.email, None)
+        # Find user
+        user = db.query(User).filter(User.email == data.email).first()
+        if not user:
+            logger.warning(f"[Reset] User not found: {data.email}")
+            raise HTTPException(status_code=404, detail="User not found.")
 
-    return {"status": "password_reset"}
+        # Update password securely
+        user.password = hash_password(data.new_password)
+        db.commit()
+        redis_client.delete(key)
+
+        logger.info(f"[Reset] ✅ Password reset for {data.email} from IP {ip}")
+        return {"status": "success", "message": "Password reset successful."}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Reset Error] Unexpected failure: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error during password reset.")
+
