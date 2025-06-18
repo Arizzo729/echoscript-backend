@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from faster_whisper import WhisperModel
+from app.routes import stripe_webhook  # ✅ Import Stripe webhook route
+
 import tempfile
 import logging
 import os
@@ -27,6 +29,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
 )
+
+# === Include Stripe Webhook Routes ===
+app.include_router(stripe_webhook.router)
 
 # === Health Check ===
 @app.get("/health")
@@ -91,5 +96,4 @@ async def transcribe_audio(file: UploadFile = File(...), language: str = DEFAULT
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Live transcription coming soon.")
-
 
