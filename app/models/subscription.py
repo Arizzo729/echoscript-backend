@@ -6,7 +6,6 @@ from pydantic import BaseModel
 import stripe
 import os
 
-from app.db import get_db
 from app.models.user import User
 from app.models.subscription import Subscription
 from app.auth_utils import get_current_user
