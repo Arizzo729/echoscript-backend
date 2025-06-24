@@ -172,8 +172,14 @@ app.include_router(subscription_router, prefix="/api/subscription")
 
 # Global exception handler
 @app.exception_handler(Exception)
+# Global exception handler
+@app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception(f"[Unhandled] {exc}")
-    return JSONResponse(status_code=500, content={"error": str(exc)})
-tr(exc)})
-
+    logger.exception(f"[Unhandled Exception] {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": str(exc),
+            "trace": repr(exc),
+        }
+    )
