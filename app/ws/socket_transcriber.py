@@ -9,6 +9,11 @@ import numpy as np
 import soundfile as sf
 import noisereduce as nr
 import librosa
+import os
+from dotenv import load_dotenv
+
+# ---- Load Env and Set OpenAI API Key ----
+load_dotenv()
 
 # ---- Adaptive GPU/CPU Selection ----
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -35,10 +40,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            chunk = await websocket.receive_bytes()
+            try:
+                chunk = await websocket.receive_bytes()
+            except Exception as recv_error:
+                logger.warning(f"⚠️ WebSocket receive failed: {recv_error}")
+                break
+
             audio_buffer.extend(chunk)
 
             if len(audio_buffer) >= BUFFER_SIZE * 2:  # 16-bit PCM = 2 bytes/sample
+                await websocket.send_json({"status": "processing"})
+
                 with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp_file:
                     np_audio = np.frombuffer(audio_buffer, dtype=np.int16).astype(np.float32) / 32768.0
                     denoised = nr.reduce_noise(y=np_audio, sr=SAMPLING_RATE)
@@ -46,11 +58,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     try:
                         if whisper_model:
-                            result = whisper_model.transcribe(tmp_file.name, language=None)
+                            result = whisper_model.transcribe(tmp_file.name, language='auto')
                             lang = result.get("language", "unknown")
                             raw_text = result.get("text", "").strip()
 
-                            cleaned_text = await ai_enhance_transcript(raw_text)
+                            cleaned_text = (await ai_enhance_transcript(raw_text)) or "[No clear speech]"
 
                             await websocket.send_json({
                                 "text": cleaned_text,
@@ -100,4 +112,3 @@ async def ai_enhance_transcript(text: str) -> str:
     except Exception as e:
         logger.warning(f"GPT enhancement failed: {e}")
         return text
-

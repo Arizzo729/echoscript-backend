@@ -1,24 +1,19 @@
-#from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal, Dict
-from uuid import uuid4
 import openai
 import os
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/assistant", tags=["AI Assistant"])
 
-# --- Environment ---
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# --- In-memory session context (replace with Redis soon) ---
 user_memory: Dict[str, List[str]] = {}
-
-# === Request Models ===
 
 class AssistantQuery(BaseModel):
     transcript: str = Field(..., description="Full transcript content")
-    question: str = Field(..., description="User’s query")
+    question: str = Field(..., description="User's query")
     history: List[str] = Field(default_factory=list)
     user_id: str = "default"
     mode: Optional[str] = "auto"
@@ -37,8 +32,6 @@ class TrainingExample(BaseModel):
     correction: Optional[str] = None
     bad_reply: Optional[str] = None
 
-# === Intent Mapping ===
-
 INTENT_MAP = {
     "summarize": "Summarize the key points clearly.",
     "clarify": "Clarify unclear sections in plain English.",
@@ -47,19 +40,20 @@ INTENT_MAP = {
     "explain": "Explain concepts as if teaching.",
     "compare": "Compare themes or speakers.",
     "next_steps": "Suggest logical next steps.",
-    "casual_chat": "Answer in a friendly, conversational way.",
+    "casual_chat": "Respond in a conversational way.",
 }
-
-# === Mode Classifier ===
 
 def classify_mode(transcript: str, question: str) -> str:
     prompt = f"""
-Classify the user's goal based on the transcript and question.
-Choose only one: summarize, clarify, actions, insight, explain, compare, next_steps, casual_chat
+    Classify user intent from transcript and question.
+    Choose one clearly: summarize, clarify, actions, insight, explain, compare, next_steps, casual_chat.
 
-Transcript: {transcript[:1000]}
-Question: {question}
-""".strip()
+    Transcript excerpt:
+    {transcript[:1000]}
+
+    Question:
+    {question}
+    """.strip()
 
     try:
         res = openai.ChatCompletion.create(
@@ -71,10 +65,8 @@ Question: {question}
         mode = res.choices[0].message["content"].strip().split()[0].lower()
         return mode if mode in INTENT_MAP else "auto"
     except Exception as e:
-        logger.warning(f"[Mode Classifier] fallback to 'auto': {e}")
+        logger.warning(f"[Mode Classifier] Fallback to 'auto': {e}")
         return "auto"
-
-# === Prompt Builder ===
 
 def build_prompt(data: AssistantQuery) -> tuple[list, str]:
     tone = data.tone or "friendly"
@@ -83,18 +75,15 @@ def build_prompt(data: AssistantQuery) -> tuple[list, str]:
 
     system_msg = (
         f"You are EchoScript.AI — an adaptive AI assistant.\n"
-        f"Use a {tone} tone and speak with {voice} style.\n"
-        f"{INTENT_MAP.get(mode, 'Be helpful and context-aware.')}"
+        f"Maintain a {tone} tone with a {voice} voice.\n"
+        f"{INTENT_MAP.get(mode, 'Provide helpful, context-aware responses.')}"
     )
 
     messages = [{"role": "system", "content": system_msg}]
 
-    # Memory + prior interactions
-    memory = user_memory.get(data.user_id, [])[-3:]
-    for line in memory + data.history[-3:]:
-        messages.append({"role": "user", "content": line})
+    context_memory = user_memory.get(data.user_id, [])[-3:] + data.history[-3:]
+    messages.extend({"role": "user", "content": line} for line in context_memory)
 
-    # Current query
     messages.append({
         "role": "user",
         "content": f"Transcript:\n{data.transcript[:4000]}\n\nQuestion:\n{data.question}"
@@ -102,44 +91,30 @@ def build_prompt(data: AssistantQuery) -> tuple[list, str]:
 
     return messages, mode
 
-# === Smart Assistant Entry Point ===
-
 @router.post("/ask", response_model=AssistantResponse)
 async def ask_smart_assistant(data: AssistantQuery):
-    try:
-        messages, mode = build_prompt(data)
+    messages, mode = build_prompt(data)
+    model_sequence = ["gpt-4", "gpt-3.5-turbo"]
 
+    for model in model_sequence:
         try:
-            # Try GPT-4 first
             res = openai.ChatCompletion.create(
-                model="gpt-4",
+                model=model,
                 messages=messages,
                 temperature=0.65,
                 max_tokens=1400,
             )
-        except Exception as e:
-            logger.warning(f"[Assistant] GPT-4 failed, fallback to 3.5: {e}")
-            res = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.65,
-                max_tokens=1400,
-            )
-
-        reply = res.choices[0].message["content"].strip()
-
-        # Save memory
-        user_memory.setdefault(data.user_id, []).append(data.question)
-        if len(user_memory[data.user_id]) > 10:
+            reply = res.choices[0].message["content"].strip()
+            user_memory.setdefault(data.user_id, []).append(data.question)
             user_memory[data.user_id] = user_memory[data.user_id][-10:]
 
-        return AssistantResponse(response=reply, mode=mode)
+            return AssistantResponse(response=reply, mode=mode)
 
-    except Exception as e:
-        logger.error(f"[Assistant] Unhandled error: {e}")
-        raise HTTPException(status_code=500, detail="Assistant failed to respond.")
+        except Exception as e:
+            logger.warning(f"[Assistant] {model} failed: {e}, trying next.")
 
-# === Feedback Training Route ===
+    logger.error("[Assistant] All AI models failed to respond.")
+    raise HTTPException(status_code=500, detail="Assistant could not generate a response.")
 
 @router.post("/train", response_model=dict)
 async def train_assistant(example: TrainingExample):
@@ -153,5 +128,5 @@ async def train_assistant(example: TrainingExample):
 
     user_memory.setdefault(example.user_id, []).append(feedback)
 
-    logger.info(f"[Feedback] Stored training input for {example.user_id}")
-    return {"message": "Feedback stored.", "data": feedback}
+    logger.info(f"[Feedback] Stored training feedback for {example.user_id}")
+    return {"message": "Feedback recorded successfully.", "data": feedback}

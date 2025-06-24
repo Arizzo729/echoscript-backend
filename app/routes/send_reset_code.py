@@ -1,5 +1,3 @@
-# routes/auth/send_verification_code.py — EchoScript.AI Email Verification Code Sender
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 import random
@@ -17,48 +15,52 @@ class VerificationRequest(BaseModel):
 
 @router.post("/api/auth/send-verification-code")
 async def send_verification_code(data: VerificationRequest):
-    if not data.email:
+    email = data.email.strip().lower()
+    if not email:
         raise HTTPException(status_code=400, detail="Email is required.")
 
-    # === Generate 6-digit Code ===
+    # === Generate 6-digit Verification Code ===
     try:
-        code = str(random.randint(100000, 999999))
-    except:
-        code = uuid4().hex[:6]
+        code = f"{random.randint(100000, 999999):06d}"
+    except Exception:
+        code = uuid4().hex[:6].upper()
 
-    # === Store in Redis for 15 minutes ===
-    redis_key = f"verify:{data.email.lower()}"
+    # === Store in Redis with 15 min TTL ===
+    redis_key = f"verify:{email}"
     try:
-        redis_client.setex(redis_key, 900, code)
-        logger.info(f"[Verify] Verification code cached for {data.email} → {code}")
+        success = redis_client.setex(redis_key, 900, code)
+        if not success:
+            raise Exception("Redis SETEX failed")
+        logger.info(f"[Verify Cache ✅] Code cached for {email} → {code}")
     except Exception as e:
-        logger.error(f"[Redis ❌] Failed to store verification code: {e}")
-        raise HTTPException(status_code=500, detail="Unable to cache verification code. Try again shortly.")
+        logger.exception(f"[Redis ❌] Caching error: {e}")
+        raise HTTPException(status_code=500, detail="Unable to cache verification code. Please try again shortly.")
 
-    # === Prepare Email Content ===
-    subject = "Verify Your EchoScript.AI Email"
+    # === Construct Email ===
+    subject = "🔐 Confirm Your EchoScript.AI Account"
     content = (
-        f"Hello,\n\n"
-        f"Thanks for signing up with EchoScript.AI!\n\n"
-        f"🔐 Your verification code: {code}\n\n"
-        f"This code will expire in 15 minutes.\n\n"
-        f"If you didn’t create this account, you can safely ignore this email.\n\n"
-        f"— EchoScript.AI Team"
+        f"Hi there,\n\n"
+        f"You're almost done! Use the code below to confirm your email:\n\n"
+        f"🔢 <strong>{code}</strong>\n\n"
+        f"This code expires in 15 minutes.\n\n"
+        f"If you didn't request this, feel free to ignore it.\n\n"
+        f"— The EchoScript.AI Team"
     )
 
     # === Send Email ===
     try:
-        email_response = send_email(to=data.email, subject=subject, content=content)
-        if email_response.get("status") != "success":
-            raise RuntimeError(email_response.get("message", "Unknown failure during email send."))
+        result = send_email(to=email, subject=subject, content=content)
+        if result.get("status") != "success":
+            raise RuntimeError(result.get("message", "Unknown email sending error."))
 
-        logger.info(f"[Email ✅] Verification email sent to {data.email}")
+        logger.info(f"[Email ✅] Verification email delivered to {email}")
         return {
-            "status": "ok",
-            "message": "Verification code sent successfully. Check your inbox."
+            "status": "success",
+            "message": "Verification code sent. Please check your inbox."
         }
 
     except Exception as e:
-        logger.error(f"[Email ❌] Failed to send to {data.email}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send verification email.")
+        logger.exception(f"[Email ❌] Delivery failed to {email}: {e}")
+        raise HTTPException(status_code=500, detail="Email delivery failed. Please try again.")
+
 

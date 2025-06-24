@@ -40,9 +40,9 @@ def check_minutes(estimated: int):
         db: Session = Depends(get_db)
     ) -> bool:
         plan = user.plan or "guest"
-        limit = PLAN_CONFIG.get(plan, PLAN_CONFIG["guest"])"minutes_limit"
-        # Interpret infinite as no limit
-        if limit != float("inf") and user.minutes_used + estimated > limit:
+        limit = PLAN_CONFIG.get(plan, PLAN_CONFIG["guest"])["minutes_limit"]  # ← fixed syntax
+
+        if limit != float("inf") and (user.minutes_used + estimated) > limit:
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail=(
@@ -50,8 +50,10 @@ def check_minutes(estimated: int):
                     "Please upgrade your plan to continue."
                 )
             )
-        # Deduct minutes and persist
+
+        # Update and persist usage
         user.minutes_used += estimated
         db.commit()
         return True
+
     return _checker

@@ -1,5 +1,3 @@
-# === routes/auth/signup.py — EchoScript.AI Signup & Verification (Enhanced) ===
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -24,28 +22,25 @@ class SignUpRequest(BaseModel):
 def signup(data: SignUpRequest, request: Request, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
 
-    # === Duplicate Check ===
     if db.query(User).filter(User.email == email).first():
-        logger.info(f"[Signup] Duplicate: {email}")
+        logger.info(f"[Signup ❌] Duplicate email attempt: {email}")
         raise HTTPException(status_code=400, detail="Email already registered.")
 
-    # === Basic Password Strength Check ===
     if len(data.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters long.")
 
-    # === Optional Anti-spam Throttle ===
     throttle_key = f"signup:attempts:{email}"
     try:
         attempts = redis_client.incr(throttle_key)
         if attempts == 1:
-            redis_client.expire(throttle_key, 3600)  # expire in 1 hour
+            redis_client.expire(throttle_key, 3600)
         if attempts > 5:
-            raise HTTPException(status_code=429, detail="Too many signup attempts. Try again in an hour.")
+            logger.warning(f"[Signup Throttle] Too many attempts for {email}")
+            raise HTTPException(status_code=429, detail="Too many signup attempts. Try again later.")
     except Exception as e:
-        logger.warning(f"[Throttle] Redis error for {email}: {e}")
+        logger.warning(f"[Throttle Error] Redis issue for {email}: {e}")
 
     try:
-        # === Create User ===
         hashed_pw = hash_password(data.password)
         new_user = User(
             email=email,
@@ -57,47 +52,39 @@ def signup(data: SignUpRequest, request: Request, db: Session = Depends(get_db))
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        logger.info(f"[Signup] ✅ Registered: {email}")
+        logger.info(f"[Signup ✅] Registered: {email}")
 
-        # === Generate Secure Verification Code ===
         code = ''.join(secrets.choice(string.digits) for _ in range(6))
         redis_key = f"verify:{email}"
 
-        if not redis_client.setex(redis_key, 900, code):  # expires in 15 minutes
-            raise RuntimeError("Failed to store verification code in cache.")
+        if not redis_client.setex(redis_key, 900, code):
+            raise RuntimeError("Verification code caching failed.")
 
-        logger.info(f"[Verify] Code sent → {email} ({code})")
+        logger.info(f"[Verify Code] Cached for {email} → {code}")
 
-        # === Send Verification Email ===
-        subject = "Verify Your EchoScript.AI Account"
-        content = f"""
-Hello 👋,
-
-Thanks for signing up with EchoScript.AI!
-
-Your verification code is: **{code}**
-
-This code will expire in 15 minutes.
-
-If you didn’t create this account, you can ignore this email.
-
-— The EchoScript.AI Team
-        """.strip()
+        subject = "🔐 Verify Your EchoScript.AI Account"
+        content = (
+            f"Hi {email},\n\n"
+            f"Thanks for signing up for EchoScript.AI.\n\n"
+            f"Your verification code is: <strong>{code}</strong>\n\n"
+            f"This code is valid for 15 minutes.\n\n"
+            f"If you didn’t request this account, you may safely ignore this email.\n\n"
+            f"— EchoScript.AI Security"
+        )
 
         email_status = send_email(to=email, subject=subject, content=content)
         if email_status.get("status") != "success":
-            logger.warning(f"[Email Fail] Could not send verification to {email}: {email_status}")
+            logger.warning(f"[Email ❌] Could not deliver to {email}: {email_status}")
             raise RuntimeError("Verification email failed to send.")
 
         return {
-            "status": "ok",
-            "message": "Signup successful. Check your email for the verification code."
+            "status": "success",
+            "message": "Signup complete. Verification code sent to your email."
         }
 
     except HTTPException:
         raise
-
     except Exception as e:
-        logger.error(f"[Signup Error] {email} — {e}")
-        raise HTTPException(status_code=500, detail="Signup failed. Please try again later.")
+        logger.exception(f"[Signup Error] {email} — {e}")
+        raise HTTPException(status_code=500, detail="Signup failed due to an internal error.")
 

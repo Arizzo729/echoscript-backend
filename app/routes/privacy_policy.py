@@ -7,87 +7,102 @@
   <title>Privacy Policy | EchoScript.AI</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 900px;
+      font-family: 'Segoe UI', sans-serif;
+      max-width: 880px;
       margin: 0 auto;
       padding: 2rem;
-      line-height: 1.6;
+      line-height: 1.7;
       color: #1f2937;
-      background-color: #f9fafb;
+      background-color: #ffffff;
     }
     h1, h2, h3 {
       color: #111827;
     }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+    }
+    ul {
+      padding-left: 1.2rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
     a {
-      color: #00b4ff;
+      color: #0284c7;
       text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <h1>Privacy Policy</h1>
-  <p><strong>Effective Date:</strong> [Insert Date]</p>
+  <p><strong>Effective Date:</strong> June 24, 2025</p>
 
-  <p>Welcome to EchoScript.AI. Your privacy is important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit or use our platform and services.</p>
+  <p>At EchoScript.AI, your privacy is a top priority. This Privacy Policy describes how we collect, use, disclose, and safeguard your personal data when using our platform.</p>
 
   <h2>1. Information We Collect</h2>
   <h3>a. Information You Provide</h3>
   <ul>
-    <li>Account registration details (email, name, etc.)</li>
-    <li>Audio/video uploads for transcription</li>
-    <li>Support messages and contact requests</li>
-    <li>Payment data (processed securely via Stripe)</li>
+    <li>Email address and password (for registration and authentication)</li>
+    <li>Uploaded audio and video files</li>
+    <li>Billing details (securely processed by Stripe)</li>
+    <li>Support requests or feedback</li>
   </ul>
 
-  <h3>b. Automatically Collected Information</h3>
+  <h3>b. Information Collected Automatically</h3>
   <ul>
-    <li>Device and browser data</li>
-    <li>IP address and location metadata</li>
-    <li>Usage behavior, access times, and referral URLs</li>
+    <li>Device type, browser, and IP address</li>
+    <li>Usage patterns and referral URLs</li>
+    <li>Access timestamps and click behavior</li>
   </ul>
 
-  <h2>2. How We Use Your Information</h2>
+  <h2>2. Use of Information</h2>
   <ul>
-    <li>To provide and improve transcription services</li>
-    <li>To personalize and enhance user experience</li>
-    <li>To process payments and prevent fraud</li>
-    <li>To comply with legal obligations</li>
-    <li>To communicate service updates and support</li>
+    <li>To deliver and improve transcription and AI services</li>
+    <li>To enhance personalization and performance</li>
+    <li>To process secure payments and verify transactions</li>
+    <li>To protect against abuse and ensure platform integrity</li>
+    <li>To comply with legal requirements and regulations</li>
   </ul>
 
-  <h2>3. Data Storage and Security</h2>
-  <p>We store all data securely using industry-standard encryption. Your files and transcripts are processed in secure environments and are not shared with third parties unless legally required.</p>
+  <h2>3. Data Security</h2>
+  <p>We use advanced encryption and secure storage practices. Transcripts are processed in isolated environments and are not shared outside the scope of user control.</p>
 
   <h2>4. Third-Party Services</h2>
-  <p>We use trusted third-party providers including:</p>
+  <p>We use the following services, each governed by their own privacy terms:</p>
   <ul>
-    <li><strong>Stripe</strong> for secure payment processing</li>
-    <li><strong>Google Analytics</strong> for anonymous usage tracking</li>
-    <li><strong>Auth0</strong> (or equivalent) for user authentication</li>
+    <li><strong>Stripe</strong> – payment processing</li>
+    <li><strong>Auth0</strong> – user authentication</li>
+    <li><strong>Google Analytics</strong> – anonymized usage statistics</li>
   </ul>
-  <p>Each provider has its own privacy policy and adheres to industry standards.</p>
 
-  <h2>5. Your Rights</h2>
+  <h2>5. Your Privacy Rights</h2>
   <p>You may request to:</p>
   <ul>
-    <li>Access the data we have about you</li>
-    <li>Delete your account and associated data</li>
-    <li>Correct inaccurate or incomplete data</li>
-    <li>Opt out of marketing communications</li>
+    <li>Access or download your data</li>
+    <li>Delete your account and associated records</li>
+    <li>Update incorrect personal information</li>
+    <li>Opt out of non-essential communications</li>
   </ul>
-  <p>To exercise your rights, please contact us at <a href="mailto:support@echoscriptai.com">support@echoscriptai.com</a>.</p>
+  <p>Contact us anytime at <a href="mailto:support@echoscriptai.com">support@echoscriptai.com</a>.</p>
 
   <h2>6. Data Retention</h2>
-  <p>We retain account data for as long as your account is active. Audio files and transcripts may be stored temporarily and deleted automatically after a set duration, unless saved by you.</p>
+  <p>Account data is retained for as long as the account remains active. Temporary processing files (e.g., audio uploads) may be auto-deleted after a predefined retention period.</p>
 
   <h2>7. Children's Privacy</h2>
-  <p>EchoScript.AI is not intended for users under the age of 13. We do not knowingly collect personal data from children.</p>
+  <p>EchoScript.AI is not intended for users under 13 years of age. We do not knowingly collect data from children.</p>
 
-  <h2>8. Policy Updates</h2>
-  <p>We may update this policy periodically. Any changes will be posted on this page with a revised effective date.</p>
+  <h2>8. Changes to This Policy</h2>
+  <p>We may revise this policy to reflect changes in law or our services. The updated policy will be posted on this page with the revised date.</p>
 
-  <h2>9. Contact Us</h2>
-  <p>If you have questions or concerns about our privacy practices, reach out to:</p>
-  <p><strong>EchoScript.AI Support</strong><br />Email: <a href="mailto:support@echoscriptai.com">support@echoscriptai.com</a></p>
+  <h2>9. Contact</h2>
+  <p>Questions or concerns? Reach us at:</p>
+  <p><strong>EchoScript.AI Support</strong><br />
+     Email: <a href="mailto:support@echoscriptai.com">support@echoscriptai.com</a>
+  </p>
 </body>
 </html>

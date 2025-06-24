@@ -1,5 +1,3 @@
-# app/routes/profile.py — EchoScript.AI Avatar Upload API
-
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
@@ -13,6 +11,7 @@ router = APIRouter(prefix="/api/profile", tags=["Profile"])
 AVATAR_DIR = Path("static/avatars")
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+MAX_AVATAR_SIZE_MB = 5
 
 # === Upload Avatar (Form file or base64) ===
 @router.post("/upload-avatar")
@@ -28,21 +27,24 @@ async def upload_avatar(
     path = AVATAR_DIR / filename
 
     try:
-        # Option A: UploadFile (raw file upload)
         if file:
             ext = Path(file.filename).suffix.lower()
             if ext not in ALLOWED_EXTENSIONS:
                 raise HTTPException(status_code=400, detail="Unsupported file type.")
 
             contents = await file.read()
+            if len(contents) > MAX_AVATAR_SIZE_MB * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="Avatar file too large.")
+
             with open(path, "wb") as f:
                 f.write(contents)
 
-        # Option B: base64 string
         elif base64_img:
             try:
                 header, encoded = base64_img.split(",", 1)
                 image_data = base64.b64decode(encoded)
+                if len(image_data) > MAX_AVATAR_SIZE_MB * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="Base64 avatar exceeds size limit.")
                 with open(path, "wb") as f:
                     f.write(image_data)
             except Exception:
@@ -51,13 +53,12 @@ async def upload_avatar(
         else:
             raise HTTPException(status_code=400, detail="No file or base64 provided.")
 
-        # Optional: Verify image integrity
         try:
             with Image.open(path) as img:
                 img.verify()
         except Exception:
             os.remove(path)
-            raise HTTPException(status_code=400, detail="Invalid image file.")
+            raise HTTPException(status_code=400, detail="Corrupted or invalid image file.")
 
         return JSONResponse({
             "status": "success",
@@ -67,5 +68,6 @@ async def upload_avatar(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error during upload: {e}")
+
 

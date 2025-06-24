@@ -19,31 +19,32 @@ def request_2fa_code(data: TwoFARequest):
 
     # === Step 1: Store in Redis ===
     try:
-        result = redis_client.setex(redis_key, 300, code)  # 5 min expiry
-        if not result:
-            raise Exception("Redis setex returned False")
-        logger.info(f"[2FA] Code cached for {data.email} → {code}")
+        success = redis_client.setex(redis_key, 300, code)  # 5-minute expiry
+        if not success:
+            raise Exception("Redis setex operation failed.")
+        logger.info(f"[2FA] ✅ Code stored in Redis for {data.email} → {code}")
     except Exception as e:
-        logger.error(f"[2FA Redis ❌] Failed to store code: {e}")
-        raise HTTPException(status_code=500, detail="Unable to store 2FA code.")
+        logger.exception(f"[2FA Redis ❌] Failed to cache 2FA code: {e}")
+        raise HTTPException(status_code=500, detail="Unable to cache 2FA code.")
 
     # === Step 2: Send Email ===
     subject = "🔐 Your EchoScript.AI Login Code"
     content = (
         f"Hello,\n\n"
-        f"Use the code below to complete your login:\n\n"
-        f"🔢 Your 2FA Code: {code}\n\n"
+        f"Use the code below to verify your login and access your account:\n\n"
+        f"🔢 <strong>{code}</strong>\n\n"
         f"This code is valid for 5 minutes.\n\n"
-        f"If you didn’t request this, please ignore this message.\n\n"
-        f"— EchoScript.AI Security Team"
+        f"If you did not request this code, please ignore this email.\n\n"
+        f"Thank you,\nThe EchoScript.AI Security Team"
     )
 
     try:
         result = send_email(to=data.email, subject=subject, content=content)
         if result.get("status") != "success":
             raise Exception(result.get("message", "Failed to send email"))
-        return {"status": "ok", "message": "2FA code sent successfully."}
+        logger.info(f"[2FA Email ✅] Sent successfully to {data.email}")
+        return {"status": "success", "message": "2FA code sent successfully."}
     except Exception as e:
-        logger.error(f"[2FA Email ❌] Failed to send to {data.email}: {e}")
+        logger.exception(f"[2FA Email ❌] Delivery failed to {data.email}: {e}")
         raise HTTPException(status_code=500, detail="Unable to send 2FA email.")
 

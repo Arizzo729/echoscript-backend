@@ -1,5 +1,3 @@
-# === routes/auth/login.py — EchoScript.AI Secure Login ===
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -21,55 +19,49 @@ class LoginRequest(BaseModel):
 @router.post("/login")
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
+    throttle_key = f"login:attempts:{email}"
 
     # === Rate Limiting (5 attempts/hr) ===
-    throttle_key = f"login:attempts:{email}"
     try:
         attempts = redis_client.incr(throttle_key)
         if attempts == 1:
-            redis_client.expire(throttle_key, 3600)  # 1 hour expiry
+            redis_client.expire(throttle_key, 3600)
         if attempts > 5:
-            logger.warning(f"[Login] Too many attempts for {email}")
-            raise HTTPException(status_code=429, detail="Too many login attempts. Try again in an hour.")
+            logger.warning(f"[Login] ❌ Too many attempts for {email}")
+            raise HTTPException(status_code=429, detail="Too many login attempts. Please try again later.")
     except Exception as e:
-        logger.warning(f"[Throttle] Redis error for {email}: {e}")
+        logger.warning(f"[Login Throttle] Redis issue for {email}: {e}")
 
     try:
         user = db.query(User).filter(User.email == email).first()
 
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid credentials.")
-
-        if not verify_password(data.password, user.password):
-            raise HTTPException(status_code=401, detail="Invalid credentials.")
+        if not user or not verify_password(data.password, user.password):
+            raise HTTPException(status_code=401, detail="Invalid email or password.")
 
         if not user.is_active:
-            raise HTTPException(status_code=403, detail="Account is disabled.")
+            raise HTTPException(status_code=403, detail="Your account has been disabled. Contact support.")
 
         if not user.is_verified:
-            raise HTTPException(status_code=403, detail="Account not verified. Please check your email.")
+            raise HTTPException(status_code=403, detail="Your account is not verified. Check your inbox.")
 
-        # === Successful Login ===
-        logger.info(f"[Login] ✅ {email} logged in at {datetime.utcnow().isoformat()}")
+        logger.info(f"[Login] ✅ {email} logged in @ {datetime.utcnow().isoformat()}")
 
-        # === Optional JWT Session Token ===
         token = create_jwt_token(user_id=user.id, email=user.email, plan=user.plan)
 
         return {
-            "status": "ok",
-            "message": "Login successful.",
+            "status": "success",
+            "message": "Welcome back! You are now logged in.",
             "user": {
                 "id": user.id,
                 "email": user.email,
                 "plan": user.plan,
-                "is_verified": user.is_verified,
+                "is_verified": user.is_verified
             },
             "token": token
         }
 
     except HTTPException:
         raise
-
     except Exception as e:
-        logger.error(f"[Login Error] {email} — {e}")
-        raise HTTPException(status_code=500, detail="Login failed. Please try again.")
+        logger.exception(f"[Login Error] Unexpected failure for {email}: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred during login.")

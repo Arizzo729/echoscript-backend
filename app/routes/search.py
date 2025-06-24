@@ -1,4 +1,3 @@
-# routes/search.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -11,7 +10,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
-# Define Search Item schema
+# === Schema Definitions ===
 class SearchResultItem(BaseModel):
     type: str
     name: str
@@ -23,7 +22,7 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     results: List[SearchResultItem]
 
-# For demo, simple in-memory data (replace with real DB search)
+# === Demo Search Index (Replace with DB/AI in production) ===
 SEARCH_INDEX = [
     {"type": "Page", "name": "Dashboard", "path": "/dashboard"},
     {"type": "Page", "name": "Upload Audio", "path": "/upload"},
@@ -38,19 +37,25 @@ SEARCH_INDEX = [
     {"type": "Page", "name": "Contact Us", "path": "/contact"},
 ]
 
+# === Search Route ===
 @router.post("/search", response_model=SearchResponse)
-def search(
-    request: SearchRequest,
-    db: Session = Depends(get_db)
-):
+def search(request: SearchRequest, db: Session = Depends(get_db)):
     query = request.query.strip().lower()
     if not query:
         return {"results": []}
-    
-    # Simple case-insensitive substring match
-    matched = [item for item in SEARCH_INDEX if query in item["name"].lower()]
-    
-    # Limit results to top 10
-    results = matched[:10]
-    return {"results": results}
 
+    # Enhanced fuzzy match scoring (basic demo version)
+    def score(item):
+        name = item["name"].lower()
+        if query == name:
+            return 3  # exact
+        elif query in name:
+            return 2  # partial
+        elif name.startswith(query):
+            return 1  # prefix
+        return 0
+
+    ranked = sorted([item for item in SEARCH_INDEX if score(item) > 0], key=score, reverse=True)
+    results = ranked[:10]
+
+    return {"results": results}

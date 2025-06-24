@@ -40,13 +40,13 @@ async def summarize(req: SummaryRequest):
     # Validate input length
     word_count = len(transcript.split())
     if word_count < 10:
-        logger.warning("[Summary] ❌ Too short to summarize.")
+        logger.warning("[Summary ❌] Input too short.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Transcript too short to summarize."
         )
     if word_count > 10000:
-        logger.warning("[Summary] ⚠️ Input too large.")
+        logger.warning("[Summary ⚠️] Input too long.")
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Transcript too long to summarize."
@@ -61,7 +61,7 @@ async def summarize(req: SummaryRequest):
         cached = redis_client.get(cache_key)
         if cached:
             summary = zlib.decompress(cached).decode("utf-8")
-            logger.info(f"[Summary] ✅ Cache hit — tone={req.tone}, length={req.length}")
+            logger.info(f"[Summary ✅] Cache hit — tone={req.tone}, length={req.length}")
             return SummaryResponse(
                 summary=summary,
                 cached=True,
@@ -78,7 +78,7 @@ async def summarize(req: SummaryRequest):
 
         # === Cache result ===
         redis_client.setex(cache_key, 3600, zlib.compress(summary.encode("utf-8")))
-        logger.info(f"[Summary] 🧠 GPT summary generated — tone={req.tone}, length={req.length}")
+        logger.info(f"[Summary 🧠] GPT summary generated — tone={req.tone}, length={req.length}")
 
         return SummaryResponse(
             summary=summary,
@@ -88,10 +88,9 @@ async def summarize(req: SummaryRequest):
         )
 
     except HTTPException:
-        # Propagate client errors unchanged
         raise
     except Exception as e:
-        logger.error(f"[Summary Error] ❌ GPT failed: {e}")
+        logger.exception(f"[Summary ❌] Internal error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Summary generation failed. Please try again later."

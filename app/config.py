@@ -17,18 +17,17 @@ STORAGE_DIR = BASE_DIR / "transcripts"
 EXPORT_DIR = BASE_DIR / "exports"
 LOG_DIR = BASE_DIR / "logs"
 
-# === Ensure Runtime Directories Exist ===
+# === Ensure Required Directories Exist ===
 for path in [UPLOAD_FOLDER, STORAGE_DIR, EXPORT_DIR, LOG_DIR]:
     path.mkdir(parents=True, exist_ok=True)
 
-# === Config Class ===
+# === Main Config Class ===
 class Config:
-    # Static attrs for logger or class-level access
     APP_NAME = "echoscript"
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
     def __init__(self):
-        # App
+        # App Settings
         self.APP_NAME = Config.APP_NAME
         self.DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
         self.LOG_LEVEL = Config.LOG_LEVEL
@@ -37,21 +36,19 @@ class Config:
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self.HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
-        # Auth
+        # Authentication
         self.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
         self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
-        # Redis & DB
+        # Services
         self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./db.sqlite3")
 
-        # File Paths
+        # Paths
         self.UPLOAD_FOLDER = UPLOAD_FOLDER
         self.STORAGE_DIR = STORAGE_DIR
         self.EXPORT_DIR = EXPORT_DIR
         self.LOG_DIR = LOG_DIR
-
-        # Upload config
         self.ALLOWED_EXTENSIONS = {"mp3", "wav", "m4a", "mp4", "flac", "webm", "ogg"}
 
     def print_summary(self):
@@ -66,7 +63,7 @@ class Config:
         if not self.JWT_SECRET_KEY:
             print("[⚠️  WARNING] JWT_SECRET_KEY is not set!")
 
-# === Redis Helper ===
+# === Redis Client Loader ===
 def get_redis_client(config: Config):
     try:
         client = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)
@@ -76,7 +73,8 @@ def get_redis_client(config: Config):
         print(f"[REDIS ⚠️ ] Connection failed: {e}")
         return None
 
-# === Instantiate Config ===
+# === Instantiate Shared Config + Redis Client ===
 config = Config()
 redis_client = get_redis_client(config)
+
 

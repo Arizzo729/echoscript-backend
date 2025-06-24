@@ -1,5 +1,3 @@
-# ✅ EchoScript.AI — Stripe Checkout Session Route (FastAPI)
-
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -10,13 +8,13 @@ load_dotenv()
 
 router = APIRouter()
 
-# 🔐 Load secret key
+# 🔐 Load Stripe secret key
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-# 🧾 Define product prices (linked to Stripe dashboard price IDs)
+# 🧾 Stripe plan pricing (set in .env)
 PLAN_PRICES = {
-    "pro": os.getenv("STRIPE_PRO_PRICE_ID"),  # e.g. price_1N9xyz...
-    # Add more plans as needed
+    "pro": os.getenv("STRIPE_PRO_PRICE_ID"),
+    "enterprise": os.getenv("STRIPE_ENTERPRISE_PRICE_ID")  # Optional: Add more plans
 }
 
 @router.post("/api/create-checkout-session")
@@ -25,24 +23,25 @@ async def create_checkout_session(request: Request):
         body = await request.json()
         plan = body.get("plan")
 
-        if not plan or plan not in PLAN_PRICES:
-            raise HTTPException(status_code=400, detail="Invalid plan.")
+        price_id = PLAN_PRICES.get(plan)
+        if not price_id:
+            raise HTTPException(status_code=400, detail="Invalid or missing plan ID.")
 
-        checkout_session = stripe.checkout.Session.create(
+        session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
-            line_items=[
-                {
-                    "price": PLAN_PRICES[plan],
-                    "quantity": 1,
-                }
-            ],
+            line_items=[{
+                "price": price_id,
+                "quantity": 1
+            }],
             success_url=os.getenv("STRIPE_SUCCESS_URL", "https://echoscript.ai/success"),
             cancel_url=os.getenv("STRIPE_CANCEL_URL", "https://echoscript.ai/purchase"),
             metadata={"plan": plan},
         )
 
-        return JSONResponse({"url": checkout_session.url})
+        return JSONResponse({"url": session.url})
 
+    except stripe.error.StripeError as se:
+        raise HTTPException(status_code=502, detail=f"Stripe error: {str(se)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

@@ -1,7 +1,7 @@
 # app/utils/safety_check.py
 
 import os
-from app.config import config, redis_client
+from app.config import Config, redis_client
 from app.utils.logger import logger
 
 def run_safety_checks():
@@ -13,8 +13,12 @@ def run_safety_checks():
         raise SystemExit("Startup halted. Required environment variables not set.")
 
     # === Redis Connection ===
-    if not redis_client or not redis_client.ping():
-        logger.critical("[❌ REDIS] Connection to Redis failed. Check REDIS_URL and service status.")
-        raise SystemExit("Startup halted. Redis unavailable.")
+    try:
+        if not redis_client.client or not redis_client.client.ping():
+            logger.critical("[❌ REDIS] Connection to Redis failed. Check REDIS_URL and service status.")
+            raise SystemExit("Startup halted. Redis unavailable.")
+    except Exception as e:
+        logger.critical(f"[❌ REDIS] Redis check failed: {e}")
+        raise SystemExit("Startup halted. Redis check error.")
 
     logger.info("[✅ SAFETY] All core systems passed initial checks.")

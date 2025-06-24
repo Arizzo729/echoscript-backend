@@ -1,4 +1,4 @@
-# app/main.py — Hardened, Modular, Production-Ready with Auth, Search & Newsletter
+# === app/main.py — Hardened, Modular, Production-Ready with Auth, Search & Newsletter ===
 
 import os
 import tempfile
@@ -175,4 +175,5 @@ app.include_router(subscription_router, prefix="/api/subscription")
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(f"[Unhandled] {exc}")
     return JSONResponse(status_code=500, content={"error": str(exc)})
+tr(exc)})
 
