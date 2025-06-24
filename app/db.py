@@ -1,37 +1,47 @@
-# === app/db.py — Database Engine & Session ===
+# === app/database.py — User DB Utils ===
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import config  # ← use the instantiated Config object, not class
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from app.models import User
+from app.db import get_db
+import logging
 
-# === Dynamic DB URL ===
-DATABASE_URL = config.DATABASE_URL
+logger = logging.getLogger("echoscript")
 
-# === Engine Setup ===
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+def get_user_by_email(email: str) -> User | None:
+    db_gen = get_db()
+    db: Session = next(db_gen, None)
+    if not db:
+        logger.warning("Failed to acquire DB session")
+        return None
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    future=True,
-)
-
-# === Session Factory ===
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False,
-    expire_on_commit=False  # Optional: avoids lazy-loading bugs after commit
-)
-
-# === Declarative Base ===
-Base = declarative_base()
-
-# === FastAPI Dependency Injection ===
-def get_db():
-    db = SessionLocal()
     try:
-        yield db
+        return db.query(User).filter(User.email == email).first()
+    except SQLAlchemyError as e:
+        logger.exception(f"[DB ERROR] get_user_by_email failed: {e}")
+        return None
+    finally:
+        db.close()
+
+def update_user_password(email: str, new_hashed_password: str) -> bool:
+    db_gen = get_db()
+    db: Session = next(db_gen, None)
+    if not db:
+        logger.warning("Failed to acquire DB session")
+        return False
+
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            return False
+
+        user.password = new_hashed_password
+        db.commit()
+        db.refresh(user)
+        return True
+    except SQLAlchemyError as e:
+        logger.exception(f"[DB ERROR] update_user_password failed: {e}")
+        db.rollback()
+        return False
     finally:
         db.close()

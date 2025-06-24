@@ -1,6 +1,10 @@
-# === EchoScript.AI — main.py (Hardened, Modular, Production-Ready with Auth, Search & Newsletter) ===
+# app/main.py — Hardened, Modular, Production-Ready with Auth, Search & Newsletter
 
-import os, tempfile, logging, torch, warnings
+import os
+import tempfile
+import logging
+import torch
+import warnings
 from datetime import datetime
 from fastapi import (
     FastAPI, UploadFile, File, WebSocket,
@@ -8,37 +12,35 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
-from sqlalchemy.orm import Session
-from dotenv import load_dotenv
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
-# === Suppress Deprecation Warnings ===
+# Suppress noisy deprecation warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# === Load Environment Variables ===
+# Load env vars
 load_dotenv()
 
-# === Configuration ===
+# Config
 DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "en")
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-COMPUTE_TYPE = "float16" if DEVICE == "cuda" else "int8"
+WHISPER_MODEL    = os.getenv("WHISPER_MODEL", "medium")
+DEVICE           = "cuda" if torch.cuda.is_available() else "cpu"
 
-# === Logging Setup ===
+# Logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("echoscript")
 
-# === FastAPI Initialization ===
+# FastAPI init
 app = FastAPI(
     title="EchoScript.AI API",
     description="Audio transcription, summarization & user management",
     version="1.0.0"
 )
 
-# === CORS Middleware ===
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,62 +49,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# === Safe Imports ===
+# Safe imports
 try:
     from app.config import config, redis_client
     from app.utils.safety_check import run_safety_checks
-    from app.db import engine, SessionLocal
-    from app import models
+    from app.db import engine, get_db              # use our centralized DB utils
+    from app.models import Base                    # single Base from models package
 
     # Routers
-    from app.routes.auth import router as auth_router
-    from app.routes.search import router as search_router
+    from app.routes.auth       import router as auth_router
+    from app.routes.search     import router as search_router
     from app.routes.newsletter import router as newsletter_router
     from app.routes.transcribe import router as transcribe_router
-    from app.routes.summary import router as summary_router
+    from app.routes.summary    import router as summary_router
+    from app.routes.subscription import router as subscription_router
 
-    # GPT cleanup utility
-    from app.utils.echo_ai import apply_gpt_cleanup
+    # GPT cleanup util
+    from app.utils.echo_ai    import apply_gpt_cleanup
+
 except ImportError as e:
     logger.critical(f"[Import ❌] Startup import failure: {e}")
     raise
 
-# === Safety Checks on Startup ===
+# Startup safety checks
 run_safety_checks()
 
-# === Database Initialization ===
+# Create tables
 try:
-    models.Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     logger.info("[DB ✅] Tables checked/created.")
 except Exception as e:
     logger.error(f"[DB ❌] Failed to initialize tables: {e}")
     raise
 
-# === Dependency: DB Session ===
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# === Transcription Response Model ===
+# Transcription response schema
 class TranscriptionResponse(BaseModel):
     transcript: str
-    language: str
+    language:   str
     confidence: float
 
-# === Health Endpoint ===
+# Health
 @app.get("/health")
 def health():
     return {
-        "status": "ok",
-        "device": DEVICE,
-        "model": WHISPER_MODEL,
-        "redis_connected": bool(redis_client)
+        "status":           "ok",
+        "device":           DEVICE,
+        "model":            WHISPER_MODEL,
+        "redis_connected":  bool(redis_client),
     }
 
-# === Test Redis Endpoint ===
+# Redis test
 @app.get("/test-redis")
 def test_redis():
     if not redis_client:
@@ -113,34 +109,34 @@ def test_redis():
     except Exception as e:
         return {"redis": f"error: {e}"}
 
-# === Transcription API ===
-@app.post("/api/transcribe", response_model=TranscriptionResponse)
+# Transcription endpoint
+@app.post(
+    "/api/transcribe",
+    response_model=TranscriptionResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def transcribe_audio(
-    file: UploadFile = File(...),
-    language: str = DEFAULT_LANGUAGE,
-    db: Session = Depends(get_db)
+    file:      UploadFile = File(...),
+    language:  str        = DEFAULT_LANGUAGE,
+    db=Depends(get_db),
 ):
-    if not file.filename.lower().endswith((
-        ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm", ".mp4", ".mov"
-    )):
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                            detail="Unsupported file format")
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm", ".mp4", ".mov"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported file format"
+        )
 
     tmp_path = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False,
-                                         suffix=os.path.splitext(file.filename)[1]) as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
             tmp.write(await file.read())
             tmp_path = tmp.name
-            logger.info(f"[Audio] File saved: {tmp_path}")
+            logger.info(f"[Audio] Saved to {tmp_path}")
 
-        whisper = load_model()
-        segments, info = whisper.transcribe(
-            tmp_path,
-            language=language,
-            beam_size=5
-        )
-        raw = "\n".join([s.text.strip() for s in segments])
+        whisper = load_model()  # ensure you've defined load_model() in your utils
+        segments, info = whisper.transcribe(tmp_path, language=language, beam_size=5)
+        raw = "\n".join(s.text.strip() for s in segments)
         logger.info("[Transcription ✅] Raw text generated")
 
         try:
@@ -151,33 +147,32 @@ async def transcribe_audio(
             cleaned = raw
 
         return TranscriptionResponse(
-            transcript=cleaned,
-            language=info.language or language,
-            confidence=0.95
+            transcript= cleaned,
+            language=   info.language or language,
+            confidence= 0.95,
         )
 
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-# === WebSocket Placeholder ===
+# WebSocket placeholder
 @app.websocket("/ws/transcribe")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_text("🔊 Live transcription coming soon.")
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+    await ws.send_text("🔊 Live transcription coming soon.")
 
-# === Register Routers ===
-app.include_router(auth_router)
-app.include_router(search_router)
-app.include_router(newsletter_router)
-app.include_router(transcribe_router)
-app.include_router(summary_router)
+# Register routers
+app.include_router(auth_router,       prefix="/api/auth")
+app.include_router(search_router,     prefix="/api/search")
+app.include_router(newsletter_router, prefix="/api/newsletter")
+app.include_router(transcribe_router, prefix="/api/transcribe")
+app.include_router(summary_router,    prefix="/api/summary")
+app.include_router(subscription_router, prefix="/api/subscription")
 
-# === Global Exception Handler ===
+# Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception(f"[Unhandled Error] {exc}")
-    return JSONResponse(status_code=500,
-                        content={"error": str(exc)})
-
+    logger.exception(f"[Unhandled] {exc}")
+    return JSONResponse(status_code=500, content={"error": str(exc)})
 

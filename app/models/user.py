@@ -1,43 +1,60 @@
-from sqlalchemy import Column, String, Boolean, DateTime
-from sqlalchemy.orm import declarative_base, relationship
+# app/models/user.py
+from sqlalchemy import Column, String, Boolean, Integer, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-
-Base = declarative_base()
+from . import Base
 
 class User(Base):
     __tablename__ = "users"
 
-    # Primary identification
-    id = Column(String(36), primary_key=True, index=True, doc="UUID from Auth0 or similar provider")
-    email = Column(String(255), unique=True, nullable=False, index=True, doc="User email address")
-    username = Column(String(50), nullable=True, doc="Optional display username")
+    id                     = Column(String, primary_key=True, index=True,
+                                doc="UUID from Auth0 or equivalent")
+    email                  = Column(String, unique=True, nullable=False, index=True)
+    username               = Column(String, nullable=True)
 
-    # Subscription & plan details
-    plan = Column(String(50), default="guest", nullable=False, doc="Subscription plan: guest, pro, edu, premium, enterprise")
-    stripe_customer_id = Column(String(100), nullable=True, doc="Stripe customer identifier")
-    stripe_subscription_id = Column(String(100), nullable=True, doc="Stripe subscription identifier")
+    # Plan & Billing
+    plan                   = Column(String, default="guest", nullable=False,
+                                doc="User plan: guest, pro, enterprise")
+    stripe_customer_id     = Column(String, nullable=True)
+    stripe_subscription_id = Column(String, nullable=True)
 
-    # Permissions & flags
-    is_active = Column(Boolean, default=True, nullable=False, doc="Whether the user account is active")
-    is_admin = Column(Boolean, default=False, nullable=False, doc="Admin privileges flag")
+    # Usage & Limits
+    minutes_used           = Column(Integer, default=0, nullable=False)
+    minutes_limit          = Column(Integer, default=60, nullable=False)
 
-    # Audit timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # Permissions & Security
+    is_active              = Column(Boolean, default=True, nullable=False)
+    is_admin               = Column(Boolean, default=False, nullable=False)
+    is_verified            = Column(Boolean, default=False, nullable=False)
+    two_factor_enabled     = Column(Boolean, default=False, nullable=False)
+    two_factor_email       = Column(String, nullable=True)
 
-    # Usage logs (one-to-many relationship)
-    usage_logs = relationship(
-        "UsageLog",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        doc="List of usage log records for the last 30 days and beyond"
-    )
+    # Timestamps
+    created_at             = Column(DateTime(timezone=True),
+                                   server_default=func.now(), nullable=False)
+    updated_at             = Column(DateTime(timezone=True),
+                                   onupdate=func.now())
+
+    # 1:1 Subscription
+    subscription           = relationship(
+                                "Subscription",
+                                back_populates="user",
+                                uselist=False,
+                                cascade="all, delete-orphan"
+                             )
+
+    # 1:N Usage logs
+    usage_logs             = relationship(
+                                "UsageLog",
+                                back_populates="user",
+                                cascade="all, delete-orphan"
+                             )
 
     def get_minutes_used_last_30_days(self):
-        """
-        Calculate the sum of 'minutes' from usage_logs in the past 30 days.
-        """
         from datetime import datetime, timedelta
         threshold = datetime.utcnow() - timedelta(days=30)
-        return sum(log.minutes for log in self.usage_logs if log.created_at >= threshold)
+        return sum(
+          log.minutes for log in self.usage_logs
+          if log.created_at >= threshold
+        )
 
