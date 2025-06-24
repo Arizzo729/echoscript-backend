@@ -1,5 +1,3 @@
-# app/routes/subscription.py
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -9,6 +7,7 @@ import os
 from app.models.user import User
 from app.models.subscription import Subscription
 from app.auth_utils import get_current_user
+from app.dependencies import get_db
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
@@ -18,19 +17,13 @@ router = APIRouter(
 )
 
 
-# === Request Model ===
 class SubscriptionCreate(BaseModel):
-    plan_id: str        # Stripe Price ID
+    plan_id: str
     success_url: str
     cancel_url: str
 
 
-# === Create a Stripe Checkout Session ===
-@router.post(
-    "/create-session",
-    status_code=status.HTTP_201_CREATED,
-    summary="Create Stripe checkout session",
-)
+@router.post("/create-session", status_code=status.HTTP_201_CREATED)
 def create_checkout_session(
     data: SubscriptionCreate,
     current_user: User = Depends(get_current_user),
@@ -47,17 +40,13 @@ def create_checkout_session(
         )
         return {"session_url": session.url}
     except stripe.error.StripeError as e:
-        # Use Stripe’s own HTTP status if available
-        code = getattr(e, "http_status", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        msg  = getattr(e, "user_message", str(e))
-        raise HTTPException(status_code=code, detail=msg)
+        raise HTTPException(
+            status_code=getattr(e, "http_status", 500),
+            detail=getattr(e, "user_message", str(e)),
+        )
 
 
-# === Check current user’s subscription status ===
-@router.get(
-    "/status",
-    summary="Get subscription status",
-)
+@router.get("/status")
 def get_subscription_status(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -73,11 +62,7 @@ def get_subscription_status(
     }
 
 
-# === Cancel an active subscription ===
-@router.post(
-    "/cancel",
-    summary="Cancel subscription",
-)
+@router.post("/cancel")
 def cancel_subscription(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -85,7 +70,7 @@ def cancel_subscription(
     sub = db.query(Subscription).filter_by(user_id=current_user.id).first()
     if not sub or not sub.stripe_subscription_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="No active subscription to cancel"
         )
 
@@ -95,7 +80,8 @@ def cancel_subscription(
         db.commit()
         return {"success": True, "message": "Subscription canceled"}
     except stripe.error.StripeError as e:
-        code = getattr(e, "http_status", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        msg  = getattr(e, "user_message", str(e))
-        raise HTTPException(status_code=code, detail=msg)
+        raise HTTPException(
+            status_code=getattr(e, "http_status", 500),
+            detail=getattr(e, "user_message", str(e)),
+        )
 
