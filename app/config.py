@@ -26,6 +26,9 @@ class Config:
     APP_NAME = "echoscript"
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+    # ✅ Make REDIS_URL available as a class attribute
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
     def __init__(self):
         # App Settings
         self.APP_NAME = Config.APP_NAME
@@ -41,7 +44,7 @@ class Config:
         self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
         # Services
-        self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.REDIS_URL = Config.REDIS_URL
         self.DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./db.sqlite3")
 
         # Paths
