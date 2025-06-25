@@ -1,33 +1,39 @@
-# === app/database.py — User DB Utils ===
+# app/db.py
 
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from app.models import User
-from app.db import get_db
-import logging
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
+import os
 
-logger = logging.getLogger("echoscript")
+# Load environment variables from .env
+load_dotenv()
 
+# Example: postgresql://user:pass@host:port/dbname
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
-def get_user_by_email(email: str, db: Session) -> User | None:
+# Create engine
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    pool_pre_ping=True,
+    future=True,
+)
+
+# Session factory
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
+# Declarative base for models
+Base = declarative_base()
+
+# Dependency for FastAPI routes
+def get_db():
+    db = SessionLocal()
     try:
-        return db.query(User).filter(User.email == email).first()
-    except SQLAlchemyError as e:
-        logger.exception(f"[DB ERROR] get_user_by_email failed: {e}")
-        return None
+        yield db
+    finally:
+        db.close()
 
-
-def update_user_password(email: str, new_hashed_password: str, db: Session) -> bool:
-    try:
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            return False
-
-        user.password = new_hashed_password
-        db.commit()
-        db.refresh(user)
-        return True
-    except SQLAlchemyError as e:
-        logger.exception(f"[DB ERROR] update_user_password failed: {e}")
-        db.rollback()
-        return False
