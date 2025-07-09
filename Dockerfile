@@ -19,8 +19,10 @@ WORKDIR /app
 
 # Copy and install Python deps
 COPY requirements.txt .
-RUN python -m pip install --upgrade pip
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --upgrade pip \
+ && python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1 torchvision==0.22.1 \
+      --extra-index-url https://download.pytorch.org/whl/cu118 \
+ && python -m pip install --no-cache-dir -r requirements.txt
 
 # Copy app
 COPY . .
@@ -33,18 +35,4 @@ EXPOSE 8000
 
 # Run app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-FROM python:3.10-slim
-
-WORKDIR /app
-
-COPY requirements.txt requirements.txt
-
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
 
