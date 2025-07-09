@@ -63,7 +63,7 @@ for static_dir in ("static", "exports", "logs"):
 
 # === Safe imports & dependency checks ===
 try:
-    from .config import config, redis_client
+    from .config import Config as config, redis_client
     from .utils.safety_check import run_safety_checks
     from .db import engine, get_db
     from .models import Base
