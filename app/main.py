@@ -63,18 +63,18 @@ for static_dir in ("static", "exports", "logs"):
 
 # === Safe imports & dependency checks ===
 try:
-    from config import config, redis_client
-    from utils.safety_check import run_safety_checks
-    from db import engine, get_db
-    from models import Base
-    from routes.auth         import router as auth_router
-    from routes.search       import router as search_router
-    from routes.newsletter   import router as newsletter_router
-    from routes.transcribe   import router as transcribe_router
-    from routes.summary      import router as summary_router
-    from routes.subscription import router as subscription_router
-    from utils.echo_ai       import apply_gpt_cleanup
-    from utils.gpt_logic     import summarize_transcript
+    from .config import config, redis_client
+    from .utils.safety_check import run_safety_checks
+    from .db import engine, get_db
+    from .models import Base
+    from .routes.auth         import router as auth_router
+    from .routes.search       import router as search_router
+    from .routes.newsletter   import router as newsletter_router
+    from .routes.transcribe   import router as transcribe_router
+    from .routes.summary      import router as summary_router
+    from .routes.subscription import router as subscription_router
+    from .utils.echo_ai       import apply_gpt_cleanup
+    from .utils.gpt_logic     import summarize_transcript
 except ImportError as e:
     logger.critical(f"[Import ❌] Startup import failure: {e}")
     raise
