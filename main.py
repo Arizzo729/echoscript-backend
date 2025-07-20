@@ -39,19 +39,22 @@ from app.routes.send_reset_code import router as send_reset_code_router
 from app.routes.verify_reset import router as verify_reset_router
 from app.routes.security import router as security_router
 from app.ws.socket_transcriber import websocket_endpoint
+from app.routes.subscription import router as subscription_router
+app.include_router(subscription_router, prefix="/api", tags=["subscription"])
+
 
 # ---- Route Registration ----
-app.include_router(auth_router,           prefix="/api/v1", tags=["Authentication"])
-app.include_router(transcribe_router,     prefix="/api/v1", tags=["Transcription"])
-app.include_router(export_router,         prefix="/api/v1", tags=["Export"])
-app.include_router(summary_router,        prefix="/api/v1", tags=["Summarization"])
-app.include_router(feedback_router,       prefix="/api/v1", tags=["Feedback"])
-app.include_router(translate_router,      prefix="/api/v1", tags=["Translation"])
-app.include_router(history_router,        prefix="/api/v1", tags=["Transcript History"])
-app.include_router(assistant_router,      prefix="/api/v1", tags=["AI Assistant"])
-app.include_router(send_reset_code_router, prefix="/api/v1", tags=["Password Reset"])
-app.include_router(verify_reset_router,    prefix="/api/v1", tags=["Password Reset"])
-app.include_router(security_router,        prefix="/api/v1", tags=["Security"])
+app.include_router(auth_router,           prefix="/api/", tags=["Authentication"])
+app.include_router(transcribe_router,     prefix="/api/", tags=["Transcription"])
+app.include_router(export_router,         prefix="/api/", tags=["Export"])
+app.include_router(summary_router,        prefix="/api/", tags=["Summarization"])
+app.include_router(feedback_router,       prefix="/api/", tags=["Feedback"])
+app.include_router(translate_router,      prefix="/api/", tags=["Translation"])
+app.include_router(history_router,        prefix="/api/", tags=["Transcript History"])
+app.include_router(assistant_router,      prefix="/api/", tags=["AI Assistant"])
+app.include_router(send_reset_code_router, prefix="/api/", tags=["Password Reset"])
+app.include_router(verify_reset_router,    prefix="/api/", tags=["Password Reset"])
+app.include_router(security_router,        prefix="/api/", tags=["Security"])
 
 # ---- WebSocket Transcription Endpoint ----
 app.websocket("/ws/transcribe")(websocket_endpoint)

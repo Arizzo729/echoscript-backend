@@ -38,6 +38,9 @@ from app.routes.newsletter import router as newsletter_router
 from app.routes.transcribe import router as transcribe_router
 from app.routes.summary import router as summary_router
 from app.routes.subscription import router as subscription_router
+from app.routes.subscription import router as subscription_router
+app.include_router(subscription_router, prefix="/api", tags=["subscription"])
+
 
 # Schemas
 from app.schemas import (
