@@ -1,244 +1,290 @@
-# === app/main.py — EchoScript.AI: Hardened, Modular, Production-Grade API ===
+# Must be first: apply CRUDRouter Pydantic-v2 patch
+import app.utils.crudrouter_patch
 
 import os
 import tempfile
 import logging
-import torch
 import warnings
 from datetime import datetime
+from typing import Any, Optional
+
+import torch
 from fastapi import (
     FastAPI, UploadFile, File, WebSocket,
     HTTPException, Request, Depends, status
 )
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
-from starlette.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
-from dotenv import load_dotenv
-from typing import Any
+from fastapi.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
-# === Ignore noisy deprecation warnings ===
+from fastapi_crudrouter import SQLAlchemyCRUDRouter
+
+from app.db import engine, Base, get_db
+from app.config import Config, redis_client
+from app.dependencies import get_current_user
+from app.utils.safety_check import run_safety_checks
+from app.utils.echo_ai import apply_gpt_cleanup
+
+# Import ORM models to register tables
+import app.models
+from app.models import Item
+
+# Routers
+from app.routes.auth import router as auth_router
+from app.routes.search import router as search_router
+from app.routes.newsletter import router as newsletter_router
+from app.routes.transcribe import router as transcribe_router
+from app.routes.summary import router as summary_router
+from app.routes.subscription import router as subscription_router
+
+# Schemas
+from app.schemas import (
+    ItemRead, ItemCreate, ItemUpdate,
+    NewsletterSubscribeRequest, NewsletterSubscribeResponse,
+    SubscriptionRead, SubscriptionCreate, SubscriptionUpdate,
+)
+
+# -------------------------------------------------------------------------
+# Suppress non-critical warnings
+# -------------------------------------------------------------------------
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# === Load env vars and configs ===
-load_dotenv()
-
-DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "en")
-WHISPER_MODEL    = os.getenv("WHISPER_MODEL", "medium")
-DEVICE           = "cuda" if torch.cuda.is_available() else "cpu"
-
-# === Logging ===
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+# -------------------------------------------------------------------------
+# Logging configuration (UTF-8 safe)
+# -------------------------------------------------------------------------
+logging.root.handlers.clear()
+handler = logging.StreamHandler()
+handler.setFormatter(
+    logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 )
-logger = logging.getLogger("echoscript")
+logging.root.addHandler(handler)
+logging.root.setLevel(getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO))
+logger = logging.getLogger(Config.APP_NAME)
 
-# === App ===
+# -------------------------------------------------------------------------
+# Initialize FastAPI
+# -------------------------------------------------------------------------
 app = FastAPI(
-    title="EchoScript.AI API",
+    title=Config.APP_NAME,
     description="Audio transcription, summarization & user management",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
-# === CORS for all origins, secured ===
+# -------------------------------------------------------------------------
+# CORS configuration
+# -------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "*").split(","),
+    allow_origins=Config.CORS_ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# === Serve static directories in dev ===
-for static_dir in ("static", "exports", "logs"):
-    path = os.path.join(os.path.dirname(__file__), static_dir)
-    if os.path.isdir(path):
-        app.mount(f"/{static_dir}", StaticFiles(directory=path), name=static_dir)
+# -------------------------------------------------------------------------
+# Mount static directories
+# -------------------------------------------------------------------------
+for directory in (Config.UPLOAD_FOLDER, Config.EXPORT_DIR, Config.LOG_DIR):
+    if os.path.isdir(directory):
+        name = os.path.basename(directory)
+        app.mount(f"/{name}", StaticFiles(directory=directory), name=name)
 
-# === Safe imports & dependency checks ===
-try:
-    from .config import Config as config, redis_client
-    from .utils.safety_check import run_safety_checks
-    from .db import engine, get_db
-    from .models import Base
-    from .routes.auth         import router as auth_router
-    from .routes.search       import router as search_router
-    from .routes.newsletter   import router as newsletter_router
-    from .routes.transcribe   import router as transcribe_router
-    from .routes.summary      import router as summary_router
-    from .routes.subscription import router as subscription_router
-    from .utils.echo_ai       import apply_gpt_cleanup
-    from .utils.gpt_logic     import summarize_transcript
-except ImportError as e:
-    logger.critical(f"[Import ❌] Startup import failure: {e}")
-    raise
+# Record startup time for uptime metrics
+_start_time = datetime.utcnow()
 
-# === Global startup checks (env, Redis, DB, keys) ===
+# -------------------------------------------------------------------------
+# Startup & Shutdown events
+# -------------------------------------------------------------------------
 @app.on_event("startup")
-def on_startup():
+async def on_startup() -> None:
     run_safety_checks()
+    Base.metadata.create_all(bind=engine)
+    logger.info("[DB OK] Tables ensured")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    logger.info(f"[Startup] Device={device}, WhisperModel={Config.WHISPER_MODEL}")
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    logger.info("[Shutdown] API server shutting down")
+
+# -------------------------------------------------------------------------
+# Response models
+# -------------------------------------------------------------------------
+class HealthResponse(BaseModel):
+    status: str = Field(..., example="ok")
+    device: str
+    model: str
+    redis_connected: bool
+
+class VersionResponse(BaseModel):
+    version: str
+    build_time: datetime
+
+class MetricsResponse(BaseModel):
+    uptime: float
+    redis_connected: bool
+    device: str
+    model: str
+
+class RedisTestResponse(BaseModel):
+    redis: str
+    value: str
+
+# -------------------------------------------------------------------------
+# Health & Info endpoints
+# -------------------------------------------------------------------------
+@app.get("/health", response_model=HealthResponse)
+def health() -> HealthResponse:
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    return HealthResponse(
+        status="ok",
+        device=device,
+        model=Config.WHISPER_MODEL,
+        redis_connected=bool(redis_client),
+    )
+
+@app.get("/version", response_model=VersionResponse)
+def version() -> VersionResponse:
+    return VersionResponse(version=app.version, build_time=datetime.utcnow())
+
+@app.get("/metrics", response_model=MetricsResponse)
+def metrics() -> MetricsResponse:
+    uptime = (datetime.utcnow() - _start_time).total_seconds()
+    return MetricsResponse(
+        uptime=uptime,
+        redis_connected=bool(redis_client),
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        model=Config.WHISPER_MODEL,
+    )
+
+@app.get("/test-redis", response_model=RedisTestResponse)
+def test_redis() -> RedisTestResponse:
     try:
-        Base.metadata.create_all(bind=engine)
-        logger.info("[DB ✅] Tables checked/created.")
-    except Exception as e:
-        logger.error(f"[DB ❌] Table initialization failed: {e}")
-        raise
-
-    logger.info(f"[Startup] Running on device={DEVICE}, model={WHISPER_MODEL}")
-
-# === Simple Prometheus/monitoring endpoint ===
-@app.get("/metrics")
-def metrics() -> dict:
-    return {
-        "uptime": (datetime.utcnow() - datetime.fromtimestamp(os.getpid())).total_seconds(),
-        "redis_connected": bool(redis_client),
-        "device": DEVICE,
-        "model": WHISPER_MODEL,
-    }
-
-# === Healthcheck ===
-@app.get("/health", response_model=dict)
-def health() -> dict:
-    return {
-        "status":           "ok",
-        "device":           DEVICE,
-        "model":            WHISPER_MODEL,
-        "redis_connected":  bool(redis_client),
-    }
-
-# === API version endpoint ===
-@app.get("/version", response_model=dict)
-def version() -> dict:
-    return {
-        "version": app.version,
-        "build_time": datetime.utcnow().isoformat() + "Z"
-    }
-
-# === Redis test endpoint ===
-@app.get("/test-redis", response_model=dict)
-def test_redis() -> dict:
-    if not redis_client:
-        return {"redis": "not connected"}
-    try:
+        if not redis_client:
+            raise RuntimeError("Redis client not configured")
         redis_client.setex("echoscript_ping", 30, "pong")
-        return {"redis": "connected", "value": redis_client.get("echoscript_ping")}
-    except Exception as e:
-        return {"redis": f"error: {e}"}
+        raw = redis_client.get("echoscript_ping")
+        val = raw.decode() if isinstance(raw, (bytes, bytearray)) else raw
+        return RedisTestResponse(redis="connected", value=val or "")
+    except Exception as exc:
+        return RedisTestResponse(redis=f"error: {exc}", value="")
 
-# === Model Loader: ensures model loads only once per worker ===
-_whisper_model = None
+# -------------------------------------------------------------------------
+# WhisperX model loader
+# -------------------------------------------------------------------------
+_whisper_model: Any = None
 
-def load_model():
+def load_whisper_model() -> Any:
     global _whisper_model
     if _whisper_model is None:
-        try:
-            import whisperx
-            _whisper_model = whisperx.load_model(WHISPER_MODEL, device=DEVICE)
-            logger.info(f"✅ WhisperX model loaded: {WHISPER_MODEL} on {DEVICE}")
-        except Exception as e:
-            logger.critical(f"Whisper model failed to load: {e}")
-            raise
+        import whisperx
+        _whisper_model = whisperx.load_model(
+            Config.WHISPER_MODEL,
+            device="cuda" if torch.cuda.is_available() else "cpu"
+        )
+        logger.info(f"[WhisperX OK] Loaded {Config.WHISPER_MODEL}")
     return _whisper_model
 
-# === Response schemas ===
+# -------------------------------------------------------------------------
+# Transcription endpoint
+# -------------------------------------------------------------------------
 class TranscriptionResponse(BaseModel):
     transcript: str
-    language:   str
+    language: str
     confidence: float
 
-# === Core Transcription Endpoint ===
 @app.post(
     "/api/transcribe",
     response_model=TranscriptionResponse,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED
 )
 async def transcribe_audio(
-    file:      UploadFile = File(...),
-    language:  str        = DEFAULT_LANGUAGE,
-    db: Any    = Depends(get_db),
+    file: UploadFile = File(...),
+    language: str = Config.DEFAULT_LANGUAGE,
+    db: Any = Depends(get_db),
 ) -> TranscriptionResponse:
     ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm", ".mp4", ".mov"):
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file format"
-        )
-    tmp_path = None
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-            tmp.write(await file.read())
-            tmp_path = tmp.name
-            logger.info(f"[Audio] Saved to {tmp_path}")
+    if ext not in Config.ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=415, detail="Unsupported file format")
 
-        whisper = load_model()
+    tmp_path: Optional[str] = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_file:
+            tmp_file.write(await file.read())
+            tmp_path = tmp_file.name
+
+        whisper = load_whisper_model()
         segments, info = whisper.transcribe(tmp_path, language=language, beam_size=5)
-        raw = "\n".join(s.text.strip() for s in segments)
-        logger.info("[Transcription ✅] Raw text generated")
+        raw = "\n".join(seg.text.strip() for seg in segments)
 
         try:
             cleaned = await apply_gpt_cleanup(raw)
-            logger.info("[GPT ✅] Enhancement applied")
-        except Exception as e:
-            logger.warning(f"[GPT ⚠️] Enhancement failed: {e}")
+        except Exception:
             cleaned = raw
 
         return TranscriptionResponse(
-            transcript= cleaned,
-            language=   info.language or language,
-            confidence= 0.95,
+            transcript=cleaned,
+            language=info.language or language,
+            confidence=round(getattr(info, "confidence", 0.0), 2),
         )
-
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-# === WebSocket placeholder (can swap for full streaming later) ===
+# -------------------------------------------------------------------------
+# WebSocket stub
+# -------------------------------------------------------------------------
 @app.websocket("/ws/transcribe")
-async def websocket_endpoint(ws: WebSocket):
+async def ws_transcribe(ws: WebSocket):
     await ws.accept()
-    await ws.send_text("🔊 Live transcription coming soon.")
+    await ws.send_text("Live transcription coming soon.")
 
-# === Router registration (no double prefixing) ===
-app.include_router(auth_router)
-app.include_router(search_router)
-app.include_router(newsletter_router)
-app.include_router(transcribe_router)
-app.include_router(summary_router)
-app.include_router(subscription_router)
+# -------------------------------------------------------------------------
+# CRUD router for Item model
+# -------------------------------------------------------------------------
+item_router = SQLAlchemyCRUDRouter(
+    db_model=Item,
+    db=get_db,
+    schema=ItemRead,
+    create_schema=ItemCreate,
+    update_schema=ItemUpdate,
+    prefix="items",
+    tags=["items"],
+)
+app.include_router(item_router)
 
-# === 404 Not Found Handler ===
+# -------------------------------------------------------------------------
+# Include additional routers
+# -------------------------------------------------------------------------
+for router in (
+    auth_router, search_router, newsletter_router,
+    transcribe_router, summary_router, subscription_router
+):
+    app.include_router(router)
+
+# -------------------------------------------------------------------------
+# Global exception handlers
+# -------------------------------------------------------------------------
 @app.exception_handler(404)
-async def not_found(request: Request, exc):
+async def handle_404(request: Request, exc: HTTPException):
     return JSONResponse(status_code=404, content={"error": "Not found"})
 
-# === Global Validation Error Handler ===
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_error_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "body": exc.body}
+        content={"detail": exc.errors(), "body": exc.body},
     )
 
-# === Global Exception Handler (logs stack trace) ===
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    import traceback
-    logger.error(f"[Unhandled Exception] {exc}\n{traceback.format_exc()}")
+async def unhandled_error_handler(request: Request, exc: Exception):
+    logger.error(f"[Unhandled ERROR] {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={
-            "error": str(exc),
-            "trace": traceback.format_exc(),
-        }
+        content={"error": "Internal server error"},
     )
-
-# === Custom shutdown logic (log, notify, flush, etc) ===
-@app.on_event("shutdown")
-def on_shutdown():
-    logger.info("[Shutdown] API server shutting down.")

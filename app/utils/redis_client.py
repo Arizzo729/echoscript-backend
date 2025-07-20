@@ -11,9 +11,9 @@ class RedisClient:
         try:
             self.client = redis.Redis.from_url(self.url, decode_responses=True)
             self.client.ping()
-            logger.info("✅ Connected to Redis")
+            logger.info("[Redis] Connected to Redis")
         except Exception as e:
-            logger.error(f"❌ Redis connection failed: {e}")
+            logger.error(f"[Redis ERROR] Connection failed: {e}")
             self.client = None
 
     # ---- Basic Key/Value Ops ----
@@ -83,3 +83,4 @@ class RedisClient:
 
 # ✅ Singleton client
 redis_client = RedisClient()
+

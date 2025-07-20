@@ -10,3 +10,31 @@
 [2025-06-04 22:22:51] INFO: ✅ Logger initialized for EchoScript.AI
 [2025-06-04 22:22:51] ERROR: ❌ Redis connection failed: Error 111 connecting to localhost:6379. Connection refused.
 [2025-06-04 22:22:57] INFO: ✅ WhisperX 'medium' model loaded (cuda, float16)
+[2025-07-16 12:19:49] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-16 12:19:49] INFO: [Shutdown] API server shutting down
+[2025-07-16 12:19:52] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-16 12:19:52] INFO: [Shutdown] API server shutting down
+[2025-07-16 12:25:23] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-16 12:25:24] INFO: [Shutdown] API server shutting down
+[2025-07-16 12:25:27] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-16 12:25:27] INFO: [Shutdown] API server shutting down
+[2025-07-16 12:30:36] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-16 12:47:06] INFO: [Shutdown] API server shutting down
+[2025-07-16 12:53:37] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 12:57:23] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 13:00:26] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 13:17:14] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 13:17:46] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 13:22:51] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 13:25:13] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-16 14:47:31] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 12:21:46] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 12:50:16] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 13:16:40] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 13:24:53] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 13:24:55] INFO: [DB OK] Tables ensured
+[2025-07-17 13:24:55] INFO: [Startup] Device=cpu, WhisperModel=medium
+[2025-07-17 13:28:40] INFO: [Shutdown] API server shutting down
+[2025-07-17 13:29:01] ERROR: [Redis ERROR] Connection failed: Error 11001 connecting to redis.railway.internal:6379. getaddrinfo failed.
+[2025-07-17 13:29:04] INFO: [DB OK] Tables ensured
+[2025-07-17 13:29:04] INFO: [Startup] Device=cpu, WhisperModel=medium

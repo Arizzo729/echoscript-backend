@@ -1,6 +1,6 @@
 # ---- EchoScript.AI Backend: auth_routes.py ----
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, status
 from pydantic import BaseModel, EmailStr
 from app.auth.auth_utils import (
     hash_password,
@@ -8,14 +8,17 @@ from app.auth.auth_utils import (
     create_access_token,
     decode_token,
 )
+from fastapi.security import OAuth2PasswordBearer
 from datetime import timedelta
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # ⚠️ TEMP: In-memory user store — replace with DB/Redis later
 fake_users = {
     "guest@echoscript.ai": hash_password("guest"),
 }
+
 
 # -----------------------------
 # Schemas
@@ -32,6 +35,21 @@ class UserLogin(BaseModel):
 
 class TokenRefreshRequest(BaseModel):
     token: str
+
+
+# -----------------------------
+# Auth Dependency
+# -----------------------------
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    decoded = decode_token(token)
+    if not decoded:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
+    email = decoded.get("sub")
+    if not email or email not in fake_users:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    return {"email": email}
 
 
 # -----------------------------
