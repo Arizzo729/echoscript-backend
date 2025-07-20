@@ -16,7 +16,10 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip \
- && python3 -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 torchvision==0.22.1+cu118 \
+ && python3 -m pip install \
+      torch==2.1.0+cu118 \
+      torchaudio==2.1.0+cu118 \
+      torchvision==0.16.0+cu118 \
       --extra-index-url https://download.pytorch.org/whl/cu118 \
  && python3 -m pip install --no-cache-dir -r requirements.txt
 
