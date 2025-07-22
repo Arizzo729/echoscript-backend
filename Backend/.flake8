@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 120
+exclude =
+    .venv,
+    Backend/app/__pycache__,
+    Backend/app/tests/__pycache__,
+    **/__pycache__,
+    **/site-packages/**

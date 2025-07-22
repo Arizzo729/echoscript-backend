@@ -1,0 +1,67 @@
+```ini
+# requirements.in
+
+# === API / ASGI ===
+fastapi
+uvicorn[standard]
+fastapi-crudrouter
+python-multipart
+
+# === Authentication & Security ===
+python-jose
+passlib[bcrypt]
+email-validator
+
+# === Configuration & Utilities ===
+python-dotenv
+redis
+
+# === Database & Migrations ===
+SQLAlchemy
+alembic
+psycopg2-binary
+
+# === Payment Integration ===
+stripe
+
+# === Email & Notifications ===
+sendgrid
+
+# === AI / ML & Audio Processing ===
+whisperx
+torch
+torchaudio
+torchvision
+pytorch-lightning
+torchmetrics
+transformers
+pyannote-core
+pyannote-database
+pyannote-metrics
+pyannote-pipeline
+noisereduce
+librosa
+
+# === NLP & GPT Integration ===
+openai
+tiktoken
+sentence-transformers
+sentencepiece
+tokenizers
+safetensors
+
+# === Document Export ===
+python-docx
+fpdf
+
+# === Testing & Development ===
+pytest
+pytest-asyncio
+
+# === Linting & Formatting (dev) ===
+mypy
+flake8
+black
+isort
+bandit
+```
