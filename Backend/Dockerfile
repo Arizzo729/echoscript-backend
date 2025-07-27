@@ -1,49 +1,44 @@
-```dockerfile
-# EchoScript.AI Backend Dockerfile
-# Base image with CUDA support for WhisperX GPU inference
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TRANSFORMERS_CACHE=/app/.cache \
     TORCH_HOME=/app/.torch_cache
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python3 python3-pip python3-dev python-is-python3 \
-        ffmpeg git curl libsndfile1 build-essential && \
-    rm -rf /var/lib/apt/lists/*
+# System dependencies
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      python3 python3-pip python3-dev python-is-python3 \
+      ffmpeg git curl libsndfile1 libgl1 build-essential \
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
-COPY requirements.txt ./
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# 1) Copy requirements for caching
+COPY requirements.txt .
 
-# Copy application code
+# 2) Upgrade pip
+RUN python3 -m pip install --upgrade pip
+
+# 3) Install CUDA‑11.8 PyTorch wheels
+RUN python3 -m pip install \
+      torch==2.0.1+cu118 \
+      torchvision==0.15.2+cu118 \
+      torchaudio==2.0.2+cu118 \
+    --extra-index-url https://download.pytorch.org/whl/cu118
+
+# 4) Install the rest of your Python dependencies
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+# 5) Copy application code
 COPY . .
 
-# Create necessary runtime directories
-RUN mkdir -p \
-        /app/transcripts \
-        /app/static/uploads \
-        /app/exports \
-        /app/logs
+# 6) Prepare runtime directories
+RUN mkdir -p /app/transcripts /app/static/uploads /app/exports /app/logs
 
-# Create non-root user and set permissions
-RUN groupadd -r echouser && \
-    useradd -r -g echouser echouser && \
-    chown -R echouser:echouser /app
-USER echouser
-
-# Expose application port
 EXPOSE 8000
 
-# Launch the FastAPI server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+# 7) Launch the app
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+

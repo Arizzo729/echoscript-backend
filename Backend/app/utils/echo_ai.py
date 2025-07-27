@@ -7,7 +7,7 @@ import zlib
 from typing import Any, Optional
 
 import openai
-from openai.error import OpenAIError
+from openai import OpenAIError
 
 from app.config import config
 from app.utils.redis_client import redis_client  # type: ignore[attr-defined]

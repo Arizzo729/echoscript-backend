@@ -1,17 +1,15 @@
 # app/routes/assistant.py
 
-from typing import Any
-
+from typing import Any, List
 import openai
 from fastapi import APIRouter, Depends, HTTPException, status
-from openai.error import OpenAIError
+from openai import OpenAIError
 from sqlalchemy.orm import Session
 
 from app.config import config
 from app.db import get_db
 from app.dependencies import get_current_user
-from app.schemas.assistant import (AskRequest, AskResponse, TrainRequest,
-                                   TrainResponse)
+from app.schemas.assistant import AssistantQuery, AssistantResponse, TrainingExample
 from app.utils.logger import logger
 
 # Alias ChatCompletion so MyPy recognizes it
@@ -20,19 +18,19 @@ ChatCompletion: Any = openai.ChatCompletion  # type: ignore[attr-defined]
 router = APIRouter()
 
 # In-memory feedback store (placeholder for future persistence)
-_feedback_store: list[dict] = []
+_feedback_store: List[dict] = []
 
 
 @router.post(
     "/ask",
-    response_model=AskResponse,
+    response_model=AssistantResponse,
     summary="Ask the AI Assistant a question based on a transcript",
 )
 async def ask_assistant(
-    ask_req: AskRequest,
+    query: AssistantQuery,
     db: Session = Depends(get_db),  # kept for future logging
     current_user=Depends(get_current_user),
-) -> AskResponse:
+) -> AssistantResponse:
     """
     Use OpenAI to answer a question about the provided transcript.
     """
@@ -47,7 +45,7 @@ async def ask_assistant(
         "You are a helpful assistant that answers questions about transcripts. "
         "Use the transcript context to provide accurate answers."
     )
-    user_prompt = f"Transcript:\n{ask_req.transcript}\n\nQuestion: {ask_req.question}"
+    user_prompt = f"Transcript:\n{query.transcript}\n\nQuestion: {query.question}"
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
@@ -63,7 +61,7 @@ async def ask_assistant(
         answer = response.choices[0].message.content.strip()
         usage = getattr(response, "usage", None)
         total_tokens = getattr(usage, "total_tokens", None) if usage else None
-        return AskResponse(answer=answer, tokens_used=total_tokens)
+        return AssistantResponse(answer=answer, tokens_used=total_tokens)
 
     except OpenAIError as e:
         logger.error(f"OpenAI API error in /assistant/ask: {e}")
@@ -75,28 +73,30 @@ async def ask_assistant(
 
 @router.post(
     "/train",
-    response_model=TrainResponse,
     summary="Submit feedback for assistant responses",
 )
 async def train_assistant(
-    train_req: TrainRequest,
+    examples: List[TrainingExample],
     current_user=Depends(get_current_user),
-) -> TrainResponse:
+) -> dict:
     """
     Collect feedback on assistant answers for future model training.
     """
-    _feedback_store.append(
-        {
-            "user_id": current_user.id,
-            "transcript": train_req.transcript,
-            "question": train_req.question,
-            "answer": train_req.answer,
-            "rating": train_req.rating,
-            "feedback": train_req.feedback,
-        }
-    )
-    logger.info(f"Received assistant feedback from user {current_user.id}")
-    return TrainResponse(status="received")
+    for ex in examples:
+        _feedback_store.append(
+            {
+                "user_id": current_user.id,
+                "transcript": ex.transcript,
+                "question": ex.question,
+                "answer": ex.answer,
+                "rating": ex.rating,
+                "feedback": ex.feedback,
+            }
+        )
+        logger.info(f"Received assistant feedback from user {current_user.id}: {ex.question}")
+
+    return {"status": "received"}
 
 
 __all__ = ["ask_assistant", "train_assistant"]
+

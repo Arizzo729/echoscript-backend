@@ -5,7 +5,7 @@ from json import JSONDecodeError
 from typing import Any, List
 
 import openai
-from openai.error import OpenAIError
+from openai import OpenAIError
 
 from app.config import config
 from app.utils.logger import logger

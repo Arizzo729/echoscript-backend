@@ -4,7 +4,7 @@ from typing import Any
 
 import openai
 from fastapi import APIRouter, Depends, HTTPException, status
-from openai.error import OpenAIError
+from openai import OpenAIError
 from sqlalchemy.orm import Session
 
 from app.config import config
