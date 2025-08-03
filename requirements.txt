@@ -1,0 +1,91 @@
+# === requirements.txt ===
+
+# --- API / ASGI ---
+
+anyio==4.9.0
+fastapi==0.116.1
+fastapi-crudrouter==0.8.6
+h11==0.16.0
+httptools==0.6.4
+python-multipart==0.0.20
+uvicorn\[standard]==0.23.2
+watchfiles==1.1.0
+
+# --- Auth & Security ---
+
+bcrypt==4.3.0
+click==8.2.1
+email-validator==1.2.1
+python-jose==3.3.0
+passlib\[bcrypt]==1.7.4
+
+# --- Caching / I/O / Utils ---
+
+aiofiles==23.2.1
+aiosignal==1.4.0
+certifi==2025.7.14
+charset-normalizer==3.4.2
+filelock==3.18.0
+iniconfig==2.1.0
+mdurl==0.1.2
+platformdirs==4.3.8
+pooch==1.8.2
+pycparser==2.22
+pyparsing==3.2.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+regex==2024.11.6
+redis==4.6.0
+semver==3.0.4
+six==1.17.0
+sortedcontainers==2.4.0
+tabulate==0.9.0
+threadpoolctl==3.6.0
+typing-extensions==4.14.1
+urllib3==2.5.0
+ffmpeg-python==0.2.0
+
+# --- Database & Migrations ---
+
+alembic==1.11.1
+dnspython==2.7.0
+psycopg2-binary==2.9.10
+pydantic==1.10.14
+SQLAlchemy==2.0.41
+
+# --- Email / Notifications ---
+
+sendgrid==6.10.0
+
+# --- Payment / Billing ---
+
+stripe==12.1.0
+
+# --- Transcription & Audio Processing ---
+
+numpy==1.26.4
+librosa==0.10.2
+noisereduce==3.0.3
+faster-whisper==1.1.1
+ctranslate2==4.5.0
+onnxruntime-gpu==1.22.0
+transformers==4.53.2
+huggingface-hub>=0.30.0,<1.0
+
+# --- NLP & LLM Helpers ---
+
+sentence-transformers==2.2.2
+sentencepiece==0.1.99
+tokenizers==0.21.2
+safetensors==0.5.3
+
+# --- Document Export Utilities ---
+
+fpdf==1.7.2
+python-docx==1.1.2
+
+# --- Testing & Development ---
+
+pytest==8.3.0
+pytest-asyncio==0.21.0
+async-timeout==4.0.3
