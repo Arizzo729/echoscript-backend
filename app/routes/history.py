@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import get_current_user
-from app.schemas.assistant import AskRequest, AskResponse, TrainRequest, TrainResponse
 from app.utils.logger import logger
 
 router = APIRouter()
