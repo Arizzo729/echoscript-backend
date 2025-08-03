@@ -6,14 +6,11 @@ from typing import Optional
 import ffmpeg  # type: ignore
 import torch
 import whisperx  # type: ignore
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
-                     status)
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.config import config
 from app.dependencies import get_current_user
 from app.schemas.transcription import TranscriptionOut
-from app.utils.gpt_logic import (analyze_sentiment, extract_keywords,
-                                 summarize_transcript)
 from app.utils.logger import logger
 
 # Preload WhisperX model and alignment for transcription
@@ -31,24 +28,14 @@ router = APIRouter()
 @router.post(
     "/",
     response_model=TranscriptionOut,
-    summary="Transcribe an audio/video file into text with AI enhancements",
+    summary="Transcribe an audio/video file into text",
 )
 async def transcribe(
     file: UploadFile = File(..., description="Audio or video file to transcribe"),
-    generate_summary: bool = Form(
-        False, description="Generate a summary of the transcript"
-    ),
-    generate_sentiment: bool = Form(
-        False, description="Analyze sentiment of the transcript"
-    ),
-    generate_keywords: bool = Form(
-        False, description="Extract keywords from the transcript"
-    ),
     current_user=Depends(get_current_user),
 ) -> TranscriptionOut:
     """
-    Transcribe the provided file using WhisperX and optionally generate summary,
-    sentiment label, and keywords via GPT.
+    Transcribe the provided file using WhisperX.
     """
     # Save upload to temp file
     filename = file.filename or ""
@@ -84,16 +71,11 @@ async def transcribe(
         )
         transcript_text = " ".join(seg["text"] for seg in result)
 
-        # Optional AI enhancements
-        summary = summarize_transcript(transcript_text) if generate_summary else None
-        sentiment = analyze_sentiment(transcript_text) if generate_sentiment else None
-        keywords = extract_keywords(transcript_text) if generate_keywords else None
-
         return TranscriptionOut(
             transcript=transcript_text,
-            summary=summary,
-            sentiment=sentiment,
-            keywords=keywords,
+            summary=None,
+            sentiment=None,
+            keywords=None,
             subtitles=None,
         )
     finally:
@@ -102,7 +84,6 @@ async def transcribe(
             try:
                 os.remove(path)
             except FileNotFoundError:
-                # already deleted
                 pass
             except Exception as e:
                 logger.warning(f"Could not remove temp file {path}: {e}")
