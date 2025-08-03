@@ -23,7 +23,6 @@ for module in (
     transcription,
     subtitle,
     export,
-    assistant,
     contact,
     newsletter,
     feedback,
