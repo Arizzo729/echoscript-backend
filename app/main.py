@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes.assistant import router as assistant_router
 from app.routes.auth import router as auth_router
 from app.routes.contact import router as contact_router
 from app.routes.export import router as export_router
