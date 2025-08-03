@@ -3,7 +3,6 @@ app/schemas package: Pydantic models for request validation and response formatt
 """
 
 from app.schemas import (
-    assistant,
     auth,
     contact,
     export,
