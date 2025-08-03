@@ -8,7 +8,7 @@ fastapi-crudrouter==0.8.6
 h11==0.16.0
 httptools==0.6.4
 python-multipart==0.0.20
-uvicorn\[standard]==0.23.2
+uvicorn[standard]==0.23.2
 watchfiles==1.1.0
 
 # --- Auth & Security ---
@@ -17,7 +17,7 @@ bcrypt==4.3.0
 click==8.2.1
 email-validator==1.2.1
 python-jose==3.3.0
-passlib\[bcrypt]==1.7.4
+passlib[bcrypt]==1.7.4
 
 # --- Caching / I/O / Utils ---
 
