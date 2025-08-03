@@ -13,7 +13,6 @@ from app.config import config
 from app.dependencies import get_current_user
 from app.schemas.subtitle import SubtitleOut
 from app.schemas.transcription import TranscriptionOut
-from app.utils.gpt_logic import translate_text
 from app.utils.logger import logger
 
 # Preload WhisperX model and alignment for transcription
