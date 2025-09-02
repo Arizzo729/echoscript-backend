@@ -1,6 +1,3 @@
-```ini
-# requirements.in
-
 # === API / ASGI ===
 fastapi
 uvicorn[standard]
@@ -8,13 +5,15 @@ fastapi-crudrouter
 python-multipart
 
 # === Authentication & Security ===
-python-jose
+python-jose[cryptography]
 passlib[bcrypt]
 email-validator
 
 # === Configuration & Utilities ===
 python-dotenv
 redis
+httpx
+loguru
 
 # === Database & Migrations ===
 SQLAlchemy
@@ -28,19 +27,13 @@ stripe
 sendgrid
 
 # === AI / ML & Audio Processing ===
-whisperx
-torch
-torchaudio
-torchvision
-pytorch-lightning
-torchmetrics
-transformers
-pyannote-core
-pyannote-database
-pyannote-metrics
-pyannote-pipeline
-noisereduce
+faster-whisper
+ctranslate2
+pyannote.audio
+webrtcvad
+ffmpeg-python
 librosa
+noisereduce
 
 # === NLP & GPT Integration ===
 openai
@@ -49,6 +42,7 @@ sentence-transformers
 sentencepiece
 tokenizers
 safetensors
+transformers
 
 # === Document Export ===
 python-docx
@@ -64,4 +58,4 @@ flake8
 black
 isort
 bandit
-```
+
