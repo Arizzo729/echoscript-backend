@@ -15,7 +15,7 @@ watchfiles==1.1.0
 
 bcrypt==4.3.0
 click==8.2.1
-email-validator==1.2.1
+email-validator>=2.0.0
 python-jose==3.3.0
 passlib[bcrypt]==1.7.4
 
@@ -62,6 +62,11 @@ sendgrid==6.10.0
 stripe==12.1.0
 
 # --- Transcription & Audio Processing ---
+# Transcription
+faster-whisper==1.0.3
+ctranslate2==4.5.0   # For CUDA 12 + cuDNN 9
+# If you're on CUDA 11 and cannot upgrade:
+# ctranslate2==3.24.0
 
 numpy==1.26.4
 librosa==0.10.2

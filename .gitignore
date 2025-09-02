@@ -3,7 +3,39 @@
 venv/
 ENV/
 env/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
 
+
+# Logs & caches
+*.log
+.logs/
+.cache/
+.torch_cache/
+
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+
+
+# Node (don’t commit frontend deps here)
+node_modules/
+
+
+# Data & exports
+exports/
+static/uploads/
+transcripts/
+
+
+# Env
+.env
+.env.*
 # — Byte‑compiled / optimized / DLL files —
 __pycache__/
 *.py[cod]
@@ -68,3 +100,4 @@ docker-compose.override.yml
 # — Miscellaneous —
 *.tmp
 *.bak
+
