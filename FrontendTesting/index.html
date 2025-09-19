@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>EchoScript Test Uploader</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    button { padding: 10px 16px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
+    pre { white-space: pre-wrap; background: #f8f8f8; padding: 12px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>EchoScript: Upload & Transcribe</h1>
+
+  <div class="card">
+    <form id="form" class="row">
+      <input id="file" type="file" required />
+      <select id="language" title="Language">
+        <option value="en" selected>English (en)</option>
+        <option value="">Auto-detect</option>
+      </select>
+      <button type="submit">Transcribe</button>
+    </form>
+  </div>
+
+  <h3>Response</h3>
+  <pre id="out">—</pre>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:8001';
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('file');
+      if (!fileInput.files.length) return;
+
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      const lang = document.getElementById('language').value;
+      const url = lang ? `${API_BASE}/api/v1/transcribe?language=${encodeURIComponent(lang)}`
+                       : `${API_BASE}/api/v1/transcribe`;
+
+      const out = document.getElementById('out');
+      out.textContent = 'Uploading…';
+
+      try {
+        const res = await fetch(url, { method: 'POST', body: fd });
+        // Don’t set Content-Type yourself; FormData sets proper multipart boundaries. :contentReference[oaicite:1]{index=1}
+        const text = await res.text();
+        out.textContent = text;
+      } catch (err) {
+        out.textContent = 'Network error: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

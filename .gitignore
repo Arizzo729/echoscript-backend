@@ -1,0 +1,26 @@
+﻿# Node / Vite
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/
+
+# Python / FastAPI
+Backend/.venv/
+Backend/__pycache__/
+Backend/*.pyc
+
+# Env & local
+.env
+.env.*
+*.log
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Build / coverage
+coverage/
+*.coverage
+
+# OS
+Thumbs.db
