@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,12 +8,12 @@ class FeedbackRequest(BaseModel):
         ..., description="ID of the transcript being reviewed", example=101
     )
     rating: int = Field(..., description="Rating given by the user (1-5)", example=4)
-    comment: Optional[str] = Field(
+    comment: str | None = Field(
         None,
         description="Optional feedback comment",
         example="Very accurate transcript.",
     )
-    emotion: Optional[str] = Field(
+    emotion: str | None = Field(
         None, description="Detected or expressed emotion", example="satisfied"
     )
 

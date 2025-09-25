@@ -1,13 +1,12 @@
 import smtplib
 from email.message import EmailMessage
-from typing import Optional
 
 from app.config import config
 from app.utils.logger import logger
 
 
 def send_email(
-    to_address: str, subject: str, body: str, html: Optional[str] = None
+    to_address: str, subject: str, body: str, html: str | None = None
 ) -> None:
     """
     Send an email using SMTP credentials defined in the environment.

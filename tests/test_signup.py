@@ -2,11 +2,11 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from main import app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db import Base, get_db
-from main import app
 
 # Use an in-memory SQLite database for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

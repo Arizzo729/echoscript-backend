@@ -1,12 +1,11 @@
 import logging
 import os
-from typing import List
 
 from app.config import config
 
 logger = logging.getLogger("echoscript")
 
-REQUIRED_ENV_VARS: List[str] = [
+REQUIRED_ENV_VARS: list[str] = [
     "DATABASE_URL",
     "REDIS_URL",
     "OPENAI_API_KEY",
@@ -15,7 +14,7 @@ REQUIRED_ENV_VARS: List[str] = [
     "JWT_SECRET_KEY",
 ]
 
-REQUIRED_DIRS: List[str] = [
+REQUIRED_DIRS: list[str] = [
     config.STORAGE_DIR,
     config.EXPORT_DIR,
     config.LOG_DIR,

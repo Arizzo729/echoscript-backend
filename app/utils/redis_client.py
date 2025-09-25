@@ -1,66 +1,117 @@
 # app/utils/redis_client.py
+from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
+from redis import ConnectionError as RedisConnectionError
 from redis import Redis
 
 from app.config import config
 
-# Initialize Redis client
-try:
-    tmp_client = Redis.from_url(config.REDIS_URL, decode_responses=True)
-    tmp_client.ping()
-    logging.getLogger("echoscript").info(f"Connected to Redis at {config.REDIS_URL}")
-    redis_client: Optional[Redis] = tmp_client
-except Exception as e:
-    redis_client = None
-    logging.getLogger("echoscript").warning(
-        f"Could not connect to Redis at {config.REDIS_URL}: {e}"
-    )
+logger = logging.getLogger("echoscript")
 
 
-def get_redis() -> Redis:
-    """
-    Retrieve the Redis client instance. Raises RuntimeError if not connected.
-    """
-    if redis_client is None:
-        raise RuntimeError("Redis client is not initialized or connection failed.")
-    return redis_client
+class _MemoryRedis:
+    def __init__(self) -> None:
+        self._store: dict[str, bytes] = {}
+
+    def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
+        if isinstance(value, str):
+            value = value.encode("utf-8")
+        elif not isinstance(value, (bytes, bytearray)):
+            value = str(value).encode("utf-8")
+        self._store[key] = value
+        return True
+
+    def get(self, key: str) -> Optional[bytes]:
+        return self._store.get(key)
+
+    def delete(self, key: str) -> int:
+        return 1 if self._store.pop(key, None) is not None else 0
+
+    def exists(self, key: str) -> int:
+        return 1 if key in self._store else 0
+
+    def ping(self) -> bool:
+        return True
 
 
-# Convenience functions for common operations
+_cached_client: Optional[Redis | _MemoryRedis] = None
 
 
-def set_value(key: str, value: str, ex: Optional[int] = None) -> bool:
-    """
-    Set a key to a value with optional expiration (in seconds).
-    Returns True if set succeeded, False otherwise.
-    """
-    client = get_redis()
-    result = client.set(name=key, value=value, ex=ex)
-    return result if result is not None else False
+def _build_real_redis() -> Redis:
+    url = config.REDIS_URL or "redis://localhost:6379/0"
+    logger.info(f"Connecting to Redis at {url}")
+    client = Redis.from_url(url, decode_responses=False)
+    client.ping()
+    return client
 
 
-def get_value(key: str) -> Optional[str]:
-    """
-    Get a value by key. Returns None if key does not exist.
-    """
-    client = get_redis()
-    return client.get(name=key)
+def get_redis() -> Redis | _MemoryRedis:
+    global _cached_client
+    if _cached_client is not None:
+        return _cached_client
+    try:
+        _cached_client = _build_real_redis()
+        logger.info("Connected to Redis successfully.")
+    except (RedisConnectionError, OSError) as e:
+        logger.warning(f"Redis unavailable, using in-memory shim. Reason: {e}")
+        _cached_client = _MemoryRedis()
+    except Exception as e:
+        logger.error(f"Unexpected Redis error '{e}', using in-memory shim.")
+        _cached_client = _MemoryRedis()
+    return _cached_client
+
+
+def set_value(key: str, value: Any, ex: Optional[int] = None) -> bool:
+    try:
+        return bool(get_redis().set(key, value, ex=ex))  # type: ignore[attr-defined]
+    except Exception as e:
+        logger.error(f"Redis set failed for {key}: {e}")
+        return False
+
+
+def get_value(key: str, as_text: bool = True) -> Optional[str | bytes]:
+    try:
+        raw = get_redis().get(key)  # type: ignore[attr-defined]
+        if raw is None:
+            return None
+        if as_text:
+            try:
+                return raw.decode("utf-8")
+            except Exception:
+                return None
+        return raw
+    except Exception as e:
+        logger.error(f"Redis get failed for {key}: {e}")
+        return None
 
 
 def delete_key(key: str) -> int:
-    """
-    Delete a key. Returns the number of keys removed (0 or 1).
-    """
-    client = get_redis()
-    return client.delete(key)
+    try:
+        return int(get_redis().delete(key))  # type: ignore[attr-defined]
+    except Exception as e:
+        logger.error(f"Redis delete failed for {key}: {e}")
+        return 0
 
 
 def exists(key: str) -> bool:
-    """
-    Check if a key exists. Returns True if it exists, False otherwise.
-    """
-    client = get_redis()
-    return client.exists(key) == 1
+    try:
+        return int(get_redis().exists(key)) == 1  # type: ignore[attr-defined]
+    except Exception as e:
+        logger.error(f"Redis exists failed for {key}: {e}")
+        return False
+
+
+# legacy export
+redis_client = get_redis()
+
+__all__ = [
+    "get_redis",
+    "set_value",
+    "get_value",
+    "delete_key",
+    "exists",
+    "redis_client",
+]

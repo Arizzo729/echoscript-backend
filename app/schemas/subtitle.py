@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SubtitleOut(BaseModel):
@@ -21,8 +21,7 @@ class SubtitleOut(BaseModel):
         description="Subtitle format (e.g., 'srt' for SubRip, 'txt' for plain text)",
     )
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 __all__ = [

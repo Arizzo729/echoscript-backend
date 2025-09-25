@@ -58,4 +58,3 @@ flake8
 black
 isort
 bandit
-

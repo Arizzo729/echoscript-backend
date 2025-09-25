@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+﻿from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -32,12 +32,11 @@ def get_current_user(
         )
         sub = payload.get("sub")
         if sub is None:
-            raise credentials_exc
+            raise credentials_exc from None
         user_id = int(sub)
     except (JWTError, ValueError, TypeError):
         # JWTError covers signature/expiration issues; ValueError/TypeError for int conversion
-        raise credentials_exc
-
+        raise credentials_exc from None
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

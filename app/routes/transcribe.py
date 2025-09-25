@@ -1,89 +1,102 @@
+# app/routes/transcribe.py
 import os
+import shutil
 import tempfile
-from pathlib import Path
+import uuid
 from typing import Optional
 
-import ffmpeg  # type: ignore
-import torch
-import whisperx  # type: ignore
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 
-from app.config import config
-from app.dependencies import get_current_user
-from app.schemas.transcription import TranscriptionOut
-from app.utils.logger import logger
+router = APIRouter(prefix="/api/v1", tags=["transcription"])
 
-# Preload WhisperX model and alignment for transcription
-device = "cuda" if torch.cuda.is_available() else "cpu"
-whisper_model = whisperx.load_model(
-    config.WHISPER_MODEL, device=device, compute_type="float32"
-)
-align_model, align_metadata = whisperx.load_align_model(
-    language_code=config.DEFAULT_LANGUAGE, device=device
-)
-
-router = APIRouter()
+DEMO = os.getenv("DEMO_TRANSCRIBE", "1") == "1"
+_model = None  # singleton model
 
 
-@router.post(
-    "/",
-    response_model=TranscriptionOut,
-    summary="Transcribe an audio/video file into text",
-)
-async def transcribe(
-    file: UploadFile = File(..., description="Audio or video file to transcribe"),
-    current_user=Depends(get_current_user),
-) -> TranscriptionOut:
-    """
-    Transcribe the provided file using WhisperX.
-    """
-    # Save upload to temp file
-    filename = file.filename or ""
-    suffix = os.path.splitext(filename)[1]
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+def _get_model():
+    """Create/reuse a CPU-friendly faster-whisper model."""
+    global _model
+    if _model is not None:
+        return _model
+
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+    os.environ.setdefault("ORT_DISABLE_GPU", "1")
+
     try:
-        data = await file.read()
-        tmp.write(data)
-        tmp.flush()
-        tmp.close()
-        input_path = tmp.name
-
-        # Extract audio to WAV (16kHz mono)
-        audio_path = f"{input_path}.wav"
-        try:
-            ffmpeg.input(input_path).output(
-                audio_path, format="wav", acodec="pcm_s16le", ac=1, ar="16000"
-            ).run(quiet=True, overwrite_output=True)
-        except ffmpeg.Error as e:
-            logger.error(f"Audio extraction failed: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to extract audio from file",
-            )
-
-        # Transcribe with WhisperX
-        result = whisperx.transcribe(
-            whisper_model,
-            audio_path,
-            batch_size=16,
-            device=device,
-            return_timestamps=False,
+        from faster_whisper import WhisperModel  # type: ignore
+    except Exception as e:
+        raise RuntimeError(
+            "faster-whisper import failed. Install deps:\n"
+            "  pip install faster-whisper ctranslate2 tokenizers sentencepiece numpy\n"
+            f"Original error: {e}"
         )
-        transcript_text = " ".join(seg["text"] for seg in result)
 
-        return TranscriptionOut(
-            transcript=transcript_text,
-            summary=None,
-            sentiment=None,
-            keywords=None,
-            subtitles=None,
+    model_name = os.getenv("ASR_MODEL", "base.en")
+    compute_type = os.getenv("ASR_COMPUTE_TYPE", "int8")
+    try:
+        _model = WhisperModel(model_name, device="cpu", compute_type=compute_type)
+    except Exception:
+        _model = WhisperModel(model_name, device="cpu", compute_type="int16")
+    return _model
+
+
+@router.post("/transcribe/warmup")
+def warmup():
+    if DEMO:
+        return {"ok": True, "mode": "demo"}
+    _ = _get_model()
+    return {"ok": True, "mode": "real"}
+
+
+@router.post("/transcribe")
+async def transcribe(
+    file: UploadFile = File(...),
+    diarize: Optional[bool] = False,
+    vad: Optional[bool] = False,
+    language: Optional[str] = "en",
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "bin"
+    tmp_path = os.path.join(
+        tempfile.gettempdir(), f"echoscript_{uuid.uuid4().hex}.{ext}"
+    )
+    with open(tmp_path, "wb") as out:
+        shutil.copyfileobj(file.file, out)
+
+    if DEMO:
+        return JSONResponse(
+            {
+                "filename": file.filename,
+                "tmp_path": tmp_path,
+                "language": language,
+                "diarize": bool(diarize),
+                "vad": bool(vad),
+                "text": f"(demo) Received '{file.filename}', diarize={bool(diarize)}, vad={bool(vad)}, lang={language}.",
+            }
         )
+
+    try:
+        model = _get_model()
+        segments, info = model.transcribe(
+            tmp_path, language=language or None, vad_filter=bool(vad)
+        )
+        text = "".join(seg.text for seg in segments)
+        return JSONResponse(
+            {
+                "filename": file.filename,
+                "language": (language or info.language or "en"),
+                "diarize": False,
+                "vad": bool(vad),
+                "text": text,
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
     finally:
-        # Clean up temp files
-        for path in (input_path, audio_path):  # type: ignore[name-defined]
-            try:
-                os.remove(path)
-            except FileNotFoundError:
-                pass
-            except Exception as e:
-                logger.warning(f"Could not remove temp file {path}: {e}")
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass

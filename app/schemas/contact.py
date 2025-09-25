@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -28,7 +26,7 @@ class ContactResponse(BaseModel):
         description="Result of the contact submission (e.g., success or error)",
         examples=["success"],
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         None,
         description="Optional detail or thank-you message",
         examples=["Thank you for contacting us! We will get back to you soon."],

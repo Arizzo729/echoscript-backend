@@ -2,8 +2,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
-from app import \
-    models  # ✅ Keep this *after* FastAPI app import to avoid shadowing
 from app.db import Base
 from app.main import app  # ✅ Only this app import allowed
 from tests.conftest import TestingSessionLocal

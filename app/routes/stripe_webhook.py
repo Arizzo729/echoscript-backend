@@ -1,75 +1,58 @@
+# app/routes/stripe_webhook.py
+from __future__ import annotations
+
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import stripe  # type: ignore[attr-defined]
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import config
 from app.utils.stripe_client import sync_subscription_from_stripe
 
-router = APIRouter()
+router = APIRouter(prefix="/api/stripe", tags=["Stripe Webhook"])
 logger = logging.getLogger(__name__)
-
-# Stripe webhook endpoint secret (should be set in your environment)
 WEBHOOK_SECRET: str = config.STRIPE_WEBHOOK_SECRET
 
 
-@router.post(
-    "/webhook",
-    include_in_schema=False,
-    summary="Stripe webhook endpoint (hidden from OpenAPI schema)",
-)
-async def stripe_webhook(request: Request) -> Dict[str, str]:
-    """
-    Receive Stripe webhook events and synchronize subscription data.
-
-    - Verifies signature using WEBHOOK_SECRET.
-    - Processes subscription.created and subscription.updated events.
-    """
+@router.post("/webhook")
+async def stripe_webhook(request: Request) -> Dict[str, Any]:
     payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
-    if not WEBHOOK_SECRET:
-        logger.error("Stripe webhook secret not configured.")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Webhook secret not configured",
-        )
-
+    sig_header = request.headers.get("stripe-signature", "")
     try:
-        # Verify and construct the event
-        event = stripe.Webhook.construct_event(
+        if not WEBHOOK_SECRET:
+            raise ValueError("STRIPE_WEBHOOK_SECRET not configured")
+        event = stripe.Webhook.construct_event(  # type: ignore[attr-defined]
             payload=payload,
             sig_header=sig_header,
             secret=WEBHOOK_SECRET,
         )
     except ValueError:
-        logger.warning("Invalid payload in Stripe webhook.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload"
-        )
+        raise HTTPException(status_code=400, detail="Invalid payload")
     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
-        logger.warning("Invalid signature in Stripe webhook.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature"
-        )
+        raise HTTPException(status_code=400, detail="Invalid signature")
     except Exception as e:
-        logger.error(f"Unexpected error verifying Stripe webhook: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Webhook verification failed",
-        )
+        logger.error(f"Webhook verification failed: {e}")
+        raise HTTPException(status_code=400, detail="Webhook verification failed")
 
-    # Only handle subscription lifecycle events
     event_type = event.get("type", "")
-    if event_type in ("customer.subscription.created", "customer.subscription.updated"):
-        try:
+    try:
+        if event_type in {
+            "customer.subscription.created",
+            "customer.subscription.updated",
+            "customer.subscription.deleted",
+        }:
+            # pass FULL event (sync expects it)
             sync_subscription_from_stripe(event)
-            logger.info(f"Processed Stripe event: {event_type}")
-        except Exception as e:
-            # Log errors but do not raise to prevent webhook retries
-            logger.error(f"Error syncing subscription from Stripe: {e}")
-    else:
-        logger.debug(f"Ignoring Stripe event type: {event_type}")
 
-    return {"status": "success"}
+        elif event_type == "checkout.session.completed":
+            # be defensive: fetch the subscription & wrap like an event object
+            session_obj = event.get("data", {}).get("object", {})
+            sub_id = session_obj.get("subscription")
+            if sub_id:
+                sub = stripe.Subscription.retrieve(sub_id)  # type: ignore[attr-defined]
+                sync_subscription_from_stripe({"data": {"object": sub}})
+    except Exception as e:
+        logger.error(f"Error handling Stripe event {event_type}: {e}")
+
+    return {"received": True}

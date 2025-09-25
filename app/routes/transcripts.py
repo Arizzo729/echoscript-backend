@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends
 
 from app.dependencies import get_current_user
@@ -10,10 +8,10 @@ router = APIRouter()
 
 @router.get(
     "/",
-    response_model=List[str],
+    response_model=list[str],
     summary="List all saved transcripts for the current user",
 )
-async def get_transcripts(current_user=Depends(get_current_user)) -> List[str]:
+async def get_transcripts(current_user=Depends(get_current_user)) -> list[str]:
     """
     Retrieve a list of transcript filenames saved for the authenticated user.
     Filenames follow the pattern 'transcript_{user_id}_{timestamp}.txt'.

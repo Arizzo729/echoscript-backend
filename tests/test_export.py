@@ -3,7 +3,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
-from app import models  # ensure models are registered
 from app.db import Base
 from app.main import app
 from tests.conftest import TestingSessionLocal  # test DB session factory

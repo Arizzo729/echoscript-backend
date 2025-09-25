@@ -1,46 +1,27 @@
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+# syntax=docker/dockerfile:1
+FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TRANSFORMERS_CACHE=/app/.cache \
-    TORCH_HOME=/app/.torch_cache
+    TORCH_HOME=/app/.torch_cache \
+    PORT=10000
 
 WORKDIR /app
 
-# === System dependencies ===
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      python3 python3-pip python3-dev python-is-python3 \
-      ffmpeg git curl libsndfile1 libgl1 build-essential \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libsndfile1 curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# === Copy requirements for pip caching ===
-COPY requirements.txt .
+COPY requirements.txt /app/requirements.txt
 
-# === Upgrade pip ===
-RUN python3 -m pip install --upgrade pip
+RUN python -m pip install --upgrade pip wheel setuptools && \
+    python -m pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r /app/requirements.txt
 
-# === Install CUDA-compatible PyTorch stack ===
-RUN python3 -m pip install \
-      torch==2.0.1+cu118 \
-      torchvision==0.15.2+cu118 \
-      torchaudio==2.0.2+cu118 \
-    --extra-index-url https://download.pytorch.org/whl/cu118
-
-# === Install all other dependencies ===
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-
-# === Install whisperx with diarization ===
-RUN python3 -m pip install --no-cache-dir "git+https://github.com/m-bain/whisperx.git#egg=whisperx[diarization]"
-
-# === Copy application code ===
-COPY . .
-
-# === Prepare runtime directories ===
+COPY . /app
 RUN mkdir -p /app/transcripts /app/static/uploads /app/exports /app/logs
 
-EXPOSE 8000
+EXPOSE 10000
 
-# === Launch the app ===
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash","-lc","python - <<'PY'\nimport os;from uvicorn import run\nport=int(os.environ.get('PORT','10000'))\nrun('app.main:app',host='0.0.0.0',port=port)\nPY"]

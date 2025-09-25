@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class ExportRequest(BaseModel):
@@ -31,13 +31,14 @@ class ExportOut(BaseModel):
         ..., description="Suggested filename for the downloaded export"
     )
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "url": "https://cdn.echoscript.ai/exports/transcript_1234.pdf",
                 "filename": "transcript_1234.pdf",
             }
         }
+    )
 
 
 __all__ = ["ExportRequest", "ExportOut"]

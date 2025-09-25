@@ -2,10 +2,8 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
-from app import models  # ✅ Register models after app is defined
 from app.db import Base
-from app.main import \
-    app  # ✅ Define app before anything else that might define "app"
+from app.main import app  # ✅ Define app before anything else that might define "app"
 from tests.conftest import TestingSessionLocal
 
 

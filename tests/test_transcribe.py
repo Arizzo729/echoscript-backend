@@ -2,7 +2,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
-from app import models  # ✅ Register models after app is defined
 from app.db import Base
 from app.main import app  # ✅ Import FastAPI app before anything named "app"
 from tests.conftest import TestingSessionLocal

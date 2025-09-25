@@ -1,7 +1,6 @@
 import logging
 import os
 import secrets  # [^3]
-from typing import List, Optional
 
 import redis
 from dotenv import load_dotenv
@@ -66,9 +65,9 @@ class Config:
         # — CORS origins —
         origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
         if origins and origins != "*":
-            self.CORS_ALLOW_ORIGINS: List[str] = [o.strip() for o in origins.split(",")]
+            self.CORS_ALLOW_ORIGINS: list[str] = [o.strip() for o in origins.split(",")]
         else:
-            self.CORS_ALLOW_ORIGINS: List[str] = ["*"]
+            self.CORS_ALLOW_ORIGINS: list[str] = ["*"]
 
         # — File system paths —
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -101,7 +100,7 @@ class Config:
 config = Config()
 
 # Initialize Redis client (properly handling None) and log the outcome
-redis_client: Optional[redis.Redis] = None
+redis_client: redis.Redis | None = None
 
 try:
     client = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)

@@ -2,7 +2,7 @@
 
 from typing import List
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from .subscription import SubscriptionRead
 
@@ -41,8 +41,7 @@ class UserRead(UserBase):
 
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWithSubscriptions(UserRead):
@@ -52,8 +51,7 @@ class UserWithSubscriptions(UserRead):
 
     subscriptions: List[SubscriptionRead] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 __all__ = [

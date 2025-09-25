@@ -1,151 +1,66 @@
+# app/routes/password_reset.py
+from __future__ import annotations
+
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.models import User
+from app.schemas.auth import (
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
+    PasswordResetResponse,
+)
 from app.utils.auth_utils import hash_password
-from app.utils.db_utils import get_user_by_email, update_user_password
-from app.utils.logger import logger
-from app.utils.redis_client import get_redis  # type: ignore[attr-defined]
-from app.utils.redis_client import (delete_key,  # type: ignore[attr-defined]
-                                    get_value)
+from app.utils.redis_client import get_value, set_value
 from app.utils.send_email import send_email
 
-router = APIRouter(prefix="/password-reset", tags=["Auth"])
+router = APIRouter(prefix="/password-reset", tags=["Password Reset"])
+TOKEN_TTL_MIN = 30
 
 
-class PasswordResetRequest(BaseModel):
-    """
-    Request schema for initiating a password reset (sends a reset code via email).
-    """
-
-    email: EmailStr = Field(
-        ..., description="Email address of the user requesting a reset"
-    )
-
-
-class PasswordResetVerifyRequest(BaseModel):
-    """
-    Request schema for completing a password reset with code verification.
-    """
-
-    email: EmailStr = Field(..., description="Email address of the user")
-    code: str = Field(
-        ..., min_length=6, max_length=6, description="6-digit reset code sent via email"
-    )
-    new_password: str = Field(..., min_length=8, description="The new password to set")
-
-
-class PasswordResetResponse(BaseModel):
-    """
-    Generic response schema for password reset operations.
-    """
-
-    status: str = Field(..., description="Operation status, e.g. 'sent', 'ok'")
-
-
-@router.post(
-    "/request",
-    response_model=PasswordResetResponse,
-    summary="Send a password reset code to the user's email",
-)
-async def request_password_reset(
-    req: PasswordResetRequest,
-    db: Session = Depends(get_db),
+@router.post("/request", response_model=PasswordResetResponse)
+def request_reset(
+    payload: PasswordResetRequest, db: Session = Depends(get_db)
 ) -> PasswordResetResponse:
-    # Validate user exists
-    user = get_user_by_email(db, req.email)
+    user: User | None = db.query(User).filter(User.email == payload.email).one_or_none()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        return PasswordResetResponse(sent=True)
 
-    # Generate secure 6-digit code
-    code = f"{secrets.randbelow(10**6):06d}"
-
-    # Store in Redis with 10-minute TTL
-    redis_client = get_redis()
-    try:
-        redis_client.setex(f"pwdreset:{req.email}", 600, code)
-    except Exception as e:
-        logger.error(f"Could not store reset code in Redis: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal error generating reset code",
-        )
-
-    # Send email
+    token = secrets.token_urlsafe(32)
+    set_value(f"pwreset:{token}", str(user.id), ex=TOKEN_TTL_MIN * 60)
     try:
         send_email(
-            to_address=req.email,
-            subject="Your EchoScript.AI Password Reset Code",
+            to_address=user.email,
+            subject="Reset your EchoScript password",
             body=(
-                f"Your password reset code is: {code}\n"
-                "This code will expire in 10 minutes."
+                f"Use this token within {TOKEN_TTL_MIN} minutes:\n\n{token}\n\n"
+                "If you didn't request this, you can ignore this email."
             ),
         )
-    except Exception as e:
-        logger.error(f"Failed to send reset email: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Failed to send reset email",
-        )
-
-    return PasswordResetResponse(status="sent")
+    except Exception:
+        pass
+    return PasswordResetResponse(sent=True)
 
 
-@router.post(
-    "/verify",
-    response_model=PasswordResetResponse,
-    summary="Verify reset code and update the user's password",
-)
-async def verify_password_reset(
-    req: PasswordResetVerifyRequest,
-    db: Session = Depends(get_db),
+@router.post("/confirm", response_model=PasswordResetResponse)
+def confirm_reset(
+    payload: PasswordResetConfirmRequest, db: Session = Depends(get_db)
 ) -> PasswordResetResponse:
-    # Retrieve and validate code
-    try:
-        stored = get_value(f"pwdreset:{req.email}")
-    except Exception as e:
-        logger.error(f"Error accessing Redis for code: {e}")
+    uid = get_value(f"pwreset:{payload.token}")
+    if not uid:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal error verifying code",
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token"
         )
 
-    if stored is None or stored != req.code:
+    user: User | None = db.query(User).filter(User.id == int(uid)).one_or_none()
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset code",
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    # Update password
-    hashed = hash_password(req.new_password)
-    try:
-        success = update_user_password(db, req.email, hashed)
-    except Exception as e:
-        logger.error(f"Database error updating password: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update password",
-        )
-
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update password",
-        )
-
-    # Cleanup Redis key
-    try:
-        delete_key(f"pwdreset:{req.email}")
-    except Exception as e:
-        logger.warning(f"Failed to delete reset code from Redis: {e}")
-
-    return PasswordResetResponse(status="ok")
-
-
-__all__ = ["request_password_reset", "verify_password_reset"]
+    user.password = hash_password(payload.new_password)  # type: ignore[assignment]
+    db.commit()
+    return PasswordResetResponse(sent=True)

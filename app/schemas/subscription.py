@@ -1,7 +1,10 @@
+# app/schemas/subscription.py
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import SubscriptionStatus
 
@@ -9,20 +12,25 @@ from app.models import SubscriptionStatus
 class SubscribeRequest(BaseModel):
     """
     Request schema for subscribing to a plan.
+    Accepts a dashboard Price ID (legacy) or a plan code.
     """
 
-    plan_id: str = Field(
-        default=...,
-        min_length=1,
-        description="Stripe Price ID for the plan",
+    # Legacy (some old callers may still send a Price ID)
+    plan_id: Optional[str] = Field(
+        default=None,
+        description="Stripe Price ID (e.g., 'price_123'). Deprecated in favor of 'plan'.",
         json_schema_extra={"example": "price_1Hh1XYZabc123"},
+    )
+    # Canonical (plan code your checkout route expects)
+    plan: Optional[str] = Field(
+        default=None,
+        description="Plan code: 'pro' | 'premium' | 'edu'",
+        json_schema_extra={"example": "pro"},
     )
 
 
 class CancelRequest(BaseModel):
-    """
-    Request schema for canceling a subscription.
-    """
+    """Request schema for canceling a subscription."""
 
     reason: Optional[str] = Field(
         default=None,
@@ -31,49 +39,35 @@ class CancelRequest(BaseModel):
     )
 
 
-class SubscriptionRead(BaseModel):
-    id: int
-    user_id: int
-    plan: str
-    status: str
-    start_date: datetime
-    end_date: datetime
-
-    model_config = {"from_attributes": True}
-
-
 class SubscriptionOut(BaseModel):
     """
-    Response schema for subscription details.
+    Minimal subscription read model aligned with the ORM.
     """
 
-    id: int = Field(default=..., description="Internal subscription record ID")
-    stripe_subscription_id: str = Field(
-        default=..., description="Stripe subscription object ID"
+    id: int = Field(..., description="Internal subscription record ID")
+    stripe_subscription_id: Optional[str] = Field(
+        default=None, description="Stripe subscription object ID"
     )
-    stripe_customer_id: str = Field(
-        default=..., description="Stripe customer object ID"
+    stripe_customer_id: Optional[str] = Field(
+        default=None, description="Stripe customer object ID"
     )
-    plan_name: str = Field(default=..., description="Name of the subscribed plan")
-    status: SubscriptionStatus = Field(
-        default=..., description="Current subscription status"
-    )
-    started_at: datetime = Field(
-        default=..., description="Timestamp when subscription started"
-    )
-    renewed_at: Optional[datetime] = Field(
-        default=None, description="Timestamp of last renewal, if any"
-    )
-    canceled_at: Optional[datetime] = Field(
-        default=None, description="Timestamp when subscription was canceled, if any"
-    )
+    status: SubscriptionStatus = Field(..., description="Current subscription status")
+    created_at: datetime = Field(..., description="Record creation timestamp")
+    updated_at: datetime = Field(..., description="Record last-updated timestamp")
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Backwards compatibility for older imports ---
+class SubscriptionRead(SubscriptionOut):
+    """Alias model kept for backward compatibility with older imports."""
+
+    pass
 
 
 __all__ = [
     "SubscribeRequest",
     "CancelRequest",
-    "SubscriptionRead",
     "SubscriptionOut",
+    "SubscriptionRead",  # <- legacy name expected by app/schemas/user.py
 ]

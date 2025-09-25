@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TranscriptionOut(BaseModel):
@@ -22,8 +22,7 @@ class TranscriptionOut(BaseModel):
         None, description="Subtitle text with timestamps (SRT or plain text)"
     )
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 __all__ = [

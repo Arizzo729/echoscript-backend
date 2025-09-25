@@ -1,6 +1,5 @@
 import os
 import time
-from typing import List
 
 from app.config import config
 
@@ -28,11 +27,11 @@ def load_transcript_file(filename: str) -> str:
     filepath = os.path.join(config.STORAGE_DIR, filename)
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"Transcript file not found: {filename}")
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         return f.read()
 
 
-def list_transcripts(user_id: int) -> List[str]:
+def list_transcripts(user_id: int) -> list[str]:
     """
     List all transcript filenames for a given user_id.
     """
