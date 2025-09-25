@@ -2,7 +2,7 @@
 anyio==4.4.0
 fastapi==0.115.6
 fastapi-crudrouter==0.8.6
-h11==0.14.0
+h11==0.16.0
 httptools==0.6.1
 python-multipart==0.0.9
 uvicorn[standard]==0.30.6
@@ -62,3 +62,15 @@ black==24.8.0
 isort==5.13.2
 bandit==1.7.9
 
+fonttools>=4.43.0 # not directly required, pinned by Snyk to avoid a vulnerability
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
+pillow>=10.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
+protobuf>=4.25.8 # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.32.4 # not directly required, pinned by Snyk to avoid a vulnerability
+scikit-learn>=1.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=78.1.1 # not directly required, pinned by Snyk to avoid a vulnerability
+sympy>=1.12 # not directly required, pinned by Snyk to avoid a vulnerability
+torch>=2.8.0 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
