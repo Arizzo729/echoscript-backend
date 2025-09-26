@@ -10,6 +10,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg libsndfile1 curl && \
     rm -rf /var/lib/apt/lists/*
