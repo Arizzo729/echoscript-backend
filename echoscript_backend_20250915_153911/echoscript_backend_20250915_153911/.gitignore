@@ -1,0 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.build/
+.dist/
+.venv/
+env/
+venv/
+
+# Byte-compiled / cache
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.cache/
+.torch_cache/
+.huggingface/
+
+# --- OS / Editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Logs / runtime ---
+*.log
+logs/
+loaded-config.txt
+
+# --- Data / uploads / exports ---
+transcripts/
+static/uploads/
+exports/
+
+# --- Env / secrets (use .env locally; never commit) ---
+.env
+.env.*
+!.env.example
+
+# --- Node (if any JS tooling appears) ---
+node_modules/

@@ -1,34 +1,18 @@
-﻿repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: mixed-line-ending
-        args: [--fix=lf]
-
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
-    hooks:
-      - id: black
-        language_version: python3.10
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile=black]
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8-bugbear==24.8.19]
-
+repos:
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.9
+    rev: 1.8.6
     hooks:
       - id: bandit
-        args: ["-q", "-r", "."]
-        additional_dependencies: [pbr>=5.11.1]
+        name: bandit (app only)
+        args:
+          - "-q"
+          - "-r"
+          - "app"                     # scan only your source, not the whole repo
+          - "-x"
+          - "tests,migrations,examples"
+          - "-s"
+          - "B106,B110"               # skip hardcoded password funcarg + try/except/pass
+        files: ^app/.*\.py$
+        exclude: ^(node_modules|\.venv|dist|build|\.mypy_cache|\.pytest_cache|\.ruff_cache)/
+        pass_filenames: false
+

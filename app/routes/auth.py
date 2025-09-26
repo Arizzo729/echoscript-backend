@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import User
 from app.schemas.auth import LoginRequest, RefreshRequest, Token
-from app.utils.auth_utils import create_access_token, decode_access_token, verify_password
+from app.utils.auth_utils import (
+    create_access_token,
+    decode_access_token,
+    verify_password,
+)
 from app.utils.db_utils import get_user_by_email
 
 logger = logging.getLogger("echoscript")
