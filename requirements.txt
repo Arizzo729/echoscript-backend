@@ -6,6 +6,8 @@ sqlalchemy==2.0.34
 python-multipart==0.0.9
 python-jose==3.3.0
 redis==5.0.8
+python-docx==0.8.11
+
 
 # in-use
 passlib[bcrypt]==1.7.4
