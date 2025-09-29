@@ -1,38 +1,21 @@
 # app/main.py
 import os
-
+import importlib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Payments
-from app.routers import paypal as paypal_router
-from app.routers.stripe_checkout import router as stripe_checkout_router
-
-# Routers (keep the ones you actually have in your repo)
-from app.routes.auth import router as auth_router
-from app.routes.contact import router as contact_router
-from app.routes.export import router as export_router
-from app.routes.feedback import router as feedback_router
-from app.routes.history import router as history_router
-from app.routes.newsletter import router as newsletter_router
-from app.routes.password_reset import router as password_reset_router
-from app.routes.signup import router as signup_router
-from app.routes.stripe_webhook import router as stripe_webhook_router
-from app.routes.transcribe import router as transcribe_router
-from app.routes.transcripts import router as transcripts_router
-from app.routes.verify_email import router as verify_email_router
-from app.routes.video_task import router as video_task_router
-
+APP_NAME = "EchoScript API"
+APP_VERSION = os.getenv("GIT_SHA", "local")
 
 def _allowed_origins() -> list[str]:
-    raw = os.getenv("API_ALLOWED_ORIGINS", "*").strip()
-    if raw == "*" or raw == "":
+    raw = os.getenv("API_ALLOWED_ORIGINS", "").strip()
+    if not raw or raw == "*":
         return ["*"]
     return [o.strip() for o in raw.split(",") if o.strip()]
 
+app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
-app = FastAPI(title="EchoScript API", version=os.getenv("GIT_SHA", "local"))
-
+# --- CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins(),
@@ -41,41 +24,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount all routers
-app.include_router(auth_router)
-app.include_router(contact_router)
-app.include_router(export_router)
-app.include_router(feedback_router)
-app.include_router(history_router)
-app.include_router(newsletter_router)
-app.include_router(password_reset_router)
-app.include_router(signup_router)
-app.include_router(stripe_webhook_router)
-app.include_router(transcribe_router)
-app.include_router(transcripts_router)
-app.include_router(verify_email_router)
-app.include_router(video_task_router)
+def include_optional(module_path: str, attr: str = "router", prefix: str | None = None) -> None:
+    """
+    Import module_path and include FastAPI router named `attr`.
+    If it fails, log but DO NOT crash the app.
+    """
+    try:
+        mod = importlib.import_module(module_path)
+        router = getattr(mod, attr)
+        if prefix:
+            app.include_router(router, prefix=prefix)
+            print(f"[router] loaded: {module_path}.{attr} (prefix={prefix})")
+        else:
+            app.include_router(router)
+            print(f"[router] loaded: {module_path}.{attr}")
+    except Exception as e:
+        print(f"[router] NOT loaded: {module_path}.{attr} -> {e}")
 
-# payments
-app.include_router(paypal_router.router)
-app.include_router(stripe_checkout_router)
+# --- Mount routers (guarded) ---
+# Add or remove lines based on what you actually have in your repo.
+include_optional("app.routes.auth")
+include_optional("app.routes.contact")
+include_optional("app.routes.export")
+include_optional("app.routes.feedback")
+include_optional("app.routes.history")
+include_optional("app.routes.newsletter")
+include_optional("app.routes.password_reset")
+include_optional("app.routes.signup")
+include_optional("app.routes.stripe_webhook")
+include_optional("app.routes.transcribe")
+include_optional("app.routes.transcripts")
+include_optional("app.routes.verify_email")
+include_optional("app.routes.video_task")
+# Payments (if present)
+include_optional("app.routers.paypal")
+include_optional("app.routers.stripe_checkout")
 
-
+# --- Health & meta routes ---
 @app.get("/")
 def root():
-    return {"ok": True, "service": "echoscript-api"}
-
+    return {"ok": True, "service": "echoscript-api", "version": APP_VERSION}
 
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
 
-
 @app.get("/readyz")
 def readyz():
     return {"ready": True}
 
-
 @app.get("/version")
 def version():
-    return {"version": os.getenv("GIT_SHA", "local")}
+    return {"version": APP_VERSION}
+
