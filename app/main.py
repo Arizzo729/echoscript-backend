@@ -1,6 +1,5 @@
 # app/main.py
-import os
-import importlib
+import os, importlib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,7 +14,7 @@ def _allowed_origins() -> list[str]:
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
-# --- CORS ---
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins(),
@@ -25,24 +24,15 @@ app.add_middleware(
 )
 
 def include_optional(module_path: str, attr: str = "router", prefix: str | None = None) -> None:
-    """
-    Import module_path and include FastAPI router named `attr`.
-    If it fails, log but DO NOT crash the app.
-    """
     try:
         mod = importlib.import_module(module_path)
         router = getattr(mod, attr)
-        if prefix:
-            app.include_router(router, prefix=prefix)
-            print(f"[router] loaded: {module_path}.{attr} (prefix={prefix})")
-        else:
-            app.include_router(router)
-            print(f"[router] loaded: {module_path}.{attr}")
+        app.include_router(router, prefix=prefix or "")
+        print(f"[router] loaded: {module_path}.{attr} prefix={prefix or ''}")
     except Exception as e:
         print(f"[router] NOT loaded: {module_path}.{attr} -> {e}")
 
-# --- Mount routers (guarded) ---
-# Add or remove lines based on what you actually have in your repo.
+# Load routers but don't crash if any fail
 include_optional("app.routes.auth")
 include_optional("app.routes.contact")
 include_optional("app.routes.export")
@@ -56,11 +46,9 @@ include_optional("app.routes.transcribe")
 include_optional("app.routes.transcripts")
 include_optional("app.routes.verify_email")
 include_optional("app.routes.video_task")
-# Payments (if present)
 include_optional("app.routers.paypal")
 include_optional("app.routers.stripe_checkout")
 
-# --- Health & meta routes ---
 @app.get("/")
 def root():
     return {"ok": True, "service": "echoscript-api", "version": APP_VERSION}
@@ -76,4 +64,3 @@ def readyz():
 @app.get("/version")
 def version():
     return {"version": APP_VERSION}
-
