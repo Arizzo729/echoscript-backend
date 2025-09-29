@@ -1,6 +1,4 @@
-@'
-# app/main.py (minimal boot)
-import os
+﻿import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,4 +31,3 @@ def healthz():
 @app.get("/version")
 def version():
     return {"version": APP_VERSION}
-'@ | Set-Content app\main.py -Encoding UTF8
