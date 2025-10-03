@@ -1,170 +1,81 @@
-from __future__ import annotations
-
+# app/routes/stripe_checkout.py
 import os
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
-import stripe  # type: ignore[attr-defined]
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+import stripe
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
-from app.db import SessionLocal
-from app.dependencies import get_current_user
-from app.models.subscription import (  # or from app.models import Subscription if that's your path
-    Subscription,
-)
+router = APIRouter()
 
-# Optionally load .env so this module works even if main didn't load it yet
-try:
-    from dotenv import load_dotenv  # pip install python-dotenv
+# --- Stripe config from env ---
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
+STRIPE_MODE = os.getenv("STRIPE_MODE", "subscription")
+STRIPE_PRICE_PRO = os.getenv("STRIPE_PRICE_PRO", "") or os.getenv("STRIPE_PRO_PRICE_ID", "")
+STRIPE_PRICE_PREMIUM = os.getenv("STRIPE_PRICE_PREMIUM", "")
+STRIPE_PRICE_EDU = os.getenv("STRIPE_PRICE_EDU", "")
+SUCCESS_URL = os.getenv("STRIPE_SUCCESS_URL", "https://echoscript.ai/purchase/success?session_id={CHECKOUT_SESSION_ID}")
+CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://echoscript.ai/purchase")
 
-    env_path = Path(__file__).resolve().parents[2] / ".env"  # Backend/.env
-    if env_path.exists():
-        load_dotenv(env_path)
-except Exception:
-    pass
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
-router = APIRouter(prefix="/api/stripe", tags=["stripe"])
-
-
-def _get_env(name: str, default: Optional[str] = None) -> Optional[str]:
-    val = os.getenv(name)
-    if val is None:
-        return default
-    val = val.strip()
-    return val if val else default
-
-
-def _ensure_stripe_configured() -> None:
-    key = _get_env("STRIPE_SECRET_KEY")
-    if not key:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
-    stripe.api_key = key
-
-
-# Defaults / config
-STRIPE_MODE_DEFAULT = (
-    _get_env("STRIPE_MODE", "subscription") or "subscription"
-).lower()
-CURRENCY = (_get_env("STRIPE_CURRENCY", "usd") or "usd").lower()
-
-# Frontend URLs (support either FRONTEND_URL or FRONTEND_DOMAIN)
-_FRONTEND = (
-    _get_env("FRONTEND_URL") or _get_env("FRONTEND_DOMAIN") or "http://localhost:5173"
-)
-SUCCESS_URL = _get_env(
-    "STRIPE_SUCCESS_URL", f"{_FRONTEND}/success?session_id={{CHECKOUT_SESSION_ID}}"
-)
-CANCEL_URL = _get_env("STRIPE_CANCEL_URL", f"{_FRONTEND}/purchase")
-
-# Dashboard Price IDs (preferred)
-PRICE_MAP: Dict[str, Optional[str]] = {
-    "pro": _get_env("STRIPE_PRICE_PRO"),
-    "premium": _get_env("STRIPE_PRICE_PREMIUM"),
-    "edu": _get_env("STRIPE_PRICE_EDU"),
-}
-
-# Fallback inline pricing (cents) if you haven't created Prices yet
-AMOUNT_CENTS: Dict[str, int] = {"pro": 999, "premium": 1999, "edu": 499}
-
-
-def _get_user_id(u: Any) -> int:
-    return u["id"] if isinstance(u, dict) else int(getattr(u, "id"))
-
-
-def _get_user_email(u: Any) -> Optional[str]:
-    return u.get("email") if isinstance(u, dict) else getattr(u, "email", None)
-
-
-@router.post("/create-checkout-session")
-async def create_checkout_session(
-    req: Request, current_user=Depends(get_current_user)
-) -> Dict[str, Any]:
-    _ensure_stripe_configured()
-
-    try:
-        body = await req.json()
-    except Exception:
-        body = {}
-    plan = str((body.get("plan") or "pro")).lower()
-    if plan not in {"pro", "premium", "edu"}:
-        raise HTTPException(status_code=400, detail=f"Unknown plan '{plan}'")
-
-    mode = (
-        STRIPE_MODE_DEFAULT
-        if STRIPE_MODE_DEFAULT in {"subscription", "payment"}
-        else "subscription"
-    )
-    price_id = PRICE_MAP.get(plan)
-
-    user_id = _get_user_id(current_user)
-    user_email = _get_user_email(current_user) or ""
-
-    db: Session = SessionLocal()
-    try:
-        sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-        customer_id = sub.stripe_customer_id if sub and sub.stripe_customer_id else None
-
-        if not customer_id:
-            customer = stripe.Customer.create(  # type: ignore[attr-defined]
-                email=user_email,
-                metadata={"user_id": str(user_id)},
-            )
-            customer_id = customer["id"]
-            if not sub:
-                sub = Subscription(
-                    user_id=user_id
-                )  # don't set plan/status yet; webhook will
-                db.add(sub)
-            sub.stripe_customer_id = customer_id
-            db.commit()
-
-        if price_id:
-            line_items = [{"price": price_id, "quantity": 1}]
-        else:
-            amount = AMOUNT_CENTS.get(plan, 999)
-            price_data: Dict[str, Any] = {
-                "currency": CURRENCY,
-                "product_data": {"name": f"EchoScript {plan.capitalize()}"},
-                "unit_amount": amount,
-            }
-            if mode == "subscription":
-                price_data["recurring"] = {"interval": "month"}
-            line_items = [{"price_data": price_data, "quantity": 1}]
-
-        session = stripe.checkout.Session.create(  # type: ignore[attr-defined]
-            mode=mode,
-            customer=customer_id,
-            line_items=line_items,
-            success_url=SUCCESS_URL,
-            cancel_url=CANCEL_URL,
-            allow_promotion_codes=True,
-            metadata={"user_id": str(user_id)},  # on session
-            subscription_data={
-                "metadata": {"user_id": str(user_id)}
-            },  # on subscription
-        )
-        return {"url": session["url"]}
-    except stripe.error.StripeError as e:  # type: ignore[attr-defined]
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-
+# ---------- Debug probe (safe) ----------
 @router.get("/_debug-env")
-def debug_env() -> Dict[str, Any]:
+def stripe_debug_env():
+    """Small, safe probe to verify wiring from the frontend through Netlify to the API."""
     return {
-        "has_secret": bool(_get_env("STRIPE_SECRET_KEY")),
-        "mode_default": STRIPE_MODE_DEFAULT,
-        "currency": CURRENCY,
-        "price_pro": (PRICE_MAP["pro"][:8] + "…") if PRICE_MAP.get("pro") else None,
-        "price_premium": (
-            (PRICE_MAP["premium"][:8] + "…") if PRICE_MAP.get("premium") else None
-        ),
-        "price_edu": (PRICE_MAP["edu"][:8] + "…") if PRICE_MAP.get("edu") else None,
+        "ok": True,
+        "mode_default": STRIPE_MODE,
+        "has_secret": bool(STRIPE_SECRET_KEY),
+        "has_public": bool(STRIPE_PUBLIC_KEY),
+        "price_pro?": bool(STRIPE_PRICE_PRO),
+        "price_premium?": bool(STRIPE_PRICE_PREMIUM),
+        "price_edu?": bool(STRIPE_PRICE_EDU),
         "success_url": SUCCESS_URL,
         "cancel_url": CANCEL_URL,
-        "frontend": _FRONTEND,
+        "frontend": os.getenv("FRONTEND_URL", "https://echoscript.ai"),
     }
+
+# ---------- Minimal checkout session ----------
+class CheckoutPayload(BaseModel):
+    plan: Optional[str] = "pro"  # pro | premium | edu
+    mode: Optional[str] = None   # override subscription / payment
+
+def _resolve_price(plan: str) -> str:
+    plan = (plan or "pro").lower()
+    if plan == "premium" and STRIPE_PRICE_PREMIUM:
+        return STRIPE_PRICE_PREMIUM
+    if plan == "edu" and STRIPE_PRICE_EDU:
+        return STRIPE_PRICE_EDU
+    if STRIPE_PRICE_PRO:
+        return STRIPE_PRICE_PRO
+    raise HTTPException(status_code=400, detail="No Stripe price configured for requested plan")
+
+@router.post("/create-checkout-session")
+def create_checkout_session(payload: CheckoutPayload):
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe not configured")
+
+    price_id = _resolve_price(payload.plan)
+    mode = (payload.mode or STRIPE_MODE or "subscription").lower()
+
+    try:
+        if mode == "payment":
+            session = stripe.checkout.Session.create(
+                mode="payment",
+                line_items=[{"price": price_id, "quantity": 1}],
+                success_url=SUCCESS_URL,
+                cancel_url=CANCEL_URL,
+            )
+        else:
+            session = stripe.checkout.Session.create(
+                mode="subscription",
+                line_items=[{"price": price_id, "quantity": 1}],
+                success_url=SUCCESS_URL,
+                cancel_url=CANCEL_URL,
+            )
+        return {"id": session.id, "url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
