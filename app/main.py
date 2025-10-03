@@ -37,10 +37,7 @@ def version():
     return {"version": APP_VERSION}
 
 def _safe_include(module_path: str, attr: str = "router", prefix: str | None = None, tags: list[str] | None = None):
-    """
-    Import module and include its FastAPI router.
-    If the module's router already has a prefix, pass prefix=None here.
-    """
+    """Import module and include its FastAPI router."""
     try:
         mod = __import__(module_path, fromlist=[attr])
         router = getattr(mod, attr)
@@ -53,13 +50,13 @@ def _safe_include(module_path: str, attr: str = "router", prefix: str | None = N
         logging.getLogger(__name__).exception("Router %s failed to mount: %s", module_path, e)
 
 if ENABLE_FULL_ROUTERS:
-    # Auth router (uses its own internal prefix; keep prefix=None if it does)
-    _safe_include("app.routes.auth")
+    # Auth
+    _safe_include("app.routes.auth")         # /api/auth login/refresh  :contentReference[oaicite:7]{index=7}
+    _safe_include("app.routes.signup")       # /api/auth/signup        (NEW)
 
-    # Stripe routers ALREADY define prefix="/api/stripe" inside the files.
-    # Do NOT add another prefix here.
-    _safe_include("app.routes.stripe_checkout")
-    _safe_include("app.routes.stripe_webhook")
+    # Stripe (already have their own /api/stripe prefix)
+    _safe_include("app.routes.stripe_checkout")  # create-checkout-session  :contentReference[oaicite:8]{index=8}
+    _safe_include("app.routes.stripe_webhook")   # webhook handler           :contentReference[oaicite:9]{index=9}
 
-    # Transcription (if your file defines its own prefix, leave prefix=None)
+    # Transcription (leave as-is)
     _safe_include("app.routes.transcribe")
