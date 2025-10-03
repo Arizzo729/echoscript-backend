@@ -1,31 +1,59 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# app/routes/stripe_checkout.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 import os
+import stripe
 
-from app.routes.auth import router as auth_router
-from app.routes.stripe_checkout import router as stripe_router
+router = APIRouter(prefix="/api/stripe", tags=["stripe"])
 
-ENV = os.getenv("ENV", "production")
-ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "https://echoscript.ai,https://www.echoscript.ai").split(",")
+# Stripe config
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 
-app = FastAPI(title="EchoScript API", version="1.0.0")
+PRICE_MAP = {
+    "pro": os.getenv("STRIPE_PRICE_PRO"),
+    "premium": os.getenv("STRIPE_PRICE_PREMIUM"),
+    "edu": os.getenv("STRIPE_PRICE_EDU"),
+}
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[o.strip() for o in ALLOW_ORIGINS if o.strip()],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+SUCCESS_URL = os.getenv(
+    "STRIPE_SUCCESS_URL",
+    "https://echoscript.ai/success?session_id={CHECKOUT_SESSION_ID}",
 )
+CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://echoscript.ai/purchase")
+MODE = os.getenv("STRIPE_MODE", "subscription")
 
-@app.get("/")
-def root():
-    return {"ok": True, "service": "echoscript-backend", "env": ENV}
+class CheckoutIn(BaseModel):
+    plan: str
 
-@app.get("/healthz")
-def healthz():
-    return {"ok": True, "version": "live", "env": ENV}
+@router.get("/_debug-env")
+def debug_env():
+    return {
+        "ok": True,
+        "mode_default": MODE,
+        "has_secret": bool(stripe.api_key),
+        "price_pro": bool(PRICE_MAP.get("pro")),
+        "price_premium": bool(PRICE_MAP.get("premium")),
+        "price_edu": bool(PRICE_MAP.get("edu")),
+        "success_url": SUCCESS_URL,
+        "cancel_url": CANCEL_URL,
+        "frontend": "https://echoscript.ai",
+    }
 
-# 👇 the important part
-app.include_router(auth_router,   prefix="/api/auth",   tags=["auth"])
-app.include_router(stripe_router, prefix="/api/stripe", tags=["stripe"])
+@router.post("/create-checkout-session")
+def create_checkout_session(data: CheckoutIn):
+    price_id = PRICE_MAP.get(data.plan)
+    if not price_id:
+        raise HTTPException(status_code=400, detail="Unknown plan")
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode=MODE,
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=SUCCESS_URL,
+            cancel_url=CANCEL_URL,
+            automatic_tax={"enabled": True},
+        )
+        return {"url": session.url}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
