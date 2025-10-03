@@ -52,8 +52,11 @@ def _safe_include(module_path: str, attr: str = "router", prefix: str = "", tags
 
 # Only mount full routers when explicitly enabled
 if ENABLE_FULL_ROUTERS:
-    # Adjust module paths/prefixes to match your project layout if different.
+    # auth (unchanged if you have it)
     _safe_include("app.routes.auth", prefix="/api/auth", tags=["auth"])
-    _safe_include("app.routes.stripe", prefix="/api/stripe", tags=["stripe"])
+    # stripe — include BOTH real modules
+    _safe_include("app.routes.stripe_checkout", prefix="/api/stripe", tags=["stripe"])
+    _safe_include("app.routes.stripe_webhook", prefix="/api/stripe", tags=["stripe"])
+    # transcribe
     _safe_include("app.routes.transcribe", prefix="/api/v1", tags=["transcribe"])
 

@@ -1,4 +1,3 @@
-# app/routes/stripe_webhook.py
 from __future__ import annotations
 
 import logging

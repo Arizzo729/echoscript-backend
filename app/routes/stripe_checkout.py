@@ -1,4 +1,3 @@
-# app/routers/stripe_checkout.py
 from __future__ import annotations
 
 import os
