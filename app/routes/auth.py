@@ -18,7 +18,7 @@ def signup(body: SignupIn):
 
 @router.post("/login")
 def login(body: LoginIn):
-    # TODO: validate credentials & return real JWT
+    # TODO: verify and return real JWT
     if not body.email or not body.password:
         raise HTTPException(status_code=400, detail="Invalid credentials")
     return {"ok": True, "access_token": "dummy-token", "token_type": "bearer"}
