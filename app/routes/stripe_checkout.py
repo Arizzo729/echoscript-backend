@@ -1,59 +1,48 @@
 # app/routes/stripe_checkout.py
+import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import os
 import stripe
 
-router = APIRouter(prefix="/api/stripe", tags=["stripe"])
+router = APIRouter()
 
-# Stripe config
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+stripe.api_key = os.getenv("STRIPE_SECRET")
 
+# env: map plans to Stripe Price IDs
 PRICE_MAP = {
-    "pro": os.getenv("STRIPE_PRICE_PRO"),
-    "premium": os.getenv("STRIPE_PRICE_PREMIUM"),
-    "edu": os.getenv("STRIPE_PRICE_EDU"),
+    "pro": os.getenv("STRIPE_PRICE_PRO", ""),
+    "premium": os.getenv("STRIPE_PRICE_PREMIUM", ""),
+    "edu": os.getenv("STRIPE_PRICE_EDU", ""),
 }
 
-SUCCESS_URL = os.getenv(
-    "STRIPE_SUCCESS_URL",
-    "https://echoscript.ai/success?session_id={CHECKOUT_SESSION_ID}",
-)
-CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://echoscript.ai/purchase")
-MODE = os.getenv("STRIPE_MODE", "subscription")
+APP_URL = os.getenv("PUBLIC_APP_URL", "https://echoscript.ai").rstrip("/")
 
-class CheckoutIn(BaseModel):
+class CreateSessionBody(BaseModel):
     plan: str
 
-@router.get("/_debug-env")
-def debug_env():
-    return {
-        "ok": True,
-        "mode_default": MODE,
-        "has_secret": bool(stripe.api_key),
-        "price_pro": bool(PRICE_MAP.get("pro")),
-        "price_premium": bool(PRICE_MAP.get("premium")),
-        "price_edu": bool(PRICE_MAP.get("edu")),
-        "success_url": SUCCESS_URL,
-        "cancel_url": CANCEL_URL,
-        "frontend": "https://echoscript.ai",
-    }
-
-@router.post("/create-checkout-session")
-def create_checkout_session(data: CheckoutIn):
-    price_id = PRICE_MAP.get(data.plan)
+@router.post("/api/stripe/create-checkout-session")
+def create_checkout_session(body: CreateSessionBody):
+    price_id = PRICE_MAP.get(body.plan)
     if not price_id:
-        raise HTTPException(status_code=400, detail="Unknown plan")
+        raise HTTPException(status_code=400, detail=f"Unknown plan '{body.plan}' or PRICE not set")
 
     try:
         session = stripe.checkout.Session.create(
-            mode=MODE,
+            mode="subscription",
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url=SUCCESS_URL,
-            cancel_url=CANCEL_URL,
+            success_url=f"{APP_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{APP_URL}/purchase?canceled=1",
+            allow_promotion_codes=True,
             automatic_tax={"enabled": True},
+
+            # 👇 keep it simple: only show card to avoid wallet modules (Amazon/Klarna/CashApp)
+            payment_method_types=["card"],
+
+            # (optional) locale hints to avoid locale module warnings
+            locale="auto",
         )
         return {"url": session.url}
     except stripe.error.StripeError as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
+        # bubble up a readable error for the client
+        msg = getattr(e, "user_message", str(e))
+        raise HTTPException(status_code=400, detail=msg)
