@@ -1,16 +1,24 @@
 # app/routes/transcribe.py
-import os
-import shutil
-import tempfile
-import uuid
-from typing import Optional
+from fastapi import APIRouter, UploadFile, File, Query
+from fastapi.responses import JSONResponse
 
-# app/routes/transcribe.py
-from fastapi import APIRouter, UploadFile, File
-router = APIRouter()
+# Mount this router at /api/v1, so the final endpoint is:
+#   POST /api/v1/transcribe?language=en
+router = APIRouter(prefix="/api/v1", tags=["transcribe"])
 
-@router.post("")
-async def transcribe(file: UploadFile = File(...)):
-    # stub so frontend can proceed; replace with Whisper handler
-    return {"ok": True, "filename": file.filename, "text": "(transcription stub)"}
-
+@router.post("/transcribe")
+async def transcribe_endpoint(
+    language: str = Query("en"),
+    file: UploadFile = File(...),
+):
+    # NOTE: this is a stub so we can verify end-to-end wiring.
+    # Replace with your Whisper/Faster-Whisper handler later.
+    # We don't read the whole file here to avoid memory spikes.
+    return JSONResponse(
+        {
+            "ok": True,
+            "filename": file.filename,
+            "language": language,
+            "text": "(transcription stub — backend is wired correctly)",
+        }
+    )
