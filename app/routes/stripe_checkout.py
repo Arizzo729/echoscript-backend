@@ -1,67 +1,55 @@
 # app/routes/stripe_checkout.py
+
 import os
 import stripe
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/stripe", tags=["Stripe"])
-
-# Accept either STRIPE_SECRET_KEY or STRIPE_SECRET
 STRIPE_SECRET = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET")
 if not STRIPE_SECRET:
-    # We fail fast so your client sees a clean 400 instead of a stacktrace
-    raise RuntimeError("Missing STRIPE_SECRET_KEY (or STRIPE_SECRET) in environment")
+    # let the route raise later with a friendly message
+    pass
 
 stripe.api_key = STRIPE_SECRET
 
-SUCCESS_URL = os.getenv("STRIPE_SUCCESS_URL") or "http://localhost:5173/checkout/success"
-CANCEL_URL = os.getenv("STRIPE_CANCEL_URL") or "http://localhost:5173/checkout/cancel"
-PRICE_PRO   = os.getenv("STRIPE_PRICE_PRO")       # e.g. price_123
-PRICE_PREMIUM = os.getenv("STRIPE_PRICE_PREMIUM") # optional
+router = APIRouter(prefix="/api/stripe/checkout", tags=["stripe"])
 
-class CreateSessionBody(BaseModel):
-    price_id: str | None = None          # override which price to use
+class CreateBody(BaseModel):
+    mode: str | None = "subscription"  # "subscription" or "payment"
+    price_id: str | None = None        # override env price
     quantity: int | None = 1
-    mode: str | None = "subscription"    # or "payment"
-    metadata: dict | None = None
 
-@router.post("/create-checkout-session")
-def create_checkout_session(body: CreateSessionBody):
-    price_id = body.price_id or PRICE_PRO
+@router.post("/create")
+def create_checkout_session(body: CreateBody):
+    if not STRIPE_SECRET:
+        raise HTTPException(status_code=500, detail="Stripe secret key is not configured on server.")
+    mode = body.mode or "subscription"
+    price_id = body.price_id or os.getenv("STRIPE_PRICE_PRO")
     if not price_id:
-        raise HTTPException(status_code=400, detail="No price_id provided and STRIPE_PRICE_PRO not set")
+        raise HTTPException(status_code=500, detail="Stripe price id is missing. Set STRIPE_PRICE_PRO or pass price_id.")
 
     try:
         session = stripe.checkout.Session.create(
-            mode=body.mode or "subscription",
+            mode=mode,
             line_items=[{"price": price_id, "quantity": body.quantity or 1}],
-            success_url=f"{SUCCESS_URL}?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=CANCEL_URL,
-            allow_promotion_codes=True,
-            metadata=body.metadata or {},
-            automatic_tax={"enabled": True},
+            success_url=(os.getenv("STRIPE_SUCCESS_URL") or "https://echoscript.ai/checkout?success=1")
+                         + "&session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=os.getenv("STRIPE_CANCEL_URL") or "https://echoscript.ai/checkout?canceled=1",
         )
         return {"url": session.url}
     except Exception as e:
-        # The most common here is: No API key provided
         raise HTTPException(status_code=400, detail=str(e))
 
-class PortalBody(BaseModel):
-    session_id: str
-
-@router.post("/portal")
-def billing_portal(body: PortalBody, request: Request):
-    """
-    Create a Billing Portal session. Pass the Checkout session_id from success page.
-    """
+@router.get("/session")
+def get_session(session_id: str):
+    if not STRIPE_SECRET:
+        raise HTTPException(status_code=500, detail="Stripe secret key is not configured on server.")
     try:
-        checkout = stripe.checkout.Session.retrieve(body.session_id)
-        if not checkout.get("customer"):
-            raise HTTPException(status_code=400, detail="No customer on session")
-        portal = stripe.billing_portal.Session.create(
-            customer=checkout["customer"],
-            return_url=SUCCESS_URL,
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["line_items", "customer", "subscription"]
         )
-        return {"url": portal.url}
+        return {"id": session.id, "status": session.status, "payment_status": session.payment_status}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
