@@ -1,29 +1,36 @@
-# app/main.py
+# app/main.py — EchoScript API (FINAL)
 
 import os
 import logging
 from importlib import import_module
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 
-# --------------------------------------------------------------------------------------
-# App metadata / version
-# --------------------------------------------------------------------------------------
 APP_NAME = "EchoScript API"
 APP_VERSION = os.getenv("GIT_SHA", "local")
 
-log = logging.getLogger("uvicorn")
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("uvicorn")
 
-# IMPORTANT: keep this name "app" for the ASGI entrypoint
+def _mask(v: str | None) -> str | None:
+    if not v:
+        return None
+    return f"{v[:6]}…{v[-4:]}" if len(v) > 10 else v[:3] + "…"
+
+# -----------------------------------------------------------------------------
+# App
+# -----------------------------------------------------------------------------
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # CORS
-# Prefer env var:
+#   Prefer env var:
 #   API_ALLOWED_ORIGINS="https://echoscript.ai,https://www.echoscript.ai,http://localhost:5173"
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
 if not raw_allowed or raw_allowed == "*":
     ALLOWED_ORIGINS = [
@@ -45,17 +52,16 @@ app.add_middleware(
     max_age=86400,
 )
 
-# --------------------------------------------------------------------------------------
-# Ensure DB schema on startup (idempotent) — IMPORT MODELS WITHOUT SHADOWING "app"
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# DB bootstrap (idempotent). Avoid shadowing the FastAPI "app" name.
+# -----------------------------------------------------------------------------
 try:
     from app.db import Base, engine  # your SQLAlchemy Base/engine
-    # Do NOT `import app.models` (that would bind name "app" to the package).
-    import_module("app.models")  # registers models with SQLAlchemy metadata
+    import_module("app.models")      # register models
 except Exception:
     try:
         from app.database import Base, engine  # type: ignore
-        import_module("app.models")  # type: ignore
+        import_module("app.models")            # type: ignore
     except Exception:
         Base = engine = None  # type: ignore
 
@@ -68,9 +74,23 @@ if Base is not None and engine is not None:
         except Exception as e:
             log.warning("DB init error: %s", e)
 
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Startup env log (sanitized)
+# -----------------------------------------------------------------------------
+@app.on_event("startup")
+def _log_env():
+    log.info(
+        "ENV LOADED: app_version=%s allowed_origins=%s stripe_key=%s price_pro=%s price_premium=%s",
+        APP_VERSION,
+        ALLOWED_ORIGINS,
+        _mask(os.getenv("STRIPE_SECRET_KEY")),
+        os.getenv("STRIPE_PRICE_PRO"),
+        os.getenv("STRIPE_PRICE_PREMIUM"),
+    )
+
+# -----------------------------------------------------------------------------
 # Health / root
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 @app.get("/")
 def root():
     return {"ok": True, "service": "echoscript-api", "version": APP_VERSION}
@@ -92,10 +112,31 @@ def healthz_api_head():
 async def preflight_ok(path: str):
     return Response(status_code=200)
 
-# --------------------------------------------------------------------------------------
-# Routers (defensive import so one failure doesn't kill the app)
+# -----------------------------------------------------------------------------
+# Debug helpers (safe): verify Stripe env at runtime without touching Stripe router
+# Paths live under /api/_debug/stripe/* to avoid conflicts with your Stripe routes.
+# Remove or guard by APP_ENV if you prefer.
+# -----------------------------------------------------------------------------
+@app.get("/api/_debug/stripe/env")
+def _debug_stripe_env():
+    key = os.getenv("STRIPE_SECRET_KEY") or ""
+    return {
+        "has_key": bool(key),
+        "len": len(key),
+        "prefix": key[:6] if key else "",
+    }
+
+@app.get("/api/_debug/stripe/prices")
+def _debug_stripe_prices():
+    return {
+        "pro": os.getenv("STRIPE_PRICE_PRO"),
+        "premium": os.getenv("STRIPE_PRICE_PREMIUM"),
+    }
+
+# -----------------------------------------------------------------------------
+# Routers (defensive include so one failure doesn’t kill the app)
 # Each router defines its own prefix, e.g. "/api/auth", "/api/v1", etc.
-# --------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def _include_router_safe(import_path: str, name: str):
     try:
         module = __import__(import_path, fromlist=["router"])
@@ -110,3 +151,4 @@ _include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
 _include_router_safe("app.routes.transcribe", "Transcribe")
 
 log.info("Allowed CORS origins: %s", ALLOWED_ORIGINS)
+
