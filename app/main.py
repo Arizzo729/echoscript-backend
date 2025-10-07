@@ -5,7 +5,7 @@ import logging
 from importlib import import_module
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, JSONResponse
+from fastapi.responses import Response
 
 APP_NAME = "EchoScript API"
 APP_VERSION = os.getenv("GIT_SHA", "local")
@@ -28,11 +28,10 @@ app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 # -----------------------------------------------------------------------------
 # CORS
-#   Preferred env:
+#   Prefer env var:
 #   API_ALLOWED_ORIGINS="https://echoscript.ai,https://www.echoscript.ai,http://localhost:5173"
-#   Fallback also supports CORS_ORIGINS for flexibility
 # -----------------------------------------------------------------------------
-raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or "").strip()
+raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
 if not raw_allowed or raw_allowed == "*":
     ALLOWED_ORIGINS = [
         "https://echoscript.ai",
@@ -115,28 +114,18 @@ async def preflight_ok(path: str):
 
 # -----------------------------------------------------------------------------
 # Debug helpers (safe): verify Stripe env at runtime without touching Stripe router
-# Paths live under /api/_debug/stripe/* to avoid conflicts with your Stripe routes.
-# Remove or guard by APP_ENV if you prefer.
 # -----------------------------------------------------------------------------
 @app.get("/api/_debug/stripe/env")
 def _debug_stripe_env():
     key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET") or ""
-    return {
-        "has_key": bool(key),
-        "len": len(key),
-        "prefix": key[:6] if key else "",
-    }
+    return {"has_key": bool(key), "len": len(key), "prefix": key[:6] if key else ""}
 
 @app.get("/api/_debug/stripe/prices")
 def _debug_stripe_prices():
-    return {
-        "pro": os.getenv("STRIPE_PRICE_PRO"),
-        "premium": os.getenv("STRIPE_PRICE_PREMIUM"),
-    }
+    return {"pro": os.getenv("STRIPE_PRICE_PRO"), "premium": os.getenv("STRIPE_PRICE_PREMIUM")}
 
 # -----------------------------------------------------------------------------
 # Routers (defensive include so one failure doesn’t kill the app)
-# Each router defines its own prefix, e.g. "/api/auth", "/api/stripe", etc.
 # -----------------------------------------------------------------------------
 def _include_router_safe(import_path: str, name: str):
     try:
@@ -150,6 +139,6 @@ _include_router_safe("app.routes.auth", "Auth")
 _include_router_safe("app.routes.stripe_checkout", "Stripe checkout")
 _include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
 _include_router_safe("app.routes.transcribe", "Transcribe")
+_include_router_safe("app.routes.paypal", "PayPal")
 
 log.info("Allowed CORS origins: %s", ALLOWED_ORIGINS)
-

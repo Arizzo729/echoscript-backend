@@ -1,12 +1,12 @@
-# Environment
+
+# Ignore nested frontend folder
+/echoscript-web/
+
+
+# Env files (never commit real secrets)
 .env
 .env.*
-!.env.example
+!*.example
+!*.template
+!*.redacted
 
-# OS/IDE
-.DS_Store
-.vscode/
-
-# Logs & caches
-*.log
-app/logs/
