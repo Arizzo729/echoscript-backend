@@ -1,57 +1,33 @@
-from __future__ import annotations
-
+# app/routes/stripe_webhook.py
+import os
 import logging
-from typing import Any, Dict
+from fastapi import APIRouter, Header, Request, HTTPException
 
-import stripe  # type: ignore[attr-defined]
-from fastapi import APIRouter, HTTPException, Request
+import stripe
 
-from app.config import config
-from app.utils.stripe_client import sync_subscription_from_stripe
+log = logging.getLogger("stripe.webhook")
 
-router = APIRouter(prefix="/api/stripe", tags=["Stripe Webhook"])
-logger = logging.getLogger(__name__)
-WEBHOOK_SECRET: str = config.STRIPE_WEBHOOK_SECRET
+router = APIRouter(prefix="/api/stripe", tags=["stripe-webhook"])
 
+STRIPE_SECRET = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET") or ""
+stripe.api_key = STRIPE_SECRET
+WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET") or ""
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request) -> Dict[str, Any]:
+async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
+    if not WEBHOOK_SECRET:
+        raise HTTPException(status_code=500, detail="STRIPE_WEBHOOK_SECRET not set on server")
+
     payload = await request.body()
-    sig_header = request.headers.get("stripe-signature", "")
     try:
-        if not WEBHOOK_SECRET:
-            raise ValueError("STRIPE_WEBHOOK_SECRET not configured")
-        event = stripe.Webhook.construct_event(  # type: ignore[attr-defined]
+        event = stripe.Webhook.construct_event(
             payload=payload,
-            sig_header=sig_header,
+            sig_header=stripe_signature,
             secret=WEBHOOK_SECRET,
         )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+    except Exception as e:
+        log.warning("Webhook signature verification failed: %s", e)
         raise HTTPException(status_code=400, detail="Invalid signature")
-    except Exception as e:
-        logger.error(f"Webhook verification failed: {e}")
-        raise HTTPException(status_code=400, detail="Webhook verification failed")
 
-    event_type = event.get("type", "")
-    try:
-        if event_type in {
-            "customer.subscription.created",
-            "customer.subscription.updated",
-            "customer.subscription.deleted",
-        }:
-            # pass FULL event (sync expects it)
-            sync_subscription_from_stripe(event)
-
-        elif event_type == "checkout.session.completed":
-            # be defensive: fetch the subscription & wrap like an event object
-            session_obj = event.get("data", {}).get("object", {})
-            sub_id = session_obj.get("subscription")
-            if sub_id:
-                sub = stripe.Subscription.retrieve(sub_id)  # type: ignore[attr-defined]
-                sync_subscription_from_stripe({"data": {"object": sub}})
-    except Exception as e:
-        logger.error(f"Error handling Stripe event {event_type}: {e}")
-
+    log.info("Stripe event received: %s", event.get("type"))
     return {"received": True}
