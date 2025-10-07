@@ -28,10 +28,11 @@ app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 # -----------------------------------------------------------------------------
 # CORS
-#   Prefer env var:
+#   Preferred env:
 #   API_ALLOWED_ORIGINS="https://echoscript.ai,https://www.echoscript.ai,http://localhost:5173"
+#   Fallback also supports CORS_ORIGINS for flexibility
 # -----------------------------------------------------------------------------
-raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
+raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or "").strip()
 if not raw_allowed or raw_allowed == "*":
     ALLOWED_ORIGINS = [
         "https://echoscript.ai",
@@ -83,7 +84,7 @@ def _log_env():
         "ENV LOADED: app_version=%s allowed_origins=%s stripe_key=%s price_pro=%s price_premium=%s",
         APP_VERSION,
         ALLOWED_ORIGINS,
-        _mask(os.getenv("STRIPE_SECRET_KEY")),
+        _mask(os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET")),
         os.getenv("STRIPE_PRICE_PRO"),
         os.getenv("STRIPE_PRICE_PREMIUM"),
     )
@@ -119,7 +120,7 @@ async def preflight_ok(path: str):
 # -----------------------------------------------------------------------------
 @app.get("/api/_debug/stripe/env")
 def _debug_stripe_env():
-    key = os.getenv("STRIPE_SECRET_KEY") or ""
+    key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET") or ""
     return {
         "has_key": bool(key),
         "len": len(key),
@@ -135,7 +136,7 @@ def _debug_stripe_prices():
 
 # -----------------------------------------------------------------------------
 # Routers (defensive include so one failure doesn’t kill the app)
-# Each router defines its own prefix, e.g. "/api/auth", "/api/v1", etc.
+# Each router defines its own prefix, e.g. "/api/auth", "/api/stripe", etc.
 # -----------------------------------------------------------------------------
 def _include_router_safe(import_path: str, name: str):
     try:
