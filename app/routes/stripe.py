@@ -1,4 +1,3 @@
-# app/routes/stripe.py
 import os
 import logging
 from typing import Optional, Dict, Any
@@ -9,7 +8,6 @@ from pydantic import BaseModel
 
 log = logging.getLogger("stripe")
 
-# Configure Stripe
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_SECRET")
 if not STRIPE_SECRET_KEY:
     log.warning("Stripe is not configured: STRIPE_SECRET_KEY is empty.")
@@ -17,9 +15,6 @@ stripe.api_key = STRIPE_SECRET_KEY or ""
 
 router = APIRouter(prefix="/api/stripe", tags=["stripe"])
 
-# -----------------------------
-# Debug helpers
-# -----------------------------
 @router.get("/_debug-env")
 def stripe_debug_env():
     key = os.getenv("STRIPE_SECRET_KEY") or ""
@@ -33,14 +28,10 @@ def stripe_debug_prices():
         "edu": os.getenv("STRIPE_PRICE_EDU"),
     }
 
-# -----------------------------
-# Legacy alias for old frontend: /api/stripe/create-checkout-session (POST)
-# Mirrors the create route under /api/stripe/checkout/create
-# -----------------------------
 class LegacyBody(BaseModel):
     plan: Optional[str] = None
     price_id: Optional[str] = None
-    mode: Optional[str] = None            # "subscription" | "payment"
+    mode: Optional[str] = None
     quantity: Optional[int] = 1
     success_url: Optional[str] = None
     cancel_url: Optional[str] = None
@@ -55,7 +46,6 @@ def legacy_create_checkout_session(body: LegacyBody):
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Stripe secret key is not configured on server.")
 
-    # Derive price
     price_id = body.price_id
     if not price_id and body.plan:
         plan = body.plan.lower().strip()
@@ -76,7 +66,6 @@ def legacy_create_checkout_session(body: LegacyBody):
 
     success_url = body.success_url or os.getenv("STRIPE_SUCCESS_URL") or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/thank-you"
     cancel_url  = body.cancel_url  or os.getenv("STRIPE_CANCEL_URL")  or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/purchase"
-
     if not success_url or not cancel_url:
         raise HTTPException(status_code=500, detail="Missing STRIPE_SUCCESS_URL/STRIPE_CANCEL_URL or FRONTEND_URL.")
 
@@ -84,6 +73,8 @@ def legacy_create_checkout_session(body: LegacyBody):
         session = stripe.checkout.Session.create(
             mode=mode,
             line_items=[{"price": price_id, "quantity": int(body.quantity or 1)}],
+            # 👇 force card only to avoid Amazon Pay / other wallet probes & logs
+            payment_method_types=["card"],
             success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=cancel_url,
             allow_promotion_codes=True,
