@@ -2,6 +2,7 @@
 
 import os
 import logging
+from importlib import import_module
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -15,6 +16,7 @@ APP_VERSION = os.getenv("GIT_SHA", "local")
 log = logging.getLogger("uvicorn")
 logging.basicConfig(level=logging.INFO)
 
+# IMPORTANT: keep this name "app" for the ASGI entrypoint
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 # --------------------------------------------------------------------------------------
@@ -44,15 +46,16 @@ app.add_middleware(
 )
 
 # --------------------------------------------------------------------------------------
-# Ensure DB schema on startup (idempotent) — IMPORT MODELS BEFORE create_all()
+# Ensure DB schema on startup (idempotent) — IMPORT MODELS WITHOUT SHADOWING "app"
 # --------------------------------------------------------------------------------------
 try:
-    from app.db import Base, engine
-    import app.models  # <-- ensures SQLAlchemy metadata knows your models
+    from app.db import Base, engine  # your SQLAlchemy Base/engine
+    # Do NOT `import app.models` (that would bind name "app" to the package).
+    import_module("app.models")  # registers models with SQLAlchemy metadata
 except Exception:
     try:
         from app.database import Base, engine  # type: ignore
-        import app.models  # type: ignore
+        import_module("app.models")  # type: ignore
     except Exception:
         Base = engine = None  # type: ignore
 
