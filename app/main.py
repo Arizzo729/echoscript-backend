@@ -44,6 +44,27 @@ app.add_middleware(
 )
 
 # --------------------------------------------------------------------------------------
+# Ensure DB schema on startup (idempotent)
+# --------------------------------------------------------------------------------------
+try:
+    # Your project likely exposes Base/engine here
+    from app.db import Base, engine
+except Exception:  # fallback if named differently
+    try:
+        from app.database import Base, engine  # type: ignore
+    except Exception:
+        Base = engine = None  # type: ignore
+
+if Base is not None and engine is not None:
+    @app.on_event("startup")
+    def _ensure_db() -> None:
+        try:
+            Base.metadata.create_all(bind=engine)
+            log.info("DB: ensured tables exist")
+        except Exception as e:
+            log.warning("DB init error: %s", e)
+
+# --------------------------------------------------------------------------------------
 # Health / root
 # --------------------------------------------------------------------------------------
 @app.get("/")
@@ -89,3 +110,4 @@ _include_router_safe("app.routes.transcribe", "Transcribe")
 
 # Optional: log final allowed origins for debugging
 log.info("Allowed CORS origins: %s", ALLOWED_ORIGINS)
+
