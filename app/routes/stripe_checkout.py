@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/stripe/checkout", tags=["stripe"])
 
 class CheckoutBody(BaseModel):
     plan: Optional[str] = None            # "pro" | "premium" | "edu"
-    price_id: Optional[str] = None        # explicit price
+    price_id: Optional[str] = None        # explicit price ID alternative
     mode: Optional[str] = None            # "subscription" | "payment"
     quantity: Optional[int] = 1
     success_url: Optional[str] = None
@@ -30,25 +30,25 @@ def create_checkout_session(body: CheckoutBody):
 
     price_id = body.price_id
     if not price_id and body.plan:
-        plan = body.plan.lower().strip()
         env_key = {
             "pro": "STRIPE_PRICE_PRO",
             "premium": "STRIPE_PRICE_PREMIUM",
             "edu": "STRIPE_PRICE_EDU",
-        }.get(plan)
+        }.get(body.plan.lower().strip())
         if env_key:
             price_id = os.getenv(env_key)
     if not price_id:
         price_id = os.getenv("STRIPE_PRICE_PRO")
     if not price_id:
-        raise HTTPException(status_code=400, detail="Missing price. Provide price_id or set STRIPE_PRICE_PRO/EDU/PREMIUM.")
+        raise HTTPException(status_code=400, detail="Missing price. Provide price_id or set STRIPE_PRICE_* envs.")
 
     mode = (body.mode or os.getenv("STRIPE_MODE") or "subscription").lower()
     if mode not in {"subscription", "payment"}:
         mode = "subscription"
 
-    success_url = body.success_url or os.getenv("STRIPE_SUCCESS_URL") or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/thank-you"
-    cancel_url  = body.cancel_url  or os.getenv("STRIPE_CANCEL_URL")  or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/purchase"
+    frontend = (os.getenv("FRONTEND_URL") or "").rstrip("/")
+    success_url = body.success_url or os.getenv("STRIPE_SUCCESS_URL") or f"{frontend}/thank-you"
+    cancel_url  = body.cancel_url  or os.getenv("STRIPE_CANCEL_URL")  or f"{frontend}/purchase"
     if not success_url or not cancel_url:
         raise HTTPException(status_code=500, detail="Missing STRIPE_SUCCESS_URL/STRIPE_CANCEL_URL or FRONTEND_URL.")
 
@@ -56,8 +56,9 @@ def create_checkout_session(body: CheckoutBody):
         session = stripe.checkout.Session.create(
             mode=mode,
             line_items=[{"price": price_id, "quantity": int(body.quantity or 1)}],
-            # 👇 force card only
-            payment_method_types=["card"],
+            payment_method_types=["card"],   # ✅ card only
+            locale="en",                     # ✅ no dynamic './en' module
+            ui_mode="hosted",                # ✅ explicit
             success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=cancel_url,
             allow_promotion_codes=True,
@@ -80,4 +81,3 @@ def get_session(session_id: str):
         return {"id": session.id, "status": session.status, "payment_status": session.payment_status}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-

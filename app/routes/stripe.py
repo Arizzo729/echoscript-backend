@@ -31,7 +31,7 @@ def stripe_debug_prices():
 class LegacyBody(BaseModel):
     plan: Optional[str] = None
     price_id: Optional[str] = None
-    mode: Optional[str] = None
+    mode: Optional[str] = None       # "subscription" | "payment"
     quantity: Optional[int] = 1
     success_url: Optional[str] = None
     cancel_url: Optional[str] = None
@@ -64,8 +64,9 @@ def legacy_create_checkout_session(body: LegacyBody):
     if mode not in {"subscription", "payment"}:
         mode = "subscription"
 
-    success_url = body.success_url or os.getenv("STRIPE_SUCCESS_URL") or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/thank-you"
-    cancel_url  = body.cancel_url  or os.getenv("STRIPE_CANCEL_URL")  or (os.getenv("FRONTEND_URL") or "").rstrip("/") + "/purchase"
+    frontend = (os.getenv("FRONTEND_URL") or "").rstrip("/")
+    success_url = body.success_url or os.getenv("STRIPE_SUCCESS_URL") or f"{frontend}/thank-you"
+    cancel_url  = body.cancel_url  or os.getenv("STRIPE_CANCEL_URL")  or f"{frontend}/purchase"
     if not success_url or not cancel_url:
         raise HTTPException(status_code=500, detail="Missing STRIPE_SUCCESS_URL/STRIPE_CANCEL_URL or FRONTEND_URL.")
 
@@ -73,8 +74,10 @@ def legacy_create_checkout_session(body: LegacyBody):
         session = stripe.checkout.Session.create(
             mode=mode,
             line_items=[{"price": price_id, "quantity": int(body.quantity or 1)}],
-            # 👇 force card only to avoid Amazon Pay / other wallet probes & logs
+            # ✅ quiet 3rd-party noise: card-only + fixed locale + hosted UI
             payment_method_types=["card"],
+            locale="en",
+            ui_mode="hosted",
             success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=cancel_url,
             allow_promotion_codes=True,
@@ -85,3 +88,4 @@ def legacy_create_checkout_session(body: LegacyBody):
     except Exception as e:
         log.exception("Stripe session create failed")
         raise HTTPException(status_code=400, detail=str(e))
+
