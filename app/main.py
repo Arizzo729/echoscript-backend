@@ -12,15 +12,15 @@ from fastapi.responses import Response
 APP_NAME = "EchoScript API"
 APP_VERSION = os.getenv("GIT_SHA", "local")
 
-log = logging.getLogger("uvicorn")  # uvicorn logger if available
+log = logging.getLogger("uvicorn")
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 # --------------------------------------------------------------------------------------
 # CORS
-# Prefer env var API_ALLOWED_ORIGINS="https://echoscript.ai,https://www.echoscript.ai,http://localhost:5173"
-# Fallback to a safe default list for dev + prod.
+# Prefer env var:
+#   API_ALLOWED_ORIGINS="https://echoscript.ai,https://www.echoscript.ai,http://localhost:5173"
 # --------------------------------------------------------------------------------------
 raw_allowed = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
 if not raw_allowed or raw_allowed == "*":
@@ -40,18 +40,19 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=86400,  # cache preflight for a day
+    max_age=86400,
 )
 
 # --------------------------------------------------------------------------------------
-# Ensure DB schema on startup (idempotent)
+# Ensure DB schema on startup (idempotent) — IMPORT MODELS BEFORE create_all()
 # --------------------------------------------------------------------------------------
 try:
-    # Your project likely exposes Base/engine here
     from app.db import Base, engine
-except Exception:  # fallback if named differently
+    import app.models  # <-- ensures SQLAlchemy metadata knows your models
+except Exception:
     try:
         from app.database import Base, engine  # type: ignore
+        import app.models  # type: ignore
     except Exception:
         Base = engine = None  # type: ignore
 
@@ -71,17 +72,14 @@ if Base is not None and engine is not None:
 def root():
     return {"ok": True, "service": "echoscript-api", "version": APP_VERSION}
 
-# Simple health for backends that expect non-/api paths
 @app.get("/healthz")
 def healthz_root():
     return {"ok": True}
 
-# Primary health that your frontend calls via Netlify proxy (/api/healthz)
 @app.get("/api/healthz")
 def healthz_api():
     return {"ok": True}
 
-# HEAD variant to satisfy uptime pingers or proxies that probe with HEAD
 @app.head("/api/healthz")
 def healthz_api_head():
     return Response(status_code=200)
@@ -92,8 +90,8 @@ async def preflight_ok(path: str):
     return Response(status_code=200)
 
 # --------------------------------------------------------------------------------------
-# Routers (load defensively so a single failure doesn't kill the app)
-# Ensure each router defines its own prefix, e.g. "/api/auth", "/api/stripe", etc.
+# Routers (defensive import so one failure doesn't kill the app)
+# Each router defines its own prefix, e.g. "/api/auth", "/api/v1", etc.
 # --------------------------------------------------------------------------------------
 def _include_router_safe(import_path: str, name: str):
     try:
@@ -108,6 +106,4 @@ _include_router_safe("app.routes.stripe_checkout", "Stripe checkout")
 _include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
 _include_router_safe("app.routes.transcribe", "Transcribe")
 
-# Optional: log final allowed origins for debugging
 log.info("Allowed CORS origins: %s", ALLOWED_ORIGINS)
-
