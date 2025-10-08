@@ -1,81 +1,81 @@
-# app/routes/paypal.py
+# paypal.py
 import os
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from typing import Optional
+
 import httpx
+from fastapi import APIRouter, HTTPException
+
+PAYPAL_ENV = os.getenv("PAYPAL_ENV", "sandbox").lower().strip()  # "sandbox" or "live"
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
+
+BASE = "https://api-m.sandbox.paypal.com" if PAYPAL_ENV != "live" else "https://api-m.paypal.com"
 
 router = APIRouter(prefix="/api/paypal", tags=["paypal"])
 
-PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "") or os.getenv("VITE_PAYPAL_CLIENT_ID", "")
-PAYPAL_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "") or os.getenv("PAYPAL_SECRET", "")
-PAYPAL_ENV = (os.getenv("PAYPAL_ENV") or "sandbox").lower()
+async def _get_access_token() -> str:
+    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET on server")
 
-if PAYPAL_ENV not in {"sandbox", "live", "production"}:
-    PAYPAL_ENV = "sandbox"
-
-BASE = "https://api-m.sandbox.paypal.com" if PAYPAL_ENV == "sandbox" else "https://api-m.paypal.com"
-
-class CreateBody(BaseModel):
-    amount: str
-    currency: str = "USD"
-    plan: str | None = None
-
-async def _paypal_token() -> str:
-    if not PAYPAL_CLIENT_ID or not PAYPAL_SECRET:
-        raise HTTPException(status_code=500, detail="PayPal credentials missing on server.")
-    auth = (PAYPAL_CLIENT_ID, PAYPAL_SECRET)
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.post(
             f"{BASE}/v1/oauth2/token",
+            auth=(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET),
             data={"grant_type": "client_credentials"},
-            auth=auth,
+            headers={"Accept": "application/json"},
         )
-        if r.status_code >= 400:
-            raise HTTPException(status_code=502, detail=f"PayPal token error: {r.text}")
-        return r.json()["access_token"]
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"PayPal token error: {resp.text}")
+        data = resp.json()
+        return data["access_token"]
 
-@router.options("/create-order")
-async def preflight_create():
-    return {}
+@router.get("/health")
+async def paypal_health():
+    return {
+        "ok": True,
+        "env": "live" if PAYPAL_ENV == "live" else "sandbox",
+        "has_client_id": bool(PAYPAL_CLIENT_ID),
+        "has_client_secret": bool(PAYPAL_CLIENT_SECRET),
+        "base": BASE,
+    }
 
 @router.post("/create-order")
-async def create_order(body: CreateBody):
-    token = await _paypal_token()
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(
+async def create_order(amount: Optional[str] = "9.99", currency: Optional[str] = "USD", plan: Optional[str] = None):
+    access_token = await _get_access_token()
+
+    body = {
+        "intent": "CAPTURE",
+        "purchase_units": [
+            {"amount": {"currency_code": currency, "value": amount}, "custom_id": plan or "generic"}
+        ],
+        "application_context": {
+            "shipping_preference": "NO_SHIPPING",
+            "user_action": "PAY_NOW",
+            # Optional: set return/cancel URLs if you use redirect flow instead of JS SDK approval
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.post(
             f"{BASE}/v2/checkout/orders",
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
-            json={
-                "intent": "CAPTURE",
-                "purchase_units": [
-                    {"amount": {"currency_code": body.currency, "value": body.amount}}
-                ],
-                "application_context": {
-                    "shipping_preference": "NO_SHIPPING",
-                    "user_action": "PAY_NOW",
-                },
-            },
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            json=body,
         )
-        if r.status_code >= 400:
-            raise HTTPException(status_code=502, detail=f"PayPal create-order error: {r.text}")
-        data = r.json()
-        return {"id": data["id"]}
+        if resp.status_code not in (200, 201):
+            raise HTTPException(status_code=resp.status_code, detail=f"create-order failed: {resp.text}")
+        data = resp.json()
+        # Return at least the order id for the JS SDK onApprove
+        return {"id": data.get("id"), "status": data.get("status"), "links": data.get("links")}
 
-class CaptureBody(BaseModel):
-    orderID: str
-
-@router.options("/capture-order")
-async def preflight_capture():
-    return {}
-
-@router.post("/capture-order")
-async def capture_order(body: CaptureBody):
-    token = await _paypal_token()
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(
-            f"{BASE}/v2/checkout/orders/{body.orderID}/capture",
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+@router.post("/capture-order/{order_id}")
+async def capture_order(order_id: str):
+    access_token = await _get_access_token()
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.post(
+            f"{BASE}/v2/checkout/orders/{order_id}/capture",
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
         )
-        if r.status_code >= 400:
-            raise HTTPException(status_code=502, detail=f"PayPal capture error: {r.text}")
-        return r.json()
+        if resp.status_code not in (200, 201):
+            raise HTTPException(status_code=resp.status_code, detail=f"capture failed: {resp.text}")
+        return resp.json()
+
