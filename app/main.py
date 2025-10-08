@@ -1,4 +1,3 @@
-# app/main.py
 import os
 import logging
 from fastapi import FastAPI
@@ -36,11 +35,11 @@ app.add_middleware(
     max_age=86400,
 )
 
-# ---- Mount routers (AUTH IS THE IMPORTANT ONE) ----
+# ---- Mount routers (AUTH IS CRITICAL) ----
 from app.routes.auth import router as auth_router
-app.include_router(auth_router)  # auth.py already has prefix="/api/auth"
+app.include_router(auth_router)  # auth.py has prefix="/api/auth"
 
-# Keep your other routers below (safe to leave as-is if present)
+# Optional/keep if present
 try:
     from app.routes.stripe import router as stripe_legacy
     app.include_router(stripe_legacy)
@@ -66,5 +65,4 @@ except Exception as e:
     log.warning("PayPal router not loaded: %s", e)
 
 log.info("Allowed CORS origins: %s", cors_origins)
-
 
