@@ -44,7 +44,7 @@ def _include_router_safe(import_path: str, name: str):
         log.warning("%s router not loaded: %s", name, e)
 
 # Include routes
-_include_router_safe("app.routes.auth", "Auth")                 # <-- added
+_include_router_safe("app.routes.auth", "Auth")                 # <-- IMPORTANT
 _include_router_safe("app.routes.stripe", "Stripe (legacy)")
 _include_router_safe("app.routes.stripe_checkout", "Stripe checkout")
 _include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
