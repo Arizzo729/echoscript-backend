@@ -1,3 +1,4 @@
+# app/main.py
 import os
 import logging
 from fastapi import FastAPI
@@ -35,19 +36,35 @@ app.add_middleware(
     max_age=86400,
 )
 
-def _include_router_safe(import_path: str, name: str):
-    try:
-        module = __import__(import_path, fromlist=["router"])
-        app.include_router(module.router)
-        log.info("%s router loaded", name)
-    except Exception as e:
-        log.warning("%s router not loaded: %s", name, e)
+# ---- Mount routers (AUTH IS THE IMPORTANT ONE) ----
+from app.routes.auth import router as auth_router
+app.include_router(auth_router)  # auth.py already has prefix="/api/auth"
 
-# Include routes
-_include_router_safe("app.routes.auth", "Auth")                 # <-- IMPORTANT
-_include_router_safe("app.routes.stripe", "Stripe (legacy)")
-_include_router_safe("app.routes.stripe_checkout", "Stripe checkout")
-_include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
-_include_router_safe("app.routes.paypal", "PayPal")
+# Keep your other routers below (safe to leave as-is if present)
+try:
+    from app.routes.stripe import router as stripe_legacy
+    app.include_router(stripe_legacy)
+except Exception as e:
+    log.warning("Stripe (legacy) router not loaded: %s", e)
+
+try:
+    from app.routes.stripe_checkout import router as stripe_checkout
+    app.include_router(stripe_checkout)
+except Exception as e:
+    log.warning("Stripe checkout router not loaded: %s", e)
+
+try:
+    from app.routes.stripe_webhook import router as stripe_webhook
+    app.include_router(stripe_webhook)
+except Exception as e:
+    log.warning("Stripe webhook router not loaded: %s", e)
+
+try:
+    from app.routes.paypal import router as paypal_router
+    app.include_router(paypal_router)
+except Exception as e:
+    log.warning("PayPal router not loaded: %s", e)
 
 log.info("Allowed CORS origins: %s", cors_origins)
+
+
