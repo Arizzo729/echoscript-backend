@@ -4,20 +4,19 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 # ===================== Config =====================
-# Use your existing JWT secret; token stays valid across restarts.
+# Set JWT_SECRET in Railway. Default only for local/dev.
 JWT_SECRET = os.getenv("JWT_SECRET", "CHANGE_ME_DEV_ONLY")
 JWT_TTL_SECONDS = int(os.getenv("JWT_TTL_SECONDS", "2592000"))  # 30 days
 
-# Cookie attributes for cross-subdomain (site <-> api)
 COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "access_token")
-COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", ".echoscript.ai").strip() or ".echoscript.ai"
+COOKIE_DOMAIN = (os.getenv("COOKIE_DOMAIN", ".echoscript.ai") or ".echoscript.ai").strip()
 COOKIE_SECURE = True
-COOKIE_SAMESITE = "none"  # allow cross-subdomain
+COOKIE_SAMESITE = "none"   # allow cross-subdomain (site <-> api)
 COOKIE_PATH = "/"
 
 # ===================== Tiny JWT (HS256) =====================
@@ -32,26 +31,23 @@ def _sign(msg: bytes) -> str:
     sig = hmac.new(JWT_SECRET.encode("utf-8"), msg, hashlib.sha256).digest()
     return _b64u_encode(sig)
 
-def create_jwt(payload: Dict[str, Any]) -> str:
+def _create_jwt(payload: Dict[str, Any]) -> str:
     header = {"alg": "HS256", "typ": "JWT"}
     now = int(time.time())
-    exp = now + JWT_TTL_SECONDS
-    body = {**payload, "iat": now, "exp": exp}
+    body = {**payload, "iat": now, "exp": now + JWT_TTL_SECONDS}
     h64 = _b64u_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
-    p64 = _b64u_encode(json.dumps(body, separators=(",", ":")).encode("utf-8"))
+    p64 = _b64u_encode(json.dumps(body,   separators=(",", ":")).encode("utf-8"))
     sig = _sign(f"{h64}.{p64}".encode("utf-8"))
     return f"{h64}.{p64}.{sig}"
 
-def verify_jwt(token: str) -> Dict[str, Any]:
+def _verify_jwt(token: str) -> Dict[str, Any]:
     try:
         h64, p64, s = token.split(".")
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
     expected = _sign(f"{h64}.{p64}".encode("utf-8"))
     if not hmac.compare_digest(expected, s):
         raise HTTPException(status_code=401, detail="Invalid signature")
-
     payload = json.loads(_b64u_decode(p64))
     if int(time.time()) >= int(payload.get("exp", 0)):
         raise HTTPException(status_code=401, detail="Token expired")
@@ -59,12 +55,11 @@ def verify_jwt(token: str) -> Dict[str, Any]:
 
 # ===================== Helpers =====================
 def _user_id_for(email: str) -> int:
-    # deterministic id from email (stable across restarts)
+    # Stable deterministic id from email (persists across restarts)
     h = hashlib.sha256(email.lower().encode("utf-8")).hexdigest()
     return int(h[:8], 16)
 
-def _set_cookie(resp: Response, token: str):
-    # Set both Expires and Max-Age for broad browser compatibility.
+def _set_cookie(resp: Response, token: str) -> None:
     expires = (datetime.now(timezone.utc) + timedelta(seconds=JWT_TTL_SECONDS))
     resp.set_cookie(
         key=COOKIE_NAME,
@@ -78,8 +73,7 @@ def _set_cookie(resp: Response, token: str):
         expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
     )
 
-def _clear_cookie(resp: Response):
-    # Expire cookie immediately
+def _clear_cookie(resp: Response) -> None:
     resp.delete_cookie(key=COOKIE_NAME, domain=COOKIE_DOMAIN, path=COOKIE_PATH)
 
 def _token_from_request(req: Request) -> Optional[str]:
@@ -88,17 +82,17 @@ def _token_from_request(req: Request) -> Optional[str]:
         return auth.split(" ", 1)[1].strip()
     return req.cookies.get(COOKIE_NAME)
 
-# ===================== Schemas =====================
+# ===================== Schemas (no EmailStr) =====================
 class SignupIn(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class SignupOut(BaseModel):
     id: int
-    email: EmailStr
+    email: str
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class LoginOut(BaseModel):
@@ -108,24 +102,21 @@ class LoginOut(BaseModel):
 
 class MeOut(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     mode: str = "jwt"
 
 # ===================== Routes =====================
 @router.post("/signup", response_model=SignupOut, summary="Create account (stateless JWT)")
 def signup(payload: SignupIn, response: Response) -> SignupOut:
-    # In this stateless stub, we don't persist users; we just mint a signed token.
     uid = _user_id_for(payload.email)
-    token = create_jwt({"sub": str(uid), "email": payload.email})
+    token = _create_jwt({"sub": str(uid), "email": payload.email})
     _set_cookie(response, token)
     return SignupOut(id=uid, email=payload.email)
 
 @router.post("/login", response_model=LoginOut, summary="Login (stateless JWT)")
 def login(payload: LoginIn, response: Response) -> LoginOut:
-    # Stub: accept any email/password and mint a token.
-    # (Wire real password checks later; JWT remains compatible.)
     uid = _user_id_for(payload.email)
-    token = create_jwt({"sub": str(uid), "email": payload.email})
+    token = _create_jwt({"sub": str(uid), "email": payload.email})
     _set_cookie(response, token)
     return LoginOut(ok=True, access_token=token)
 
@@ -134,13 +125,12 @@ def logout(response: Response):
     _clear_cookie(response)
     return {"ok": True}
 
-@router.get("/me", response_model=MeOut, summary="Return current user (from JWT cookie)")
+@router.get("/me", response_model=MeOut, summary="Return current user (decoded from JWT cookie)")
 def me(request: Request) -> MeOut:
     token = _token_from_request(request)
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    data = verify_jwt(token)
+    data = _verify_jwt(token)
     uid = int(data["sub"])
-    email = EmailStr(data["email"])
+    email = str(data["email"])
     return MeOut(id=uid, email=email, mode="jwt")
-
