@@ -1,124 +1,87 @@
-# app/routes/compat_endpoints.py
 """
-Compatibility endpoints for legacy frontend calls.
+Compat layer so the current frontend stops 404'ing.
 
-Exposes:
-  - POST /api/video/process
-  - POST /api/v1/transcribe
-  - POST /v1/transcribe
+This file declares *absolute* paths starting with /api/* and is mounted
+ONCE with NO prefix from main.py (app.include_router(router)).
 
-If the real transcription stack is available, we try to use it.
-Otherwise, we return a harmless stub so the UI can proceed without 404s.
+If/when you normalize your other routers to use relative prefixes and
+update the frontend, you can delete this file.
 """
-
-from __future__ import annotations
-
-import os
-import tempfile
 from typing import Optional
 
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, UploadFile, File, Form
+from fastapi.responses import JSONResponse, Response
 
-router = APIRouter(tags=["Compat"])
-
-# Try optional real transcriber if your code provides one.
-# Adjust these imports to your actual service modules if needed.
-try:
-    from app.routes.video_task import process_media_file  # type: ignore
-    HAVE_VIDEO_TASK = True
-except Exception:
-    process_media_file = None  # type: ignore
-    HAVE_VIDEO_TASK = False
-
-try:
-    # Optional example: your FasterWhisper service, if present
-    from app.services.transcription import FasterWhisperTranscriber  # type: ignore
-    HAVE_WHISPER = True
-except Exception:
-    FasterWhisperTranscriber = None  # type: ignore
-    HAVE_WHISPER = False
+# IMPORTANT: no prefix here; we write full absolute paths in each route.
+router = APIRouter(tags=["compat"])
 
 
-def _save_temp(upload: UploadFile) -> str:
-    suffix = os.path.splitext(upload.filename or "upload")[1] or ".bin"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(upload.file.read())
-        return tmp.name
+# ---------- Auth alias (optional) ----------
+# If your frontend ever hits /api/auth/signin, redirect to /api/auth/login.
+from starlette.responses import RedirectResponse
 
 
-def _cleanup(path: str) -> None:
-    try:
-        os.remove(path)
-    except Exception:
-        pass
+@router.post("/api/auth/signin")
+async def compat_signin_redirect():
+    # 307 preserves POST + body; browser fetch will follow automatically.
+    return RedirectResponse(url="/api/auth/login", status_code=307)
 
 
-@router.post("/api/video/process")
-async def compat_video_process(
+# ---------- Transcribe ----------
+@router.post("/api/transcribe")
+async def compat_transcribe_api(
     file: UploadFile = File(...),
-    task_type: Optional[str] = Form("transcription"),
-    language: Optional[str] = Form("en"),
+    language: Optional[str] = "en",
 ):
-    """
-    Compatibility for frontend expecting /api/video/process.
-    If your real video_task pipeline exists, use it; otherwise return a stub.
-    """
-    src = _save_temp(file)
-    try:
-        if HAVE_VIDEO_TASK and callable(process_media_file):
-            # Delegate to your actual media pipeline (sync call expected)
-            result = process_media_file(src, task_type=task_type or "transcription", language=language or "en")  # type: ignore
-            return JSONResponse(status_code=200, content=result if isinstance(result, dict) else {"ok": True, "result": result})
-        else:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "ok": True,
-                    "task_type": task_type or "transcription",
-                    "language": language or "en",
-                    "text": "",
-                    "note": "Compat endpoint active; real media pipeline not wired in this deployment.",
-                },
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"video/process failed: {e}")
-    finally:
-        _cleanup(src)
+    # TODO: replace with real transcription logic or call your service
+    data = await file.read()
+    return {"text": f"(stub) received {file.filename} ({len(data)} bytes), language={language}"}
 
 
-# We expose both /api/v1/transcribe and /v1/transcribe to cover all callers.
+# Some older builds may call /api/v1/transcribe or /v1/transcribe.
+# Provide them too so nothing 404s while you normalize.
 @router.post("/api/v1/transcribe")
+async def compat_transcribe_api_v1(
+    file: UploadFile = File(...),
+    language: Optional[str] = "en",
+):
+    return await compat_transcribe_api(file=file, language=language)
+
+
 @router.post("/v1/transcribe")
 async def compat_transcribe_v1(
     file: UploadFile = File(...),
     language: Optional[str] = "en",
 ):
-    """
-    Compatibility for frontend expecting /v1/transcribe (or /api/v1/transcribe).
-    If Whisper stack exists, use it; else return a stub.
-    """
-    src = _save_temp(file)
-    try:
-        if HAVE_WHISPER and FasterWhisperTranscriber:
-            transcriber = FasterWhisperTranscriber()  # type: ignore[call-arg]
-            # Adjust to your API: use whatever method returns text from file path
-            text = transcriber.transcribe_text(src, language=language or "en")  # type: ignore[attr-defined]
-            return {"text": text, "language": language or "en"}
-        else:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "text": "",
-                    "language": language or "en",
-                    "note": "Compat endpoint active; Whisper not enabled on this deployment.",
-                },
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"transcribe failed: {e}")
-    finally:
-        _cleanup(src)
+    return await compat_transcribe_api(file=file, language=language)
+
+
+# ---------- Video task ----------
+@router.post("/api/video-task")
+async def compat_video_task(
+    file: UploadFile = File(None),
+    task_type: Optional[str] = Form("transcription"),
+    language: Optional[str] = Form("en"),
+):
+    # TODO: replace with real async job; this unblocks UI now
+    return JSONResponse({"status": "queued", "task_id": "stub-1"}, status_code=202)
+
+
+# Some bundles call /api/video/process; support that too.
+@router.post("/api/video/process")
+async def compat_video_process(
+    file: UploadFile = File(None),
+    task_type: Optional[str] = Form("transcription"),
+    language: Optional[str] = Form("en"),
+):
+    return await compat_video_task(file=file, task_type=task_type, language=language)
+
+
+# ---------- Subtitles ----------
+@router.post("/api/subtitles")
+async def compat_subtitles(file: UploadFile = File(...)):
+    # TODO: replace with real VTT generation
+    _ = await file.read()
+    vtt = "WEBVTT\n\n00:00.000 --> 00:01.500\n(Stub) EchoScript subtitles ready\n"
+    return Response(content=vtt, media_type="text/vtt")
+
