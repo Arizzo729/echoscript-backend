@@ -6,20 +6,18 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/auth", tags=["Auth"])
+# NOTE: prefix is RELATIVE now (no /api). main.py will mount at /api and /v1.
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# ===================== Config =====================
-# Set JWT_SECRET in Railway. Default only for local/dev.
 JWT_SECRET = os.getenv("JWT_SECRET", "CHANGE_ME_DEV_ONLY")
-JWT_TTL_SECONDS = int(os.getenv("JWT_TTL_SECONDS", "2592000"))  # 30 days
+JWT_TTL_SECONDS = int(os.getenv("JWT_TTL_SECONDS", "2592000"))
 
 COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "access_token")
 COOKIE_DOMAIN = (os.getenv("COOKIE_DOMAIN", ".echoscript.ai") or ".echoscript.ai").strip()
 COOKIE_SECURE = True
-COOKIE_SAMESITE = "none"   # allow cross-subdomain (site <-> api)
+COOKIE_SAMESITE = "none"
 COOKIE_PATH = "/"
 
-# ===================== Tiny JWT (HS256) =====================
 def _b64u_encode(b: bytes) -> str:
     return base64.urlsafe_b64encode(b).rstrip(b"=").decode("ascii")
 
@@ -53,9 +51,7 @@ def _verify_jwt(token: str) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Token expired")
     return payload
 
-# ===================== Helpers =====================
 def _user_id_for(email: str) -> int:
-    # Stable deterministic id from email (persists across restarts)
     h = hashlib.sha256(email.lower().encode("utf-8")).hexdigest()
     return int(h[:8], 16)
 
@@ -82,7 +78,6 @@ def _token_from_request(req: Request) -> Optional[str]:
         return auth.split(" ", 1)[1].strip()
     return req.cookies.get(COOKIE_NAME)
 
-# ===================== Schemas (no EmailStr) =====================
 class SignupIn(BaseModel):
     email: str
     password: str
@@ -105,32 +100,29 @@ class MeOut(BaseModel):
     email: str
     mode: str = "jwt"
 
-# ===================== Routes =====================
-@router.post("/signup", response_model=SignupOut, summary="Create account (stateless JWT)")
+@router.post("/signup", response_model=SignupOut)
 def signup(payload: SignupIn, response: Response) -> SignupOut:
     uid = _user_id_for(payload.email)
     token = _create_jwt({"sub": str(uid), "email": payload.email})
     _set_cookie(response, token)
     return SignupOut(id=uid, email=payload.email)
 
-@router.post("/login", response_model=LoginOut, summary="Login (stateless JWT)")
+@router.post("/login", response_model=LoginOut)
 def login(payload: LoginIn, response: Response) -> LoginOut:
     uid = _user_id_for(payload.email)
     token = _create_jwt({"sub": str(uid), "email": payload.email})
     _set_cookie(response, token)
     return LoginOut(ok=True, access_token=token)
 
-@router.post("/logout", summary="Clear auth cookie")
+@router.post("/logout")
 def logout(response: Response):
     _clear_cookie(response)
     return {"ok": True}
 
-@router.get("/me", response_model=MeOut, summary="Return current user (decoded from JWT cookie)")
+@router.get("/me", response_model=MeOut)
 def me(request: Request) -> MeOut:
     token = _token_from_request(request)
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     data = _verify_jwt(token)
-    uid = int(data["sub"])
-    email = str(data["email"])
-    return MeOut(id=uid, email=email, mode="jwt")
+    return MeOut(id=int(data["sub"]), email=str(data["email"]), mode="jwt")

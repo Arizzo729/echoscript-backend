@@ -1,11 +1,9 @@
-# app/routes/contact.py
 from fastapi import APIRouter, HTTPException, status
-
 from app.schemas.contact import ContactRequest, ContactResponse
 from app.utils.send_email import send_email
 
-router = APIRouter(prefix="/api/contact", tags=["Contact"])
-
+# relative prefix (no /api)
+router = APIRouter(prefix="/contact", tags=["Contact"])
 
 @router.post("/", response_model=ContactResponse, summary="Send a message to support")
 def contact(request: ContactRequest) -> ContactResponse:

@@ -13,7 +13,8 @@ if not STRIPE_SECRET_KEY:
     log.warning("Stripe is not configured: STRIPE_SECRET_KEY is empty.")
 stripe.api_key = STRIPE_SECRET_KEY or ""
 
-router = APIRouter(prefix="/api/stripe", tags=["stripe"])
+# relative prefix (no /api)
+router = APIRouter(prefix="/stripe", tags=["stripe"])
 
 @router.get("/_debug-env")
 def stripe_debug_env():
@@ -74,7 +75,6 @@ def legacy_create_checkout_session(body: LegacyBody):
         session = stripe.checkout.Session.create(
             mode=mode,
             line_items=[{"price": price_id, "quantity": int(body.quantity or 1)}],
-            # ✅ quiet 3rd-party noise: card-only + fixed locale + hosted UI
             payment_method_types=["card"],
             locale="en",
             ui_mode="hosted",
