@@ -1,4 +1,3 @@
-# app/main.py
 import os
 import logging
 import importlib
@@ -6,29 +5,27 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("echoscript")
+logging.basicConfig(level=logging.INFO)
 
 APP_VERSION = os.getenv("GIT_SHA", "local")
 
-def parse_allowed_origins():
+def _allowed_origins():
     raw = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
-    if not raw:
-        return ["*"]  # dev-friendly; tighten via env in prod
+    if not raw or raw == "*":
+        return ["*"]
     return [o.strip() for o in raw.split(",") if o.strip()]
 
 app = FastAPI(title="EchoScript API", version=APP_VERSION)
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=parse_allowed_origins(),
+    allow_origins=_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Health
 @app.get("/", response_class=PlainTextResponse)
 def root_ok():
     return "ok"
@@ -42,15 +39,26 @@ def v1_health():
     return "ok"
 
 def include_group(prefix: str):
-    """Include routers under a prefix (we’ll call with /api and /v1)."""
+    """Mount routers under the given prefix; routers must use *relative* prefixes."""
     modules = [
-        "app.routes.auth",
+        "app.routes.health",
         "app.routes.contact",
         "app.routes.newsletter",
+        "app.routes.auth",
         "app.routes.stripe",
-        "app.routes.transcribe",
-        "app.routes.transcribe_stream",
-        "app.routes.video_task",
+        "app.routes.paypal",
+        "app.routes.feedback",
+        "app.routes.history",
+        "app.routes.export",
+        "app.routes.signup",
+        "app.routes.password_reset",
+        "app.routes.send_reset",
+        "app.routes.paypal_health",
+        "app.routes.compact_endpoints",
+        # add transcribe modules here when present:
+        # "app.routes.transcribe",
+        # "app.routes.transcribe_stream",
+        # "app.routes.video_task",
     ]
     for mod in modules:
         try:
