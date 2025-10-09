@@ -1,64 +1,61 @@
-# app/routes/transcribe.py
-from fastapi import APIRouter, UploadFile, File, Query, HTTPException
-from fastapi.responses import JSONResponse
-import os, requests
+# app/main.py
+import os
+import logging
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-router = APIRouter(prefix="/api/v1", tags=["transcribe"])
+APP_NAME = "EchoScript API"
+APP_VERSION = os.getenv("GIT_SHA", "local")
+log = logging.getLogger("uvicorn")
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
-OPENAI_WHISPER_MODEL = os.getenv("OPENAI_WHISPER_MODEL", "whisper-1").strip()
+def _csv(val: str | None) -> list[str]:
+    return [x.strip() for x in (val or "").split(",") if x.strip()]
 
-@router.post("/transcribe")
-async def transcribe_endpoint(
-    language: str = Query("en"),
-    file: UploadFile = File(...),
-):
-    """
-    Uses OpenAI Whisper (server-side) to transcribe the uploaded file.
-    Expects: multipart/form-data with 'file'
-    Returns: { ok, filename, language, text }
-    """
-    if not OPENAI_API_KEY:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured on the backend")
+ALLOWED_ORIGINS = _csv(
+    os.getenv("ALLOW_ORIGINS")
+    or os.getenv("CORS_ORIGINS")
+    or os.getenv("API_ALLOWED_ORIGINS")
+    or "*"
+)
+cors_origins = ["*"] if ALLOWED_ORIGINS == ["*"] else ALLOWED_ORIGINS
 
+app = FastAPI(title=APP_NAME, version=APP_VERSION)
+
+@app.get("/api/healthz")
+def healthz():
+    return {"ok": True}
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins or ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
+def _include_router_safe(import_path: str, name: str):
     try:
-        # Ensure we read from the start
-        file.file.seek(0)
-
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-        }
-        data = {
-            "model": OPENAI_WHISPER_MODEL,  # "whisper-1"
-            "language": language,
-            "response_format": "json",
-        }
-        files = {
-            "file": (file.filename, file.file, file.content_type or "application/octet-stream")
-        }
-
-        resp = requests.post(
-            "https://api.openai.com/v1/audio/transcriptions",
-            headers=headers,
-            data=data,
-            files=files,
-            timeout=600,
-        )
-        if resp.status_code != 200:
-            # Bubble up OpenAI’s error for easier debugging
-            raise HTTPException(status_code=resp.status_code, detail=resp.text)
-
-        text = resp.json().get("text", "")
-
-        return JSONResponse(
-            {
-                "ok": True,
-                "filename": file.filename,
-                "language": language,
-                "text": text,
-            }
-        )
-    except HTTPException:
-        raise
+        module = __import__(import_path, fromlist=["router"])
+        app.include_router(module.router)
+        log.info("%s router loaded", name)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+        log.warning("%s router not loaded: %s", name, e)
+
+# Core routes you already had
+_include_router_safe("app.routes.auth", "Auth")
+_include_router_safe("app.routes.stripe", "Stripe (legacy)")
+_include_router_safe("app.routes.stripe_checkout", "Stripe checkout")
+_include_router_safe("app.routes.stripe_webhook", "Stripe webhook")
+_include_router_safe("app.routes.paypal", "PayPal")
+
+# 🆕 Ensure media/transcription routers are mounted
+_include_router_safe("app.routes.video_task", "Video tasks")
+
+# 🆕 Back-compat endpoint expected by the frontend bundle:
+#     POST https://api.echoscript.ai/v1/transcribe
+_include_router_safe("app.routes.transcribe_v1", "Transcribe v1")
+
+log.info("Allowed CORS origins: %s", cors_origins)
+
