@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import os, json, smtplib, ssl, http.client, logging
 from email.message import EmailMessage
 from typing import Iterable, Optional, Sequence
@@ -29,7 +29,7 @@ def send_email(
     to_list = _ensure_list([to_address] if isinstance(to_address, str) else to_address)
     cc_list = _ensure_list(cc); bcc_list = _ensure_list(bcc)
 
-    # Prefer HTTP (Resend)
+    # HTTP provider (Resend) first
     if api_key:
         log.info("EMAIL_MODE=HTTP provider=resend to=%s", ",".join(to_list))
         try:
@@ -50,7 +50,7 @@ def send_email(
         except Exception as e:
             raise EmailError(f"HTTP email send failed: {e}") from e
 
-    # Fallback SMTP
+    # SMTP fallback (for local/dev; PaaS may block)
     host = _env("SMTP_HOST"); port = int(_env("SMTP_PORT", "587"))
     user = _env("SMTP_USER"); pwd = _env("SMTP_PASS")
     smtp_from = _env("SMTP_FROM", from_display)
@@ -69,7 +69,6 @@ def send_email(
                 msg.add_alternative(body_html, subtype="html")
             else:
                 msg.set_content(body_text or "")
-
             ctx = ssl.create_default_context()
             with smtplib.SMTP(host, port, timeout=20) as s:
                 s.ehlo(); s.starttls(context=ctx); s.login(user, pwd)
@@ -80,4 +79,3 @@ def send_email(
             raise EmailError(f"SMTP send failed: {e}") from e
 
     raise EmailError("No email provider configured (set RESEND_API_KEY or SMTP_* envs).")
-
