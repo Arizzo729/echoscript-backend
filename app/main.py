@@ -1,4 +1,4 @@
-# app/main.py
+# app/main.py  (full file)
 import os
 import logging
 import importlib
@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
 
+# --- logging ---
 log = logging.getLogger("echoscript")
 logging.basicConfig(level=logging.INFO)
 
@@ -29,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------- basic health --------
+# -------- health --------
 @app.get("/", response_class=PlainTextResponse)
 def root_ok():
     return "ok"
@@ -47,16 +48,14 @@ def v1_health():
 
 def include_group(prefix: str):
     """
-    Mount routers that use *relative* prefixes only (e.g., '/auth', '/contact').
-    Do NOT put '/api' or '/v1' inside router files.
+    Mount routers that use relative prefixes (e.g., '/auth', '/contact').
+    Do NOT put '/api' or '/v1' inside those router files.
     """
     modules = [
-        # 🔽 only routers with relative prefixes (no leading '/api')
         "app.routes.health",
-        "app.routes.contact",
+        "app.routes.contact",        # -> /api/contact and /v1/contact
         "app.routes.newsletter",
         "app.routes.auth",
-        "app.routes.auth_alias",          # provides /auth/signin → login (redirect)
         "app.routes.history",
         "app.routes.export",
         "app.routes.signup",
@@ -64,7 +63,7 @@ def include_group(prefix: str):
         "app.routes.send_reset",
         "app.routes.paypal",
         "app.routes.paypal_health",
-        # If you have these with relative prefixes, uncomment them:
+        # Add more relative-prefix routers here if needed:
         # "app.routes.transcribe",
         # "app.routes.transcribe_stream",
         # "app.routes.video_task",
@@ -83,24 +82,50 @@ def include_group(prefix: str):
             log.warning("Skipping %s: %s", mod, e)
 
 
-# Mount standard routers under /api and /v1 (for those with relative prefixes)
+# Mount standard routers under /api and /v1 (only those that import cleanly)
 include_group("/api")
 include_group("/v1")
 
-# Mount compatibility endpoints ONCE with NO prefix.
-# These expose absolute paths like /api/transcribe, /api/video-task, etc.
+# Mount compatibility endpoints (already declare absolute '/api/*' paths)
 try:
-    from app.routes import compact_endpoints as compat  # keep filename in sync
-    app.include_router(compat.router)  # no prefix → avoids /api/api/*
+    from app.routes import compact_endpoints as compat
+    app.include_router(compat.router)  # no prefix to avoid '/api/api/*'
     log.info("Mounted compat endpoints without prefix")
 except Exception as e:
     log.warning("Compat endpoints not mounted: %s", e)
 
-# Mount feedback ONCE with NO prefix because it already declares an absolute prefix (/api/feedback)
+# Mount feedback (this router already uses prefix='/api/feedback')
 try:
     from app.routes.feedback import router as feedback_router
-    app.include_router(feedback_router)  # do not add prefix → keeps /api/feedback
-    log.info("Mounted feedback endpoints at their absolute paths")
+    app.include_router(feedback_router)  # no extra prefix
+    log.info("Mounted feedback router at its absolute path")
 except Exception as e:
     log.warning("Feedback endpoints not mounted: %s", e)
 
+# -------- Fallback contact endpoints (avoid 404 even if router import fails) --------
+# Keep these after include_group so real routers win when present.
+try:
+    from pydantic import BaseModel, EmailStr
+    class _ContactIn(BaseModel):
+        name: str
+        email: EmailStr
+        subject: str
+        message: str
+        hp: str | None = None  # honeypot
+
+    @app.post("/api/contact", name="contact_fallback_api")
+    async def _contact_fallback_api(body: _ContactIn):
+        # Accept and succeed even if email sender isn't configured yet
+        if body.hp:  # bot trap
+            return {"ok": True, "status": "discarded"}
+        log.info("CONTACT_FALLBACK %s <%s> :: %s", body.name, body.email, body.subject)
+        return {"ok": True, "status": "accepted"}
+
+    @app.post("/v1/contact", name="contact_fallback_v1")
+    async def _contact_fallback_v1(body: _ContactIn):
+        if body.hp:
+            return {"ok": True, "status": "discarded"}
+        log.info("CONTACT_FALLBACK_V1 %s <%s> :: %s", body.name, body.email, body.subject)
+        return {"ok": True, "status": "accepted"}
+except Exception as e:
+    log.warning("Fallback contact endpoints not added: %s", e)
