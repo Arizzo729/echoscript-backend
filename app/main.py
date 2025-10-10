@@ -1,3 +1,4 @@
+# app/main.py
 import os
 import logging
 import importlib
@@ -28,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # -------- basic health --------
 @app.get("/", response_class=PlainTextResponse)
 def root_ok():
@@ -51,13 +51,12 @@ def include_group(prefix: str):
     Do NOT put '/api' or '/v1' inside router files.
     """
     modules = [
-        # 🔽 add only routers that declare relative prefixes
+        # 🔽 only routers with relative prefixes (no leading '/api')
         "app.routes.health",
         "app.routes.contact",
         "app.routes.newsletter",
         "app.routes.auth",
         "app.routes.auth_alias",          # provides /auth/signin → login (redirect)
-        "app.routes.feedback",
         "app.routes.history",
         "app.routes.export",
         "app.routes.signup",
@@ -84,7 +83,7 @@ def include_group(prefix: str):
             log.warning("Skipping %s: %s", mod, e)
 
 
-# Mount standard routers under /api and /v1
+# Mount standard routers under /api and /v1 (for those with relative prefixes)
 include_group("/api")
 include_group("/v1")
 
@@ -96,3 +95,12 @@ try:
     log.info("Mounted compat endpoints without prefix")
 except Exception as e:
     log.warning("Compat endpoints not mounted: %s", e)
+
+# Mount feedback ONCE with NO prefix because it already declares an absolute prefix (/api/feedback)
+try:
+    from app.routes.feedback import router as feedback_router
+    app.include_router(feedback_router)  # do not add prefix → keeps /api/feedback
+    log.info("Mounted feedback endpoints at their absolute paths")
+except Exception as e:
+    log.warning("Feedback endpoints not mounted: %s", e)
+
