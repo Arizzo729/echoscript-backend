@@ -1,10 +1,11 @@
 # app/main.py
-import os, logging, importlib, ssl, smtplib
-from email.message import EmailMessage
-from fastapi import FastAPI, BackgroundTasks
+import os, logging, importlib
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr
+
+from app.utils.send_email import send_email, EmailError
 
 log = logging.getLogger("echoscript")
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +45,7 @@ def include_group(prefix: str):
     """Mount routers that use relative prefixes (no /api in the file)."""
     modules = [
         "app.routes.health",
-        "app.routes.contact",        # -> /api/contact and /v1/contact
+        "app.routes.contact",        # -> /api/contact and /v1/contact (if file exists)
         "app.routes.newsletter",
         "app.routes.auth",
         "app.routes.history",
@@ -92,53 +93,51 @@ try:
 except Exception as e:
     log.warning("Feedback endpoints not mounted: %s", e)
 
-# -------- email sending --------
-def _send_contact_email(payload: dict):
+# -------- Email helpers (HTTP-first) --------
+def _send_contact_email(payload: dict) -> None:
     """
-    Send a simple text email using SMTP env vars.
-    Required env: SMTP_HOST, SMTP_PORT(=465 or 587), SMTP_USER, SMTP_PASS
-    Optional: SMTP_FROM, SMTP_TO
+    Send contact email via HTTP provider (Resend) if configured; otherwise try SMTP.
+    Env:
+      - RESEND_API_KEY  (HTTP path)
+      - EMAIL_FROM or RESEND_FROM (display "From")
+      - RESEND_TO or SMTP_TO or CONTACT_TO (recipient) — defaults to support@echoscript.ai
+      - SMTP_*          (fallback)
     """
-    host = os.getenv("SMTP_HOST")
-    port = int(os.getenv("SMTP_PORT", "465"))
-    user = os.getenv("SMTP_USER")
-    pwd  = os.getenv("SMTP_PASS")
-    sender = os.getenv("SMTP_FROM", user or "")
-    rcpt   = os.getenv("SMTP_TO", sender or "")
-
-    if not (host and port and user and pwd and sender and rcpt):
-        log.warning("SMTP not fully configured; skipping email. host=%s sender=%s to=%s", host, sender, rcpt)
-        return
-
+    to_addr = (
+        os.getenv("RESEND_TO")
+        or os.getenv("SMTP_TO")
+        or os.getenv("CONTACT_TO")
+        or "support@echoscript.ai"
+    )
     subj = f"[EchoScript Contact] {payload.get('subject','(no subject)')}"
-    body = (
+    body_text = (
         "New contact submission:\n\n"
         f"Name: {payload.get('name')}\n"
         f"Email: {payload.get('email')}\n"
         f"Subject: {payload.get('subject')}\n\n"
         f"Message:\n{payload.get('message')}\n"
     )
+    body_html = f"""
+    <h2>New contact submission</h2>
+    <p><b>Name:</b> {payload.get('name')}</p>
+    <p><b>Email:</b> {payload.get('email')}</p>
+    <p><b>Subject:</b> {payload.get('subject')}</p>
+    <hr/>
+    <pre style="white-space:pre-wrap">{payload.get('message')}</pre>
+    """
 
-    msg = EmailMessage()
-    msg["Subject"] = subj
-    msg["From"] = sender
-    msg["To"] = rcpt
-    msg.set_content(body)
-
-    ctx = ssl.create_default_context()
     try:
-        if port == 587:
-            with smtplib.SMTP(host, port) as s:
-                s.starttls(context=ctx)
-                s.login(user, pwd)
-                s.send_message(msg)
-        else:
-            with smtplib.SMTP_SSL(host, port, context=ctx) as s:
-                s.login(user, pwd)
-                s.send_message(msg)
-        log.info("CONTACT_EMAIL_SENT to %s", rcpt)
-    except Exception as e:
+        send_email(
+            to_address=to_addr,
+            subject=subj,
+            body_text=body_text,
+            body_html=body_html,
+            reply_to=payload.get("email"),
+        )
+        log.info("CONTACT_EMAIL_SENT to %s", to_addr)
+    except EmailError as e:
         log.error("CONTACT_EMAIL_FAILED: %s", e)
+        raise
 
 # -------- Fallback contact endpoints (work even if contact router fails to import) --------
 class _ContactIn(BaseModel):
@@ -166,4 +165,19 @@ async def _contact_fallback_v1(body: _ContactIn, bg: BackgroundTasks):
     bg.add_task(_send_contact_email, payload)
     return {"ok": True, "status": "accepted"}
 
-# deploy-bump 2025-10-10T10:22:33
+# Quick verification endpoint
+@app.post("/api/contact/test")
+def contact_test():
+    try:
+        _send_contact_email({
+            "name": "System",
+            "email": "no-reply@echoscript.ai",
+            "subject": "EchoScript email test",
+            "message": "If you see this, HTTP email is working ✅",
+        })
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# deploy-bump (HTTP email)
+
