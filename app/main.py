@@ -165,3 +165,5 @@ async def _contact_fallback_v1(body: _ContactIn, bg: BackgroundTasks):
     log.info("CONTACT_FALLBACK_V1 %s <%s> :: %s", body.name, body.email, body.subject)
     bg.add_task(_send_contact_email, payload)
     return {"ok": True, "status": "accepted"}
+
+# deploy-bump 2025-10-10T10:22:33
