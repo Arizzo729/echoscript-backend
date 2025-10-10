@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc libpq-dev libxml2-dev libxslt1-dev curl git ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
-# Python deps (use your actual file name if different)
+# Python deps (layered for cache)
 COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip \
  && pip install -r /app/requirements.txt
@@ -19,9 +19,10 @@ RUN python -m pip install --upgrade pip \
 # App source
 COPY . /app
 
-# Railway injects $PORT; default to 8000 for local runs
+# Railway injects $PORT; default for local runs
 ENV PORT=8000
 EXPOSE 8000
 
-# ✅ Start the API (Linux shell, not Windows cmd)
+# 👇 Linux shell, not Windows cmd
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+
