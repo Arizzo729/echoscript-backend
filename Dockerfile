@@ -1,34 +1,27 @@
-# syntax=docker/dockerfile:1
+# Dockerfile (backend)
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System deps: lxml, Postgres headers, curl (for healthcheck), ffmpeg (optional but handy)
+# System deps (psycopg, lxml, ffmpeg)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc libpq-dev libxml2-dev libxslt1-dev git curl ffmpeg \
-  && rm -rf /var/lib/apt/lists/*
+    build-essential gcc libpq-dev libxml2-dev libxslt1-dev curl git ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
 
-# ---- Python deps ----
+# Python deps (use your actual file name if different)
 COPY requirements.txt /app/requirements.txt
-RUN python -m pip install --upgrade pip && pip install -r /app/requirements.txt
+RUN python -m pip install --upgrade pip \
+ && pip install -r /app/requirements.txt
 
-# ---- App code ----
+# App source
 COPY . /app
 
-# Optional runtime dirs
-RUN mkdir -p /app/transcripts /app/static/uploads /app/exports /app/logs
+# Railway injects $PORT; default to 8000 for local runs
+ENV PORT=8000
+EXPOSE 8000
 
-# Default for local; Railway injects PORT automatically
-ENV PORT=8080
-
-# Healthcheck hits the real FastAPI health endpoint
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -fsS "http://127.0.0.1:${PORT}/api/healthz" >/dev/null || exit 1
-
-# IMPORTANT: bind to ${PORT} so Railway's proxy can reach the app
-CMD ["sh","-c","uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
-
+# ✅ Start the API (Linux shell, not Windows cmd)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
