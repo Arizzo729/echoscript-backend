@@ -1,4 +1,5 @@
-﻿from __future__ import annotations
+# app/main.py  (full file with the only change: added app.routes.usage to modules)
+from __future__ import annotations
 import os, logging, importlib
 from typing import Optional
 from fastapi import FastAPI, BackgroundTasks, HTTPException, APIRouter, status
@@ -55,6 +56,8 @@ def include_group(prefix: str) -> None:
         "app.routes.send_reset",
         "app.routes.paypal",
         "app.routes.paypal_health",
+        # NEW: provides /api/usage/summary and /api/users/usage (and /v1/...)
+        "app.routes.usage",
     ]
     for mod in modules:
         try:
