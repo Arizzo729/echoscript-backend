@@ -1,10 +1,15 @@
+# app/routes/auth.py
 from __future__ import annotations
 import os, time, hmac, json, base64, hashlib
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from app.db import get_db
+from app.models import User
+from app.utils.auth_utils import verify_password
 
 # NOTE: prefix is RELATIVE now (no /api). main.py will mount at /api and /v1.
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -52,11 +57,12 @@ def _verify_jwt(token: str) -> Dict[str, Any]:
     return payload
 
 def _user_id_for(email: str) -> int:
+    # (Used for legacy tokens; new tokens use actual DB user ID)
     h = hashlib.sha256(email.lower().encode("utf-8")).hexdigest()
     return int(h[:8], 16)
 
 def _set_cookie(resp: Response, token: str) -> None:
-    expires = (datetime.now(timezone.utc) + timedelta(seconds=JWT_TTL_SECONDS))
+    expires = datetime.now(timezone.utc) + timedelta(seconds=JWT_TTL_SECONDS)
     resp.set_cookie(
         key=COOKIE_NAME,
         value=token,
@@ -78,14 +84,6 @@ def _token_from_request(req: Request) -> Optional[str]:
         return auth.split(" ", 1)[1].strip()
     return req.cookies.get(COOKIE_NAME)
 
-class SignupIn(BaseModel):
-    email: str
-    password: str
-
-class SignupOut(BaseModel):
-    id: int
-    email: str
-
 class LoginIn(BaseModel):
     email: str
     password: str
@@ -100,17 +98,13 @@ class MeOut(BaseModel):
     email: str
     mode: str = "jwt"
 
-@router.post("/signup", response_model=SignupOut)
-def signup(payload: SignupIn, response: Response) -> SignupOut:
-    uid = _user_id_for(payload.email)
-    token = _create_jwt({"sub": str(uid), "email": payload.email})
-    _set_cookie(response, token)
-    return SignupOut(id=uid, email=payload.email)
-
 @router.post("/login", response_model=LoginOut)
-def login(payload: LoginIn, response: Response) -> LoginOut:
-    uid = _user_id_for(payload.email)
-    token = _create_jwt({"sub": str(uid), "email": payload.email})
+def login(payload: LoginIn, response: Response, db: Session = Depends(get_db)) -> LoginOut:
+    # Verify user credentials against the database
+    user = db.query(User).filter(User.email == payload.email).one_or_none()
+    if not user or not verify_password(payload.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = _create_jwt({"sub": str(user.id), "email": user.email})
     _set_cookie(response, token)
     return LoginOut(ok=True, access_token=token)
 
@@ -125,4 +119,5 @@ def me(request: Request) -> MeOut:
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     data = _verify_jwt(token)
-    return MeOut(id=int(data["sub"]), email=str(data["email"]), mode="jwt")
+    return MeOut(id=int(data["sub"]), email=data["email"], mode="jwt")
+
