@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "Frontend/echoscript-front"
+		},
+		{
+			"name": "echoscript-backend-1",
+			"path": "Backend/echoscript-backend-1"
+		}
+	],
+	"settings": {}
+}

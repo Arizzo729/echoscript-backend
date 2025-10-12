@@ -1,0 +1,930 @@
+﻿EchoScriptAI
+├── AI tools to use
+│   ├── Back
+│   │   ├── echo_ai.py
+│   │   ├── gpt_logic.py
+│   │   ├── Routeassistant.py
+│   │   └── Schemaassistant.py
+│   └── Front
+│       └── 
+├── Backend
+│   ├── .audit
+│   │   ├── import-boot.json
+│   │   ├── mypy.txt
+│   │   ├── patterns.json
+│   │   ├── pip-audit.txt
+│   │   ├── pipdeptree.txt
+│   │   ├── pip-freeze.before.txt
+│   │   ├── report.md
+│   │   └── vulture.txt
+│   ├── .audit_bundle_20250917_163813
+│   │   ├── filelist.csv
+│   │   ├── git-diff-names.txt
+│   │   ├── git-log.txt
+│   │   ├── git-remotes.txt
+│   │   ├── git-status.txt
+│   │   ├── import_boot.py
+│   │   ├── import-boot.json
+│   │   ├── mypy.txt
+│   │   ├── pip-audit.txt
+│   │   ├── pipdeptree.txt
+│   │   ├── pip-freeze.txt
+│   │   ├── pip-install.txt
+│   │   ├── pip-tools.txt
+│   │   ├── requirements.audit.txt
+│   │   ├── ruff.txt
+│   │   ├── tree.txt
+│   │   └── vulture.txt
+│   ├── .mypy_cache
+│   │   ├── 3.10
+│   │   │   ├── _pytest
+│   │   │   ├── _typeshed
+│   │   │   ├── aiohappyeyeballs
+│   │   │   ├── aiohttp
+│   │   │   ├── aiosignal
+│   │   │   ├── alembic
+│   │   │   ├── annotated_types
+│   │   │   ├── anyio
+│   │   │   ├── app
+│   │   │   ├── async_timeout
+│   │   │   ├── asyncio
+│   │   │   ├── attr
+│   │   │   ├── attrs
+│   │   │   ├── av
+│   │   │   ├── certifi
+│   │   │   ├── click
+│   │   │   ├── collections
+│   │   │   ├── colorlog
+│   │   │   ├── concurrent
+│   │   │   ├── ctypes
+│   │   │   ├── cycler
+│   │   │   ├── distro
+│   │   │   ├── docx
+│   │   │   ├── dotenv
+│   │   │   ├── einops
+│   │   │   ├── email
+│   │   │   ├── exceptiongroup
+│   │   │   ├── fastapi
+│   │   │   ├── filelock
+│   │   │   ├── fpdf
+│   │   │   ├── frozenlist
+│   │   │   ├── h11
+│   │   │   ├── html
+│   │   │   ├── http
+│   │   │   ├── httpcore
+│   │   │   ├── httpx
+│   │   │   ├── huggingface_hub
+│   │   │   ├── idna
+│   │   │   ├── importlib
+│   │   │   ├── iniconfig
+│   │   │   ├── jinja2
+│   │   │   ├── jiter
+│   │   │   ├── jose
+│   │   │   ├── json
+│   │   │   ├── librosa
+│   │   │   ├── logging
+│   │   │   ├── markdown_it
+│   │   │   ├── markupsafe
+│   │   │   ├── matplotlib
+│   │   │   ├── mdurl
+│   │   │   ├── multidict
+│   │   │   ├── multiprocessing
+│   │   │   ├── numpy
+│   │   │   ├── openai
+│   │   │   ├── optuna
+│   │   │   ├── os
+│   │   │   ├── packaging
+│   │   │   ├── passlib
+│   │   │   ├── pathlib
+│   │   │   ├── PIL
+│   │   │   ├── pkg_resources
+│   │   │   ├── platformdirs
+│   │   │   ├── pluggy
+│   │   │   ├── propcache
+│   │   │   ├── pydantic
+│   │   │   ├── pydantic_core
+│   │   │   ├── pyexpat
+│   │   │   ├── pyparsing
+│   │   │   ├── pytest
+│   │   │   ├── python_multipart
+│   │   │   ├── redis
+│   │   │   ├── rich
+│   │   │   ├── safetensors
+│   │   │   ├── setuptools
+│   │   │   ├── sniffio
+│   │   │   ├── sqlalchemy
+│   │   │   ├── sqlite3
+│   │   │   ├── starlette
+│   │   │   ├── string
+│   │   │   ├── stripe
+│   │   │   ├── sys
+│   │   │   ├── tests
+│   │   │   ├── tiktoken
+│   │   │   ├── torch
+│   │   │   ├── transformers
+│   │   │   ├── typing_inspection
+│   │   │   ├── unittest
+│   │   │   ├── urllib
+│   │   │   ├── websockets
+│   │   │   ├── xml
+│   │   │   ├── yarl
+│   │   │   ├── zipfile
+│   │   │   ├── zoneinfo
+│   │   │   ├── @plugins_snapshot.json
+│   │   │   ├── __future__.data.json
+│   │   │   ├── __future__.meta.json
+│   │   │   ├── __main__.data.json
+│   │   │   ├── __main__.meta.json
+│   │   │   ├── _ast.data.json
+│   │   │   ├── _ast.meta.json
+│   │   │   ├── _asyncio.data.json
+│   │   │   ├── _asyncio.meta.json
+│   │   │   ├── _bisect.data.json
+│   │   │   ├── _bisect.meta.json
+│   │   │   ├── _blake2.data.json
+│   │   │   ├── _blake2.meta.json
+│   │   │   ├── _bz2.data.json
+│   │   │   ├── _bz2.meta.json
+│   │   │   ├── _codecs.data.json
+│   │   │   ├── _codecs.meta.json
+│   │   │   ├── _collections_abc.data.json
+│   │   │   ├── _collections_abc.meta.json
+│   │   │   ├── _compat_pickle.data.json
+│   │   │   ├── _compat_pickle.meta.json
+│   │   │   ├── _compression.data.json
+│   │   │   ├── _compression.meta.json
+│   │   │   ├── _contextvars.data.json
+│   │   │   ├── _contextvars.meta.json
+│   │   │   ├── _csv.data.json
+│   │   │   ├── _csv.meta.json
+│   │   │   ├── _ctypes.data.json
+│   │   │   ├── _ctypes.meta.json
+│   │   │   ├── _decimal.data.json
+│   │   │   ├── _decimal.meta.json
+│   │   │   ├── _frozen_importlib.data.json
+│   │   │   ├── _frozen_importlib.meta.json
+│   │   │   ├── _frozen_importlib_external.data.json
+│   │   │   ├── _frozen_importlib_external.meta.json
+│   │   │   ├── _hashlib.data.json
+│   │   │   ├── _hashlib.meta.json
+│   │   │   ├── _heapq.data.json
+│   │   │   ├── _heapq.meta.json
+│   │   │   ├── _imp.data.json
+│   │   │   ├── _imp.meta.json
+│   │   │   ├── _io.data.json
+│   │   │   ├── _io.meta.json
+│   │   │   ├── _locale.data.json
+│   │   │   ├── _locale.meta.json
+│   │   │   ├── _lsprof.data.json
+│   │   │   ├── _lsprof.meta.json
+│   │   │   ├── _markupbase.data.json
+│   │   │   ├── _markupbase.meta.json
+│   │   │   └── _operator.data.json
+│   │   ├── 3.11
+│   │   │   ├── _pytest
+│   │   │   ├── _typeshed
+│   │   │   ├── annotated_types
+│   │   │   ├── anyio
+│   │   │   ├── app
+│   │   │   ├── async_timeout
+│   │   │   ├── asyncio
+│   │   │   ├── collections
+│   │   │   ├── concurrent
+│   │   │   ├── ctypes
+│   │   │   ├── distutils
+│   │   │   ├── dotenv
+│   │   │   ├── email
+│   │   │   ├── fastapi
+│   │   │   ├── html
+│   │   │   ├── http
+│   │   │   ├── idna
+│   │   │   ├── importlib
+│   │   │   ├── iniconfig
+│   │   │   ├── json
+│   │   │   ├── logging
+│   │   │   ├── multiprocessing
+│   │   │   ├── os
+│   │   │   ├── packaging
+│   │   │   ├── pluggy
+│   │   │   ├── pydantic
+│   │   │   ├── pydantic_core
+│   │   │   ├── pydantic_settings
+│   │   │   ├── pytest
+│   │   │   ├── redis
+│   │   │   ├── sniffio
+│   │   │   ├── sqlalchemy
+│   │   │   ├── starlette
+│   │   │   ├── sys
+│   │   │   ├── tests
+│   │   │   ├── unittest
+│   │   │   ├── urllib
+│   │   │   ├── zipfile
+│   │   │   ├── zoneinfo
+│   │   │   ├── @plugins_snapshot.json
+│   │   │   ├── __future__.data.json
+│   │   │   ├── __future__.meta.json
+│   │   │   ├── _ast.data.json
+│   │   │   ├── _ast.meta.json
+│   │   │   ├── _bisect.data.json
+│   │   │   ├── _bisect.meta.json
+│   │   │   ├── _codecs.data.json
+│   │   │   ├── _codecs.meta.json
+│   │   │   ├── _collections_abc.data.json
+│   │   │   ├── _collections_abc.meta.json
+│   │   │   ├── _compression.data.json
+│   │   │   ├── _compression.meta.json
+│   │   │   ├── _ctypes.data.json
+│   │   │   ├── _ctypes.meta.json
+│   │   │   ├── _decimal.data.json
+│   │   │   ├── _decimal.meta.json
+│   │   │   ├── _locale.data.json
+│   │   │   ├── _locale.meta.json
+│   │   │   ├── _operator.data.json
+│   │   │   ├── _operator.meta.json
+│   │   │   ├── _random.data.json
+│   │   │   ├── _random.meta.json
+│   │   │   ├── _socket.data.json
+│   │   │   ├── _socket.meta.json
+│   │   │   ├── _stat.data.json
+│   │   │   ├── _stat.meta.json
+│   │   │   ├── _thread.data.json
+│   │   │   ├── _thread.meta.json
+│   │   │   ├── _warnings.data.json
+│   │   │   ├── _warnings.meta.json
+│   │   │   ├── _weakref.data.json
+│   │   │   ├── _weakref.meta.json
+│   │   │   ├── _weakrefset.data.json
+│   │   │   ├── _weakrefset.meta.json
+│   │   │   ├── _winapi.data.json
+│   │   │   ├── _winapi.meta.json
+│   │   │   ├── abc.data.json
+│   │   │   ├── abc.meta.json
+│   │   │   ├── argparse.data.json
+│   │   │   ├── argparse.meta.json
+│   │   │   ├── array.data.json
+│   │   │   ├── array.meta.json
+│   │   │   ├── asr_smoketest.data.json
+│   │   │   ├── asr_smoketest.meta.json
+│   │   │   ├── ast.data.json
+│   │   │   ├── ast.meta.json
+│   │   │   ├── atexit.data.json
+│   │   │   ├── atexit.meta.json
+│   │   │   └── audit_repo.data.json
+│   │   ├── .gitignore
+│   │   └── CACHEDIR.TAG
+│   ├── .ruff_cache
+│   ├── .venv_audit
+│   │   ├── Include
+│   │   ├── Lib
+│   │   ├── Scripts
+│   │   │   ├── activate
+│   │   │   ├── activate.bat
+│   │   │   ├── Activate.ps1
+│   │   │   ├── deactivate.bat
+│   │   │   ├── dmypy.exe
+│   │   │   ├── doesitcache.exe
+│   │   │   ├── dotenv.exe
+│   │   │   ├── fastapi.exe
+│   │   │   ├── markdown-it.exe
+│   │   │   ├── mypy.exe
+│   │   │   ├── mypyc.exe
+│   │   │   ├── normalizer.exe
+│   │   │   ├── pip.exe
+│   │   │   ├── pip3.11.exe
+│   │   │   ├── pip3.exe
+│   │   │   ├── pip-audit.exe
+│   │   │   ├── pipdeptree.exe
+│   │   │   ├── py.test.exe
+│   │   │   ├── pygmentize.exe
+│   │   │   ├── pyrsa-decrypt.exe
+│   │   │   ├── pyrsa-encrypt.exe
+│   │   │   ├── pyrsa-keygen.exe
+│   │   │   ├── pyrsa-priv2pub.exe
+│   │   │   ├── pyrsa-sign.exe
+│   │   │   ├── pyrsa-verify.exe
+│   │   │   ├── pytest.exe
+│   │   │   ├── python.exe
+│   │   │   ├── python_d.exe
+│   │   │   ├── pythonw.exe
+│   │   │   ├── pythonw_d.exe
+│   │   │   ├── ruff.exe
+│   │   │   ├── stubgen.exe
+│   │   │   ├── stubtest.exe
+│   │   │   ├── uvicorn.exe
+│   │   │   ├── vulture.exe
+│   │   │   ├── watchfiles.exe
+│   │   │   └── websockets.exe
+│   │   └── pyvenv.cfg
+│   ├── app
+│   │   ├── core
+│   │   │   ├── __init__.py
+│   │   │   └── settings.py
+│   │   ├── dependencies
+│   │   │   └── subscription_guard.py
+│   │   ├── exports
+│   │   │   └── 
+│   │   ├── logs
+│   │   │   └── 
+│   │   ├── models
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── create_user.py
+│   │   │   ├── db.py
+│   │   │   ├── init_db.py
+│   │   │   ├── subscription.py
+│   │   │   └── user.py
+│   │   ├── routers
+│   │   │   └── paypal.py
+│   │   ├── routes
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── contact.py
+│   │   │   ├── export.py
+│   │   │   ├── feedback.py
+│   │   │   ├── health.py
+│   │   │   ├── history.py
+│   │   │   ├── newsletter.py
+│   │   │   ├── password_reset.py
+│   │   │   ├── send_reset.py
+│   │   │   ├── signup.py
+│   │   │   ├── stripe_checkout.py
+│   │   │   ├── stripe_webhook.py
+│   │   │   ├── subtitles.py
+│   │   │   ├── summary.py
+│   │   │   ├── transcribe.py
+│   │   │   ├── transcribe_stream.py
+│   │   │   ├── transcripts.py
+│   │   │   ├── translate.py
+│   │   │   ├── verify_email.py
+│   │   │   └── video_task.py
+│   │   ├── schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── contact.py
+│   │   │   ├── export.py
+│   │   │   ├── feedback.py
+│   │   │   ├── history.py
+│   │   │   ├── newsletter.py
+│   │   │   ├── subscription.py
+│   │   │   ├── subtitle.py
+│   │   │   ├── summary.py
+│   │   │   ├── transcription.py
+│   │   │   ├── translate.py
+│   │   │   └── user.py
+│   │   ├── services
+│   │   │   └── transcription.py
+│   │   ├── static
+│   │   ├── transcripts
+│   │   │   └── 
+│   │   ├── utils
+│   │   │   ├── __init__.py
+│   │   │   ├── auth_utils.py
+│   │   │   ├── db_utils.py
+│   │   │   ├── export_utils.py
+│   │   │   ├── file_helpers.py
+│   │   │   ├── logger.py
+│   │   │   ├── redis_client.py
+│   │   │   ├── safety_check.py
+│   │   │   ├── send_email.py
+│   │   │   └── stripe_client.py
+│   │   ├── ws
+│   │   │   └── socket_transcriber.py
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── db.py
+│   │   ├── dependencies.py
+│   │   ├── main.py
+│   │   └── models.py
+│   ├── data
+│   │   ├── 0dab32c1-b5bc-4f19-a1b4-6d44c74c1960.mp3
+│   │   ├── 1f08e754-da07-4144-9df2-78fca75bfeca.mp3
+│   │   ├── 407c225b-9795-4b03-9aa7-1fb5bc21474e.mp3
+│   │   ├── 57915094-044f-4518-8077-6a06b86c6e11.mp3
+│   │   ├── 73a788d8-8d19-49fe-ab73-676861ac0311.mp3
+│   │   ├── 880b3055-9fcf-443f-b2cf-c62d9a250ea8.mp3
+│   │   ├── 8ab2b314-e4e9-4cb5-82d3-88a9b696179b.mp3
+│   │   ├── 95cb8988-df24-4c1a-9330-c0cd9a6607ee.mp3
+│   │   ├── a38b5ea8-721c-4ee9-8f88-ee49fbe7634d.mp3
+│   │   ├── a63750a9-0542-40e7-9850-0eedcbd3d69f.mp3
+│   │   ├── d64fefc3-b7a9-4f0c-a023-ba2cbb5725cb.mp3
+│   │   └── e3839918-5218-4ea2-a3ad-e9030c517d60.mp3
+│   ├── echoscript_backend_20250915_153911
+│   │   ├── app
+│   │   │   ├── core
+│   │   │   ├── exports
+│   │   │   ├── models
+│   │   │   ├── routes
+│   │   │   ├── schemas
+│   │   │   ├── services
+│   │   │   ├── static
+│   │   │   ├── transcripts
+│   │   │   ├── utils
+│   │   │   ├── ws
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── db.py
+│   │   │   ├── dependencies.py
+│   │   │   ├── main.py
+│   │   │   └── models.py
+│   │   ├── data
+│   │   │   ├── 0dab32c1-b5bc-4f19-a1b4-6d44c74c1960.mp3
+│   │   │   ├── 1f08e754-da07-4144-9df2-78fca75bfeca.mp3
+│   │   │   ├── 407c225b-9795-4b03-9aa7-1fb5bc21474e.mp3
+│   │   │   ├── 57915094-044f-4518-8077-6a06b86c6e11.mp3
+│   │   │   ├── 73a788d8-8d19-49fe-ab73-676861ac0311.mp3
+│   │   │   ├── 880b3055-9fcf-443f-b2cf-c62d9a250ea8.mp3
+│   │   │   ├── 8ab2b314-e4e9-4cb5-82d3-88a9b696179b.mp3
+│   │   │   ├── 95cb8988-df24-4c1a-9330-c0cd9a6607ee.mp3
+│   │   │   ├── a38b5ea8-721c-4ee9-8f88-ee49fbe7634d.mp3
+│   │   │   ├── a63750a9-0542-40e7-9850-0eedcbd3d69f.mp3
+│   │   │   ├── d64fefc3-b7a9-4f0c-a023-ba2cbb5725cb.mp3
+│   │   │   └── e3839918-5218-4ea2-a3ad-e9030c517d60.mp3
+│   │   ├── echoscript_backend_20250915_153911
+│   │   │   ├── app
+│   │   │   ├── data
+│   │   │   ├── echoscript-web
+│   │   │   ├── $null
+│   │   │   ├── .dockerignore
+│   │   │   ├── .flake8
+│   │   │   ├── .githubworkflowsci.yml
+│   │   │   ├── .gitignore
+│   │   │   ├── .mypy.ini
+│   │   │   ├── .pre-commit-config.yaml
+│   │   │   ├── asgi_dev.py
+│   │   │   ├── db_ping.py
+│   │   │   ├── docker-compose (2).yml
+│   │   │   ├── docker-compose.yml
+│   │   │   ├── Dockerfile
+│   │   │   ├── loaded-config.txt
+│   │   │   ├── package-lock.json
+│   │   │   ├── Read.md
+│   │   │   ├── requirements.in
+│   │   │   ├── requirements.txt
+│   │   │   ├── seed_user.py
+│   │   │   ├── seed_user_sql.py
+│   │   │   ├── setup.cfg
+│   │   │   ├── test.mp3
+│   │   │   └── testintro.mp3
+│   │   ├── echoscript-web
+│   │   │   ├── .react-router
+│   │   │   ├── app
+│   │   │   ├── public
+│   │   │   ├── .dockerignore
+│   │   │   ├── .gitignore
+│   │   │   ├── Dockerfile
+│   │   │   ├── package.json
+│   │   │   ├── package-lock.json
+│   │   │   ├── react-router.config.ts
+│   │   │   ├── README.md
+│   │   │   ├── tsconfig.json
+│   │   │   └── vite.config.ts
+│   │   ├── scripts
+│   │   │   ├── asr_smoketest.py
+│   │   │   ├── create_user.py
+│   │   │   ├── diagnose_audio_stack.py
+│   │   │   └── init_db.py
+│   │   ├── tests
+│   │   │   ├── __init__.py
+│   │   │   ├── conftest.py
+│   │   │   ├── test_assistant.py
+│   │   │   ├── test_auth.py
+│   │   │   ├── test_contact.py
+│   │   │   ├── test_export.py
+│   │   │   ├── test_feedback.py
+│   │   │   ├── test_newsletter.py
+│   │   │   ├── test_password_reset.py
+│   │   │   ├── test_signup.py
+│   │   │   ├── test_stripe_webhook.py
+│   │   │   ├── test_subscription.py
+│   │   │   ├── test_transcribe.py
+│   │   │   ├── test_transcripts.py
+│   │   │   ├── test_verify_email.py
+│   │   │   └── test_video_task.py
+│   │   ├── transcripts
+│   │   │   └── 
+│   │   ├── web_dist
+│   │   ├── $null
+│   │   ├── .dockerignore
+│   │   ├── .flake8
+│   │   ├── .githubworkflowsci.yml
+│   │   ├── .gitignore
+│   │   ├── .mypy.ini
+│   │   ├── .pre-commit-config.yaml
+│   │   ├── asgi_dev.py
+│   │   ├── db_ping.py
+│   │   ├── docker-compose (2).yml
+│   │   ├── docker-compose.yml
+│   │   ├── Dockerfile
+│   │   ├── file_list.txt
+│   │   ├── loaded-config.txt
+│   │   ├── package-lock.json
+│   │   ├── pip_freeze.txt
+│   │   ├── python_version.txt
+│   │   ├── Read.md
+│   │   ├── requirements.in
+│   │   ├── requirements.txt
+│   │   ├── seed_user.py
+│   │   ├── seed_user_sql.py
+│   │   ├── setup.cfg
+│   │   ├── test.mp3
+│   │   └── testintro.mp3
+│   ├── echoscript-web
+│   │   ├── .react-router
+│   │   ├── app
+│   │   │   ├── routes
+│   │   │   ├── welcome
+│   │   │   ├── app.css
+│   │   │   ├── root.tsx
+│   │   │   └── routes.ts
+│   │   ├── public
+│   │   │   └── favicon.ico
+│   │   ├── src
+│   │   ├── .dockerignore
+│   │   ├── .env.local
+│   │   ├── .gitignore
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   ├── react-router.config.ts
+│   │   ├── README.md
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts
+│   ├── logs
+│   │   └── 
+│   ├── scripts
+│   │   ├── asr_smoketest.py
+│   │   ├── cleanup_tree.py
+│   │   ├── create_user.py
+│   │   ├── diagnose_audio_stack.py
+│   │   ├── init_db.py
+│   │   ├── seed_user.py
+│   │   └── seed_user_sql.py
+│   ├── tests
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_assistant.py
+│   │   ├── test_auth.py
+│   │   ├── test_contact.py
+│   │   ├── test_export.py
+│   │   ├── test_feedback.py
+│   │   ├── test_newsletter.py
+│   │   ├── test_password_reset.py
+│   │   ├── test_signup.py
+│   │   ├── test_smoke.py
+│   │   ├── test_stripe_webhook.py
+│   │   ├── test_subscription.py
+│   │   ├── test_transcribe.py
+│   │   ├── test_transcripts.py
+│   │   ├── test_verify_email.py
+│   │   └── test_video_task.py
+│   ├── tools
+│   │   ├── audit_repo.py
+│   │   ├── fix_field_examples.py
+│   │   ├── import_boot.py
+│   │   ├── import_boots.py
+│   │   ├── make_report.py
+│   │   └── pydantic_v2_fix.py
+│   ├── transcripts
+│   │   └── 
+│   ├── web_dist
+│   ├── $null
+│   ├── .audit_mypy_after.txt
+│   ├── .dockerignore
+│   ├── .editorconfig
+│   ├── .env
+│   ├── .env.example
+│   ├── .flake8
+│   ├── .gitattributes
+│   ├── .githubworkflowsci.yml
+│   ├── .gitignore
+│   ├── .mypy.ini
+│   ├── .pre-commit-config.yaml
+│   ├── asgi_dev.py
+│   ├── backend_condensed.txt
+│   ├── backend_snapshot.txt
+│   ├── backend_snapshot.zip
+│   ├── cloudflared.exe
+│   ├── db.sqlite3
+│   ├── db_ping.py
+│   ├── Dockerfile
+│   ├── echoscript_backend_20250915_153911.zip
+│   ├── echoscript_support_20250917_163813.zip
+│   ├── loaded-config.txt
+│   ├── mini.py
+│   ├── openapi_dump.json
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── Procfile
+│   ├── project.toml
+│   ├── pyproject.toml
+│   ├── Read.md
+│   ├── requirements.audit.txt
+│   ├── requirements.in
+│   ├── requirements.txt
+│   ├── runtime.txt
+│   ├── setup.cfg
+│   ├── test.mp3
+│   └── testintro.mp3
+├── echoscript-web
+├── Frontend
+│   ├── .netlify
+│   │   ├── blobs-serve
+│   │   │   └── 
+│   │   ├── functions
+│   │   │   └── hello.js
+│   │   ├── v1
+│   │   └── state.json
+│   ├── assets
+│   │   ├── icons
+│   │   │   ├── dashboard.svg
+│   │   │   ├── home.svg
+│   │   │   ├── shop.svg
+│   │   │   └── upload.svg
+│   │   ├── lottie
+│   │   │   └── 
+│   │   ├── onboarding
+│   │   │   ├── cleanup.json
+│   │   │   ├── global.json
+│   │   │   ├── integrations.json
+│   │   │   ├── security.json
+│   │   │   ├── start.json
+│   │   │   └── upload.json
+│   │   ├── sounds
+│   │   │   ├── ambient-loop-1.mp3
+│   │   │   ├── ambient-loop-2.mp3
+│   │   │   ├── ambient-loop-3.mp3
+│   │   │   └── playPop.mp3
+│   │   ├── videos
+│   │   │   └── intro.mp4
+│   │   ├── EchoScriptAI_Animated.svg
+│   │   ├── EchoScriptAI_Icon.svg
+│   │   ├── EchoScriptAI_Icon_Dark.svg
+│   │   ├── EchoScriptAI_Transparent_Dark.png
+│   │   ├── favicon.ico
+│   │   ├── favicon_dark.ico
+│   │   ├── Icon.png
+│   │   └── Logo.png
+│   ├── public
+│   │   ├── assets
+│   │   ├── avatars
+│   │   │   ├── 158412-OV12CI-671.ai
+│   │   │   ├── 158412-OV12CM-126.eps
+│   │   │   ├── 158412-OV12CQ-203.jpg
+│   │   │   ├── avatar_1.JPG
+│   │   │   ├── avatar_2.JPG
+│   │   │   ├── avatar_3.JPG
+│   │   │   ├── avatar_4.JPG
+│   │   │   ├── avatar_5.JPG
+│   │   │   ├── avatar_6.JPG
+│   │   │   ├── avatar_7.JPG
+│   │   │   ├── avatar_8.JPG
+│   │   │   ├── avatar_9.JPG
+│   │   │   ├── Fonts.txt
+│   │   │   ├── License free.txt
+│   │   │   └── License premium.txt
+│   │   ├── onboarding
+│   │   │   ├── cleanup.json
+│   │   │   ├── global.json
+│   │   │   ├── integrations.json
+│   │   │   ├── security.json
+│   │   │   ├── start.json
+│   │   │   └── upload.json
+│   │   ├── sounds
+│   │   │   ├── ambient-loop-1.mp3
+│   │   │   ├── ambient-loop-2.mp3
+│   │   │   ├── ambient-loop-3.mp3
+│   │   │   └── playPop.mp3
+│   │   ├── _headers.txt
+│   │   ├── _redirects
+│   │   ├── EchoScriptAI_Animated.svg
+│   │   ├── EchoScriptAI_Icon.svg
+│   │   ├── EchoScriptAI_Icon_Dark.svg
+│   │   ├── EchoScriptAI_Transparent_Dark.png
+│   │   ├── favicon.ico
+│   │   ├── favicon_dark.ico
+│   │   ├── Icon.png
+│   │   ├── Logo.png
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   ├── logo512-maskable.png
+│   │   ├── manifest.json
+│   │   ├── privacy.html
+│   │   ├── service-worker.js
+│   │   └── sw.js
+│   ├── src
+│   │   ├── api
+│   │   ├── assets
+│   │   │   ├── icons
+│   │   │   ├── lottie
+│   │   │   ├── onboarding
+│   │   │   ├── sounds
+│   │   │   ├── videos
+│   │   │   ├── EchoScriptAI_Transparent_Dark.png
+│   │   │   ├── favicon.ico
+│   │   │   ├── favicon_dark.ico
+│   │   │   ├── Icon.png
+│   │   │   └── Logo.png
+│   │   ├── components
+│   │   │   ├── hooks
+│   │   │   ├── toast
+│   │   │   ├── ui
+│   │   │   ├── AdaptiveAI.jsx
+│   │   │   ├── AnimatedSplash.jsx
+│   │   │   ├── AssistantAvatar.jsx
+│   │   │   ├── AudioOverlay.jsx
+│   │   │   ├── AudioWaveform.jsx
+│   │   │   ├── BacklitButton.jsx
+│   │   │   ├── CountdownSelector.jsx
+│   │   │   ├── CountdownTimer.jsx
+│   │   │   ├── EchoAssistantUltra.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── FloatingHome.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── HeaderLogo.tsx
+│   │   │   ├── HintCarousel.jsx
+│   │   │   ├── HistoryItem.jsx
+│   │   │   ├── Icon.tsx
+│   │   │   ├── IconButton.jsx
+│   │   │   ├── IntroVideo.jsx
+│   │   │   ├── LanguageDropdown.jsx
+│   │   │   ├── LanguageToggle.jsx
+│   │   │   ├── Layout.jsx
+│   │   │   ├── LiveCaptions.tsx
+│   │   │   ├── LiveGPTBubble.jsx
+│   │   │   ├── LiveWaveform.jsx
+│   │   │   ├── LogoLoader.jsx
+│   │   │   ├── LottieSafe.jsx
+│   │   │   ├── MicCheck.tsx
+│   │   │   ├── MobileBottomNav.jsx
+│   │   │   ├── MobileHeader.jsx
+│   │   │   ├── MobileLayout.jsx
+│   │   │   ├── MobileOverlay.jsx
+│   │   │   ├── MotionSvgSafe.tsx
+│   │   │   ├── NewsletterSignup.jsx
+│   │   │   ├── NewsletterUnsubscribe.jsx
+│   │   │   ├── OnboardingModal.jsx
+│   │   │   ├── PaywallModal.jsx
+│   │   │   ├── PaywallRoute.tsx
+│   │   │   ├── PricingCard.jsx
+│   │   │   ├── PrivateRoute.jsx
+│   │   │   ├── ProgressTimeline.jsx
+│   │   │   ├── RecordingWaveform.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── SmartAIAssistant.jsx
+│   │   │   ├── Spinner.jsx
+│   │   │   ├── StatusConsole.jsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── ToastContainer.jsx
+│   │   │   ├── ToggleButton.jsx
+│   │   │   └── TranscribeUploader.tsx
+│   │   ├── context
+│   │   │   ├── AuthContext.jsx
+│   │   │   ├── GPTContext.jsx
+│   │   │   ├── LanguageContext.jsx
+│   │   │   ├── SoundContext.jsx
+│   │   │   ├── useFontSize.jsx
+│   │   │   ├── useLocalStorage.js
+│   │   │   ├── useOnClickOutside.js
+│   │   │   └── useTheme.jsx
+│   │   ├── hooks
+│   │   │   ├── useIsMobile.js
+│   │   │   ├── useTranslation.js
+│   │   │   └── useVoiceInput.js
+│   │   ├── i18n
+│   │   │   ├── en.js
+│   │   │   ├── es.js
+│   │   │   ├── i18n.js
+│   │   │   ├── index.js
+│   │   │   └── zh.js
+│   │   ├── lib
+│   │   │   ├── api.ts
+│   │   │   ├── liveCaptionClient.ts
+│   │   │   └── payments.js
+│   │   ├── locales
+│   │   │   ├── en
+│   │   │   ├── es
+│   │   │   └── zh
+│   │   ├── pages
+│   │   │   ├── Account.jsx
+│   │   │   ├── AIAssistant.jsx
+│   │   │   ├── ApifyTest.jsx
+│   │   │   ├── BuyExtraMinutes.jsx
+│   │   │   ├── Checkout.jsx
+│   │   │   ├── Community.jsx
+│   │   │   ├── Contact.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── History.jsx
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── NotFound.jsx
+│   │   │   ├── PrivacyPolicy.jsx
+│   │   │   ├── Purchase.jsx
+│   │   │   ├── ReceiptPage.jsx
+│   │   │   ├── RecoverDeletedFiles.jsx
+│   │   │   ├── ResetPassword.jsx
+│   │   │   ├── SearchResults.jsx
+│   │   │   ├── Settings.jsx
+│   │   │   ├── SignIn.jsx
+│   │   │   ├── SignUp.jsx
+│   │   │   ├── Status.jsx
+│   │   │   ├── Summary.jsx
+│   │   │   ├── TermsOfService.jsx
+│   │   │   ├── Transcripts.jsx
+│   │   │   ├── Unsubscribe.jsx
+│   │   │   ├── Unsubscribed.jsx
+│   │   │   ├── Upload.jsx
+│   │   │   ├── VerifyEmail.jsx
+│   │   │   └── VideoUpload.jsx
+│   │   ├── services
+│   │   │   ├── AutomationService.js
+│   │   │   └── browseAIService.js
+│   │   ├── styles
+│   │   │   ├── GlareTitle.css
+│   │   │   └── mobile.css
+│   │   ├── utils
+│   │   ├── ambient-effect.css
+│   │   ├── App.jsx
+│   │   ├── file-tree.txt
+│   │   ├── force-redeploy.txt
+│   │   ├── global.css
+│   │   ├── i18n.ts
+│   │   ├── index.jsx
+│   │   └── input.css
+│   ├── venv
+│   │   ├── Include
+│   │   ├── Lib
+│   │   ├── Scripts
+│   │   │   ├── activate
+│   │   │   ├── activate.bat
+│   │   │   ├── activate.fish
+│   │   │   ├── Activate.ps1
+│   │   │   ├── alembic.exe
+│   │   │   ├── coloredlogs.exe
+│   │   │   ├── ct2-fairseq-converter.exe
+│   │   │   ├── ct2-marian-converter.exe
+│   │   │   ├── ct2-openai-gpt2-converter.exe
+│   │   │   ├── ct2-opennmt-py-converter.exe
+│   │   │   ├── ct2-opennmt-tf-converter.exe
+│   │   │   ├── ct2-opus-mt-converter.exe
+│   │   │   ├── ct2-transformers-converter.exe
+│   │   │   ├── deactivate.bat
+│   │   │   ├── distro.exe
+│   │   │   ├── f2py.exe
+│   │   │   ├── fabric.exe
+│   │   │   ├── fastapi.exe
+│   │   │   ├── httpx.exe
+│   │   │   ├── huggingface-cli.exe
+│   │   │   ├── humanfriendly.exe
+│   │   │   ├── isympy.exe
+│   │   │   ├── mako-render.exe
+│   │   │   ├── markdown-it.exe
+│   │   │   ├── nltk.exe
+│   │   │   ├── normalizer.exe
+│   │   │   ├── numpy-config.exe
+│   │   │   ├── onnxruntime_test.exe
+│   │   │   ├── openai.exe
+│   │   │   ├── optuna.exe
+│   │   │   ├── pip.exe
+│   │   │   ├── pip3.11.exe
+│   │   │   ├── pip3.exe
+│   │   │   ├── pyannote-audio-eval.exe
+│   │   │   ├── pyannote-audio-train.exe
+│   │   │   ├── pyannote-database.exe
+│   │   │   ├── pyannote-metrics.exe
+│   │   │   ├── pyannote-pipeline.exe
+│   │   │   ├── pyav.exe
+│   │   │   ├── pygmentize.exe
+│   │   │   ├── pygrun
+│   │   │   ├── pysemver.exe
+│   │   │   ├── python.exe
+│   │   │   ├── pythonw.exe
+│   │   │   ├── tabulate.exe
+│   │   │   ├── tiny-agents.exe
+│   │   │   ├── torchfrtrace.exe
+│   │   │   ├── torchrun.exe
+│   │   │   ├── tqdm.exe
+│   │   │   └── transformers.exe
+│   │   ├── share
+│   │   ├── .gitignore
+│   │   └── pyvenv.cfg
+│   ├── .env
+│   ├── .env.local
+│   ├── .gitattributes
+│   ├── .gitignore
+│   ├── .nvmrc
+│   ├── index.html
+│   ├── logo192.png
+│   ├── netlify.toml
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   └── vite-env.d.ts
+├── FrontendTesting
+│   └── index.html
+├── Unused
+├── .gitattributes
+├── .gitignore
+├── project_tree.txt
+└── rustup-init.exe
