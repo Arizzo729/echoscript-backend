@@ -101,7 +101,7 @@ async def submit_transcript(
         user = payload.user_id or "anon"
         key = f"transcript:latest:{user}"
         item = {"user_id": user, "transcript": payload.transcript, "meta": payload.meta or {}}
-        cache.set(key, item, ex=3600)  # 1h TTL
+        cache.set(key, json.dumps(item), ex=3600)  # 1h TTL
         return SubmitTranscriptOut(ok=True, id=key)
     except Exception:
         log.exception("Could not submit transcript")
