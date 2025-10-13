@@ -67,7 +67,7 @@ async def usage_summary(
 
 @router.get("/users/usage", response_model=UsersUsageOut)
 async def users_usage(
-    request: Request, settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings)
 ) -> UsersUsageOut:
     """
     Return per-user usage.
