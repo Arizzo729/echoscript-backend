@@ -5,7 +5,16 @@ from typing import Optional
 from fastapi import FastAPI, BackgroundTasks, HTTPException, APIRouter, status
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+# EmailStr moved between pydantic versions; try common locations then fall back to plain str
+try:
+    from pydantic import EmailStr  # type: ignore
+except Exception:
+    try:
+        from pydantic.networks import EmailStr  # type: ignore
+    except Exception:
+        # Fallback: accept plain strings where email validation isn't available
+        EmailStr = str  # type: ignore
 from app.utils.send_email import send_email, EmailError
 
 log = logging.getLogger("echoscript")
@@ -56,6 +65,7 @@ def include_group(prefix: str) -> None:
         "app.routes.send_reset",
         "app.routes.paypal",
         "app.routes.paypal_health",
+    "app.routes.assistant",
         # NEW: provides /api/usage/summary and /api/users/usage (and /v1/...)
         "app.routes.usage",
     ]
@@ -70,7 +80,7 @@ def include_group(prefix: str) -> None:
         except Exception as e:
             log.warning("Skipping %s: %s", mod, e)
 
-include_group("/api")
+include_group("/api/v1")
 include_group("/v1")
 
 # Compat routes that already have absolute paths

@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 import httpx
+import logging
+
+log = logging.getLogger(__name__)
 
 
 async def safe_get_json(url: str, timeout: float = 5.0) -> Optional[Dict[str, Any]]:
@@ -22,6 +25,7 @@ async def safe_get_json(url: str, timeout: float = 5.0) -> Optional[Dict[str, An
     except httpx.RequestError:
         return None
     except Exception:
+        log.exception("safe_get_json failed for url: %s", url)
         return None
 
 
