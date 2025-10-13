@@ -1,6 +1,15 @@
 # app/core/settings.py
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
+except Exception:  # pragma: no cover - runtime compatibility
+    try:
+        from pydantic import BaseSettings, ConfigDict as SettingsConfigDict  # type: ignore
+    except Exception:
+        from pydantic import BaseSettings  # type: ignore
+
+        class SettingsConfigDict(dict):
+            pass
 
 
 class Settings(BaseSettings):

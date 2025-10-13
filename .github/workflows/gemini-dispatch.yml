@@ -1,0 +1,22 @@
+# .github/workflows/gemini-dispatch.yml
+name: Gemini Dispatch
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Handle @gemini-cli comments
+        uses: google-github-actions/run-gemini-cli@v0.1.13
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-2.5-pro

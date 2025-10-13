@@ -1,0 +1,25 @@
+name: Gemini PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gemini CLI for PR review
+        uses: google-github-actions/run-gemini-cli@v0.1.13
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-2.5-pro
+          # Optional: a simple prompt to guide the review
+          prompt: >
+            Review this pull request. Summarize changes, identify risks,
+            suggest fixes, and propose tests. Be concise but specific.

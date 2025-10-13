@@ -40,6 +40,30 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+    # --- JWT / Auth ---
+    JWT_SECRET_KEY: Optional[str] = Field(default=None)
+    JWT_ALGORITHM: str = Field(default="HS256")
+
+    # --- Database ---
+    DATABASE_URL: Optional[str] = Field(default=None)
+
+    # --- AI Integrations ---
+    OPENAI_API_KEY: Optional[str] = Field(default=None)
+    HF_TOKEN: Optional[str] = Field(default=None)
+
+    # --- Payments ---
+    STRIPE_SECRET_KEY: Optional[str] = Field(default=None)
+
+    # --- File Storage ---
+    # Default to a local 'transcripts' directory when not provided via env
+    UPLOAD_FOLDER: str = Field(default=os.path.join(os.getcwd(), "uploads"))
+    STORAGE_DIR: str = Field(default=os.path.join(os.getcwd(), "transcripts"))
+    
+    # --- Logging / Exports ---
+    LOG_DIR: str = Field(default=os.path.join(os.getcwd(), "logs"))
+    LOG_LEVEL: str = Field(default="INFO")
+    EXPORT_DIR: str = Field(default=os.path.join(os.getcwd(), "exports"))
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

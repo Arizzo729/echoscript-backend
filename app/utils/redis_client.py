@@ -80,7 +80,7 @@ class _MemoryCache:
                 import json
                 value = json.dumps(value)
             exp_ts = time.time() + ex if ex else None
-            self._store[key] = (value, exp_ts)
+            self._store[key] = (str(value), exp_ts)
 
     def delete(self, key: str) -> None:
         with self._lock:
@@ -149,4 +149,8 @@ class Cache:
 
 # A ready-to-import singleton
 cache = Cache()
+
+# Backwards-compatible name used elsewhere in the codebase
+redis_client = cache
+
 
