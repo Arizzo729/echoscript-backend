@@ -1,0 +1,36 @@
+﻿# --- deps ---
+node_modules/
+.pnp/
+.pnp.cjs
+
+# --- build output ---
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# --- logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+vite-debug.log*
+vite-error.log*
+
+# --- env ---
+.env
+.env.*
+!.env.example
+
+# --- editors/OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- deploy tools ---
+.netlify/
+.vercel/
+

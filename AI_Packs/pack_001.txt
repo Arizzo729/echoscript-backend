@@ -1,0 +1,2447 @@
+﻿# AI Review Pack 1
+
+Note: Paths are relative to repo root.
+
+
+===== FILE: .vscode\launch.json =====
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "command": "npm start",
+      "name": "Run npm start",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "PowerShell: Binary Module Interactive",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "Enter command to import your binary module, for example: \"Import-Module -Force /path/to/module.psd1|dll\"",
+      "createTemporaryIntegratedConsole": true,
+      "attachDotnetDebugger": true
+    },
+    {
+      "name": "PowerShell Run Pester Tests",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "Invoke-Pester",
+      "createTemporaryIntegratedConsole": true,
+      "attachDotnetDebugger": true
+    },
+    {
+      "name": "Launch Edge",
+      "request": "launch",
+      "type": "msedge",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "EchoScript: Backend (FastAPI â€“ uvicorn)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "app"
+      ],
+      "cwd": "${workspaceFolder}/Backend",
+      "envFile": "${workspaceFolder}/Backend/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "subProcess": true
+    },
+    {
+      "name": "EchoScript: Frontend (launch Chrome to Vite)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/Frontend",
+      "preLaunchTask": "Vite: dev",
+      "userDataDir": false
+    },
+    {
+      "name": "EchoScript: Attach Chrome (5173)",
+      "type": "chrome",
+      "request": "attach",
+      "webRoot": "${workspaceFolder}/Frontend",
+      "urlFilter": "http://localhost:5173/*"
+    },
+    {
+      "name": "EchoScript: Node (Vite dev server)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/Frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Local: http://localhost:(\\\\d+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "EchoScript: Full Stack (Backend + Frontend)",
+      "configurations": [
+        "EchoScript: Backend (FastAPI â€“ uvicorn)",
+        "EchoScript: Frontend (launch Chrome to Vite)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
+
+===== FILE: .vscode\settings.json =====
+
+{
+    "python.testing.pytestArgs": [
+        "FrontendTesting"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
+
+===== FILE: .vscode\tasks.json =====
+
+{ "version": "2.0.0",
+  "tasks": [
+    { "label": "Vite: dev", "type": "npm", "script": "dev",
+      "options": { "cwd": "${workspaceFolder}/Frontend" }, "problemMatcher": [] }
+  ] }
+
+
+===== FILE: AI tools to use\Back\echo_ai.py =====
+
+# app/utils/echo_ai.py
+
+import hashlib
+import json
+import logging
+import zlib
+from typing import Any, Optional
+
+import openai
+from openai import OpenAIError
+
+from app.config import config
+from app.utils.redis_client import redis_client  # type: ignore[attr-defined]
+
+# Alias ChatCompletion so MyPy recognizes it
+ChatCompletion: Any = openai.ChatCompletion  # type: ignore[attr-defined]
+
+logger = logging.getLogger(__name__)
+
+# Ensure OpenAI key is set once
+openai.api_key = config.OPENAI_API_KEY
+
+
+def get_text_checksum(text: str) -> str:
+    """
+    Compute a SHA-256 checksum of the compressed text.
+    Uses zlib.compress to normalize input, then hashlib.sha256 for strength.
+    """
+    compressed = zlib.compress(text.encode("utf-8"))
+    # sha256 is cryptographically strong and avoids Bandit B324 warnings
+    return hashlib.sha256(compressed).hexdigest()
+
+
+def fetch_cached_response(key: str) -> Optional[str]:
+    """
+    Retrieve a cached AI response from Redis.
+    Returns None on any error or if no cache entry exists.
+    """
+    if redis_client is None:
+        return None
+    try:
+        raw = redis_client.get(key)
+        if raw is None:
+            return None
+        return json.loads(raw)
+    except Exception as e:
+        logger.warning(f"Redis GET failed for key={key}: {e}")
+        return None
+
+
+def cache_response(key: str, value: str, ttl: int = 3600) -> None:
+    """
+    Cache a JSONâ€‘serializable AI response in Redis with a TTL (in seconds).
+    Logs but ignores any Redis errors.
+    """
+    if redis_client is None:
+        return
+    try:
+        redis_client.setex(key, ttl, json.dumps(value))
+    except Exception as e:
+        logger.warning(f"Redis SETEX failed for key={key}: {e}")
+
+
+def call_openai_chat(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 0.7,
+    max_tokens: int = 500,
+    cache: bool = True,
+    cache_ttl: int = 3600,
+) -> str:
+    """
+    Send a ChatCompletion request to OpenAI, optionally caching the response.
+
+    - system_prompt: the system-level instruction
+    - user_prompt: the actual user content
+    - cache: whether to read/write Redis cache
+    - cache_ttl: time-to-live for cache in seconds
+    """
+    # Build a cache key from the combined prompt checksum
+    checksum = get_text_checksum(system_prompt + user_prompt)
+    cache_key = f"ai_resp:{checksum}"
+
+    # Try returning the cached response
+    if cache:
+        cached = fetch_cached_response(cache_key)
+        if cached is not None:
+            logger.debug(f"Cache HIT for key={cache_key}")
+            return cached
+        logger.debug(f"Cache MISS for key={cache_key}")
+
+    # No cache or miss â€” call OpenAI
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        text = response.choices[0].message.content.strip()
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error calling OpenAI: {e}")
+        raise
+
+    # Cache and return
+    if cache:
+        cache_response(cache_key, text, ttl=cache_ttl)
+    return text
+
+
+===== FILE: AI tools to use\Back\gpt_logic.py =====
+
+# app/utils/gpt_logic.py
+
+import json
+from json import JSONDecodeError
+from typing import Any, List
+
+import openai
+from openai import OpenAIError
+
+from app.config import config
+from app.utils.logger import logger
+
+# Alias ChatCompletion dynamically so MyPy sees it defined
+ChatCompletion: Any = openai.ChatCompletion  # type: ignore[attr-defined]
+
+# Initialize OpenAI API key
+openai.api_key = config.OPENAI_API_KEY
+
+
+def summarize_transcript(
+    text: str,
+    model: str = "gpt-4",
+    temperature: float = 0.7,
+    max_tokens: int = 300,
+) -> str:
+    """
+    Generate a concise summary of the provided transcript text.
+    """
+    system_prompt = "You are a helpful assistant that summarizes transcripts into concise, accurate overviews."
+    user_prompt = (
+        f"Please provide a concise summary for the following transcript:\n\n{text}"
+    )
+
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error during summary: {e}")
+        raise
+
+    return response.choices[0].message.content.strip()
+
+
+def analyze_sentiment(
+    text: str,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 0.0,
+    max_tokens: int = 50,
+) -> str:
+    """
+    Analyze the sentiment of the transcript text.
+    """
+    system_prompt = (
+        "You are an analytical assistant that determines sentiment of provided text. "
+        "Respond with one word: Positive, Neutral, or Negative."
+    )
+    user_prompt = f"Transcript text:\n\n{text}"
+
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error during sentiment analysis: {e}")
+        raise
+
+    return response.choices[0].message.content.strip()
+
+
+def extract_keywords(
+    text: str,
+    num_keywords: int = 5,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 0.0,
+    max_tokens: int = 100,
+) -> List[str]:
+    """
+    Extract the top keywords or key phrases from the transcript text.
+    """
+    system_prompt = (
+        "You are an assistant that extracts the most important keywords or phrases from the given text. "
+        "Return only a JSON array of keywords."
+    )
+    user_prompt = (
+        f"Extract the top {num_keywords} keywords or key phrases "
+        f"from the following transcript:\n\n{text}"
+    )
+
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error during keyword extraction: {e}")
+        raise
+
+    content = response.choices[0].message.content.strip()
+
+    # Try parsing JSON array of keywords
+    try:
+        keywords = json.loads(content)
+        if isinstance(keywords, list):
+            return [str(k).strip() for k in keywords]
+    except JSONDecodeError as e:
+        logger.warning(f"Could not parse keywords JSON: {e}")
+
+    # Fallback: split by commas
+    return [k.strip() for k in content.split(",")][:num_keywords]
+
+
+def translate_text(
+    text: str,
+    target_language: str,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 0.3,
+    max_tokens: int = 500,
+) -> str:
+    """
+    Translate the transcript text into the target language.
+    """
+    system_prompt = (
+        f"You are a translation assistant. Translate the provided text into {target_language}. "
+        "Maintain the original meaning and formatting."
+    )
+    user_prompt = f"Translate the following text:\n\n{text}"
+
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error during translation: {e}")
+        raise
+
+    return response.choices[0].message.content.strip()
+
+
+def clean_transcript(
+    text: str,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 0.3,
+    max_tokens: int = 500,
+) -> str:
+    """
+    Clean and polish the transcript text.
+    """
+    system_prompt = (
+        "You are a helpful assistant that cleans and polishes raw transcript text. "
+        "Remove filler words, correct grammar and punctuation, and produce clear readable text."
+    )
+    user_prompt = f"Clean the following transcript text:\n\n{text}"
+
+    try:
+        response = ChatCompletion.create(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error during cleaning: {e}")
+        raise
+
+    return response.choices[0].message.content.strip()
+
+
+__all__ = [
+    "summarize_transcript",
+    "analyze_sentiment",
+    "extract_keywords",
+    "translate_text",
+    "clean_transcript",
+]
+
+
+===== FILE: AI tools to use\Back\Routeassistant.py =====
+
+from typing import Any
+
+import openai
+from fastapi import APIRouter, Depends, HTTPException, status
+from openai import OpenAIError
+from sqlalchemy.orm import Session
+
+from app.config import config
+from app.db import get_db
+from app.dependencies import get_current_user
+from app.schemas.assistant import (AskRequest, AskResponse, TrainRequest,
+                                   TrainResponse)
+from app.utils.logger import logger
+
+# Alias ChatCompletion so MyPy recognizes it
+ChatCompletion: Any = openai.ChatCompletion  # type: ignore[attr-defined]
+
+router = APIRouter()
+
+# In-memory feedback store (placeholder for future persistence)
+_feedback_store: list[dict] = []
+
+
+@router.post(
+    "/ask",
+    response_model=AskResponse,
+    summary="Ask the AI Assistant a question based on a transcript",
+)
+async def ask_assistant(
+    ask_req: AskRequest,
+    db: Session = Depends(get_db),  # kept for future logging
+    current_user=Depends(get_current_user),
+) -> AskResponse:
+    """
+    Use OpenAI to answer a question about the provided transcript.
+    """
+    if not config.OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenAI API key is not configured.",
+        )
+
+    openai.api_key = config.OPENAI_API_KEY
+    system_prompt = (
+        "You are a helpful assistant that answers questions about transcripts. "
+        "Use the transcript context to provide accurate answers."
+    )
+    user_prompt = f"Transcript:\n{ask_req.transcript}\n\nQuestion: {ask_req.question}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    try:
+        response = ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7,
+        )
+        # Extract answer
+        answer = response.choices[0].message.content.strip()
+        # Return in the schema shape
+        return AskResponse(response=answer, mode=ask_req.mode or "auto")
+
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error in /assistant/ask: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Error communicating with OpenAI service.",
+        )
+
+
+@router.post(
+    "/train",
+    response_model=TrainResponse,
+    summary="Submit feedback for assistant responses",
+)
+async def train_assistant(
+    train_req: TrainRequest,
+    current_user=Depends(get_current_user),
+) -> TrainResponse:
+    """
+    Collect feedback on assistant answers for future model training.
+    """
+    _feedback_store.append(
+        {
+            "user_id": current_user.id,
+            "transcript": train_req.transcript,
+            "question": train_req.question,
+            "answer": train_req.answer,
+            "rating": train_req.rating,
+            "feedback": train_req.feedback,
+        }
+    )
+    logger.info(f"Received assistant feedback from user {current_user.id}")
+    return TrainResponse(status="received")
+
+
+__all__ = ["ask_assistant", "train_assistant"]
+
+
+===== FILE: AI tools to use\Back\Schemaassistant.py =====
+
+"""
+app/schemas/assistant.py: Pydantic models for the AI assistant endpoints and alias definitions.
+"""
+
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+
+class AssistantQuery(BaseModel):
+    transcript: str = Field(
+        ...,
+        description="Full transcript context",
+        examples=["Sample transcript text of a conversation."],
+    )
+    question: str = Field(
+        ...,
+        description="User's query or question",
+        examples=["What is the main point of the conversation?"],
+    )
+    history: List[str] = Field(
+        default_factory=list,
+        description="Prior conversation history messages",
+        examples=[["Previous user message", "Previous assistant reply"]],
+    )
+    user_id: str = Field(
+        default="default",
+        description="Identifier for the user (used for context memory)",
+        examples=["user123"],
+    )
+    mode: Optional[str] = Field(
+        default="auto",
+        description="Mode of response (use 'auto' for automatic mode selection)",
+        examples=["auto"],
+    )
+    tone: Optional[Literal["friendly", "formal", "neutral"]] = Field(
+        default="friendly",
+        description="Tone of the assistant's response",
+        examples=["friendly"],
+    )
+    voice: Optional[Literal["expert", "teacher", "casual", "technical"]] = Field(
+        default="expert",
+        description="Voice style of the assistant's response",
+        examples=["expert"],
+    )
+
+
+class AssistantResponse(BaseModel):
+    response: str = Field(..., description="The assistant's answer or output text")
+    mode: str = Field(
+        ..., description="The mode that was determined or used for this response"
+    )
+
+
+class TrainingExample(BaseModel):
+    user_id: str
+    transcript: str
+    question: str
+    answer: str
+    rating: Optional[int] = None
+    feedback: Optional[str] = None
+
+
+# --- Aliases so your routes can keep using the old names ---
+AskRequest = AssistantQuery
+AskResponse = AssistantResponse
+
+
+class TrainRequest(BaseModel):
+    transcript: str
+    question: str
+    answer: str
+    rating: int
+    feedback: Optional[str] = None
+
+
+class TrainResponse(BaseModel):
+    status: str
+
+
+__all__ = [
+    "AssistantQuery",
+    "AssistantResponse",
+    "TrainingExample",
+    "AskRequest",
+    "AskResponse",
+    "TrainRequest",
+    "TrainResponse",
+]
+
+
+===== FILE: Backend\.audit\import-boot.json =====
+
+{
+
+  "fastapi_version": "unknown",
+
+  "pydantic_version": "unknown",
+
+  "import_errors": [
+
+    {
+
+      "module": "app.config",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.db",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.dependencies",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.main",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    }
+
+  ]
+
+}
+
+
+
+===== FILE: Backend\.audit\mypy.txt =====
+
+app\routes\history.py:11: error: Need type annotation for "__all__" (hint: "__all__: list[<type>] = ...")  [var-annotated]
+
+seed_user.py:11: error: Module "app" has no attribute "Base"  [attr-defined]
+
+seed_user.py:11: error: Module "app" has no attribute "User"  [attr-defined]
+
+app\services\transcription.py:16: error: Unused "type: ignore" comment  [unused-ignore]
+
+asgi_dev.py:43: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:43: error: Invalid base class "Base"  [misc]
+
+asgi_dev.py:52: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:52: error: Invalid base class "Base"  [misc]
+
+scripts\create_user.py:58: error: "str" has no attribute "name"  [attr-defined]
+
+app\utils\db_utils.py:22: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\config.py:5: error: Library stubs not installed for "redis"  [import-untyped]
+
+app\config.py:22: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:23: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:24: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:27: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:31: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:32: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:33: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:34: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:35: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:41: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:49: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:52: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:53: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:54: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:55: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:58: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:59: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:64: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:66: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:70: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:71: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:74: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:75: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:76: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:79: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\utils\stripe_client.py:42: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:56: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:89: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:90: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:92: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\utils\stripe_client.py:93: error: "type[SubscriptionStatus]" has no attribute "unpaid"  [attr-defined]
+
+app\utils\stripe_client.py:95: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\redis_client.py:5: error: Library stubs not installed for "redis"  [import-untyped]
+
+app\utils\redis_client.py:5: note: Hint: "python3 -m pip install types-redis"
+
+app\utils\redis_client.py:5: note: (or run "mypy --install-types" to install all missing stub packages)
+
+app\utils\redis_client.py:5: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+
+app\utils\export_utils.py:48: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\verify_email.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\verify_email.py:59: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\subscription.py:86: error: "type[SubscriptionStatus]" has no attribute "active"  [attr-defined]
+
+app\routes\subscription.py:102: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\subscription.py:102: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\routes\subscription.py:102: note: Error code "attr-defined" not covered by "type: ignore" comment
+
+app\routes\subscription.py:103: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\stripe_webhook.py:4: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\stripe_webhook.py:45: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\signup.py:15: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\send_reset.py:12: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:13: error: Unused "type: ignore" comment  [unused-ignore]
+
+Found 32 errors in 16 files (checked 85 source files)
+
+
+
+===== FILE: Backend\.audit\patterns.json =====
+
+{
+
+  "findings": [
+
+    {
+
+      "file": "app\\routes\\password_reset.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 4
+
+    },
+
+    {
+
+      "file": "app\\routes\\send_reset.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 6
+
+    },
+
+    {
+
+      "file": "app\\routes\\signup.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 6
+
+    },
+
+    {
+
+      "file": "app\\routes\\verify_email.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 4
+
+    },
+
+    {
+
+      "file": "app\\schemas\\auth.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 5
+
+    },
+
+    {
+
+      "file": "app\\schemas\\contact.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 2
+
+    },
+
+    {
+
+      "file": "app\\schemas\\export.py",
+
+      "issue": "pydantic_v1_fields",
+
+      "line": 29
+
+    },
+
+    {
+
+      "file": "app\\schemas\\export.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 5
+
+    },
+
+    {
+
+      "file": "app\\schemas\\feedback.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 3
+
+    },
+
+    {
+
+      "file": "app\\schemas\\history.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 4
+
+    },
+
+    {
+
+      "file": "app\\schemas\\newsletter.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 1
+
+    },
+
+    {
+
+      "file": "app\\schemas\\subscription.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 3
+
+    },
+
+    {
+
+      "file": "app\\schemas\\subtitle.py",
+
+      "issue": "pydantic_v1_fields",
+
+      "line": 24
+
+    },
+
+    {
+
+      "file": "app\\schemas\\subtitle.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 2
+
+    },
+
+    {
+
+      "file": "app\\schemas\\summary.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 2
+
+    },
+
+    {
+
+      "file": "app\\schemas\\transcription.py",
+
+      "issue": "pydantic_v1_fields",
+
+      "line": 19
+
+    },
+
+    {
+
+      "file": "app\\schemas\\transcription.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 2
+
+    },
+
+    {
+
+      "file": "app\\schemas\\translate.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 1
+
+    },
+
+    {
+
+      "file": "app\\schemas\\user.py",
+
+      "issue": "pydantic_v1_fields",
+
+      "line": 44
+
+    },
+
+    {
+
+      "file": "app\\schemas\\user.py",
+
+      "issue": "pydantic_v1_fields",
+
+      "line": 55
+
+    },
+
+    {
+
+      "file": "app\\schemas\\user.py",
+
+      "issue": "pydantic_v1_import",
+
+      "line": 4
+
+    }
+
+  ]
+
+}
+
+
+
+===== FILE: Backend\.audit\pip-audit.txt =====
+
+Name        Version ID                  Fix Versions
+
+----------- ------- ------------------- ------------
+
+ecdsa       0.19.1  GHSA-wj6h-64fc-37mp
+
+starlette   0.38.6  GHSA-f96h-pmfr-66vw 0.40.0
+
+starlette   0.38.6  GHSA-2c2j-9gv5-cj73 0.47.2
+
+future      1.0.0   GHSA-xqrq-4mgf-ff32
+
+python-jose 3.3.0   PYSEC-2024-232      3.4.0
+
+python-jose 3.3.0   PYSEC-2024-233      3.4.0
+
+
+
+===== FILE: Backend\.audit\pipdeptree.txt =====
+
+filelock==3.19.1
+
+mypy==1.11.2
+
+  - mypy_extensions [required: >=1.0.0, installed: 1.1.0]
+
+  - typing_extensions [required: >=4.6.0, installed: 4.15.0]
+
+pip_audit==2.7.3
+
+  - CacheControl [required: >=0.13.0, installed: 0.14.3]
+
+    - msgpack [required: >=0.5.2,<2.0.0, installed: 1.1.1]
+
+    - requests [required: >=2.16.0, installed: 2.32.5]
+
+      - certifi [required: >=2017.4.17, installed: 2025.8.3]
+
+      - charset-normalizer [required: >=2,<4, installed: 3.4.3]
+
+      - idna [required: >=2.5,<4, installed: 3.10]
+
+      - urllib3 [required: >=1.21.1,<3, installed: 2.5.0]
+
+  - cyclonedx-python-lib [required: >=5,<8, installed: 7.6.2]
+
+    - license-expression [required: >=30,<31, installed: 30.4.4]
+
+      - boolean.py [required: >=4.0, installed: 5.0]
+
+    - packageurl-python [required: >=0.11,<2, installed: 0.17.5]
+
+    - py-serializable [required: >=1.1.0,<2.0.0, installed: 1.1.2]
+
+      - defusedxml [required: >=0.7.1,<0.8.0, installed: 0.7.1]
+
+    - sortedcontainers [required: >=2.4.0,<3.0.0, installed: 2.4.0]
+
+  - html5lib [required: >=1.1, installed: 1.1]
+
+    - six [required: >=1.9, installed: 1.17.0]
+
+    - webencodings [required: Any, installed: 0.5.1]
+
+  - packaging [required: >=23.0.0, installed: 25.0]
+
+  - pip-api [required: >=0.0.28, installed: 0.0.34]
+
+    - pip [required: Any, installed: 25.2]
+
+  - pip-requirements-parser [required: >=32.0.0, installed: 32.0.1]
+
+    - packaging [required: Any, installed: 25.0]
+
+    - pyparsing [required: Any, installed: 3.2.4]
+
+  - requests [required: >=2.31.0, installed: 2.32.5]
+
+    - certifi [required: >=2017.4.17, installed: 2025.8.3]
+
+    - charset-normalizer [required: >=2,<4, installed: 3.4.3]
+
+    - idna [required: >=2.5,<4, installed: 3.10]
+
+    - urllib3 [required: >=1.21.1,<3, installed: 2.5.0]
+
+  - rich [required: >=12.4, installed: 14.1.0]
+
+    - markdown-it-py [required: >=2.2.0, installed: 4.0.0]
+
+      - mdurl [required: ~=0.1, installed: 0.1.2]
+
+    - Pygments [required: >=2.13.0,<3.0.0, installed: 2.19.2]
+
+  - toml [required: >=0.10, installed: 0.10.2]
+
+pipdeptree==2.23.1
+
+  - packaging [required: >=23.1, installed: 25.0]
+
+  - pip [required: >=23.1.2, installed: 25.2]
+
+pytest==8.3.3
+
+  - colorama [required: Any, installed: 0.4.6]
+
+  - iniconfig [required: Any, installed: 2.1.0]
+
+  - packaging [required: Any, installed: 25.0]
+
+  - pluggy [required: >=1.5,<2, installed: 1.6.0]
+
+ruff==0.6.8
+
+setuptools==65.5.0
+
+vulture==2.11
+
+
+
+===== FILE: Backend\.audit\pip-freeze.before.txt =====
+
+
+===== FILE: Backend\.audit\report.md =====
+
+# EchoScript Backend Audit
+
+
+## Versions & Import Boot
+
+```
+{ 
+ 
+     " f a s t a p i _ v e r s i o n " :   " u n k n o w n " , 
+ 
+     " p y d a n t i c _ v e r s i o n " :   " u n k n o w n " , 
+ 
+     " i m p o r t _ e r r o r s " :   [ 
+ 
+         { 
+ 
+             " m o d u l e " :   " a p p . c o n f i g " , 
+ 
+             " e r r o r " :   " M o d u l e N o t F o u n d E r r o r ( \ " N o   m o d u l e   n a m e d   ' a p p ' \ " ) " 
+ 
+         } , 
+ 
+         { 
+ 
+             " m o d u l e " :   " a p p . d b " , 
+ 
+             " e r r o r " :   " M o d u l e N o t F o u n d E r r o r ( \ " N o   m o d u l e   n a m e d   ' a p p ' \ " ) " 
+ 
+         } , 
+ 
+         { 
+ 
+             " m o d u l e " :   " a p p . d e p e n d e n c i e s " , 
+ 
+             " e r r o r " :   " M o d u l e N o t F o u n d E r r o r ( \ " N o   m o d u l e   n a m e d   ' a p p ' \ " ) " 
+ 
+         } , 
+ 
+         { 
+ 
+             " m o d u l e " :   " a p p . m a i n " , 
+ 
+             " e r r o r " :   " M o d u l e N o t F o u n d E r r o r ( \ " N o   m o d u l e   n a m e d   ' a p p ' \ " ) " 
+ 
+         } 
+ 
+     ] 
+ 
+ } 
+ 
+ 
+```
+
+
+## Dependency Tree
+
+```
+f i l e l o c k = = 3 . 1 9 . 1 
+ 
+ m y p y = = 1 . 1 1 . 2 
+ 
+     -   m y p y _ e x t e n s i o n s   [ r e q u i r e d :   > = 1 . 0 . 0 ,   i n s t a l l e d :   1 . 1 . 0 ] 
+ 
+     -   t y p i n g _ e x t e n s i o n s   [ r e q u i r e d :   > = 4 . 6 . 0 ,   i n s t a l l e d :   4 . 1 5 . 0 ] 
+ 
+ p i p _ a u d i t = = 2 . 7 . 3 
+ 
+     -   C a c h e C o n t r o l   [ r e q u i r e d :   > = 0 . 1 3 . 0 ,   i n s t a l l e d :   0 . 1 4 . 3 ] 
+ 
+         -   m s g p a c k   [ r e q u i r e d :   > = 0 . 5 . 2 , < 2 . 0 . 0 ,   i n s t a l l e d :   1 . 1 . 1 ] 
+ 
+         -   r e q u e s t s   [ r e q u i r e d :   > = 2 . 1 6 . 0 ,   i n s t a l l e d :   2 . 3 2 . 5 ] 
+ 
+             -   c e r t i f i   [ r e q u i r e d :   > = 2 0 1 7 . 4 . 1 7 ,   i n s t a l l e d :   2 0 2 5 . 8 . 3 ] 
+ 
+             -   c h a r s e t - n o r m a l i z e r   [ r e q u i r e d :   > = 2 , < 4 ,   i n s t a l l e d :   3 . 4 . 3 ] 
+ 
+             -   i d n a   [ r e q u i r e d :   > = 2 . 5 , < 4 ,   i n s t a l l e d :   3 . 1 0 ] 
+ 
+             -   u r l l i b 3   [ r e q u i r e d :   > = 1 . 2 1 . 1 , < 3 ,   i n s t a l l e d :   2 . 5 . 0 ] 
+ 
+     -   c y c l o n e d x - p y t h o n - l i b   [ r e q u i r e d :   > = 5 , < 8 ,   i n s t a l l e d :   7 . 6 . 2 ] 
+ 
+         -   l i c e n s e - e x p r e s s i o n   [ r e q u i r e d :   > = 3 0 , < 3 1 ,   i n s t a l l e d :   3 0 . 4 . 4 ] 
+ 
+             -   b o o l e a n . p y   [ r e q u i r e d :   > = 4 . 0 ,   i n s t a l l e d :   5 . 0 ] 
+ 
+         -   p a c k a g e u r l - p y t h o n   [ r e q u i r e d :   > = 0 . 1 1 , < 2 ,   i n s t a l l e d :   0 . 1 7 . 5 ] 
+ 
+         -   p y - s e r i a l i z a b l e   [ r e q u i r e d :   > = 1 . 1 . 0 , < 2 . 0 . 0 ,   i n s t a l l e d :   1 . 1 . 2 ] 
+ 
+             -   d e f u s e d x m l   [ r e q u i r e d :   > = 0 . 7 . 1 , < 0 . 8 . 0 ,   i n s t a l l e d :   0 . 7 . 1 ] 
+ 
+         -   s o r t e d c o n t a i n e r s   [ r e q u i r e d :   > = 2 . 4 . 0 , < 3 . 0 . 0 ,   i n s t a l l e d :   2 . 4 . 0 ] 
+ 
+     -   h t m l 5 l i b   [ r e q u i r e d :   > = 1 . 1 ,   i n s t a l l e d :   1 . 1 ] 
+ 
+         -   s i x   [ r e q u i r e d :   > = 1 . 9 ,   i n s t a l l e d :   1 . 1 7 . 0 ] 
+ 
+         -   w e b e n c o d i n g s   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   0 . 5 . 1 ] 
+ 
+     -   p a c k a g i n g   [ r e q u i r e d :   > = 2 3 . 0 . 0 ,   i n s t a l l e d :   2 5 . 0 ] 
+ 
+     -   p i p - a p i   [ r e q u i r e d :   > = 0 . 0 . 2 8 ,   i n s t a l l e d :   0 . 0 . 3 4 ] 
+ 
+         -   p i p   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   2 5 . 2 ] 
+ 
+     -   p i p - r e q u i r e m e n t s - p a r s e r   [ r e q u i r e d :   > = 3 2 . 0 . 0 ,   i n s t a l l e d :   3 2 . 0 . 1 ] 
+ 
+         -   p a c k a g i n g   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   2 5 . 0 ] 
+ 
+         -   p y p a r s i n g   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   3 . 2 . 4 ] 
+ 
+     -   r e q u e s t s   [ r e q u i r e d :   > = 2 . 3 1 . 0 ,   i n s t a l l e d :   2 . 3 2 . 5 ] 
+ 
+         -   c e r t i f i   [ r e q u i r e d :   > = 2 0 1 7 . 4 . 1 7 ,   i n s t a l l e d :   2 0 2 5 . 8 . 3 ] 
+ 
+         -   c h a r s e t - n o r m a l i z e r   [ r e q u i r e d :   > = 2 , < 4 ,   i n s t a l l e d :   3 . 4 . 3 ] 
+ 
+         -   i d n a   [ r e q u i r e d :   > = 2 . 5 , < 4 ,   i n s t a l l e d :   3 . 1 0 ] 
+ 
+         -   u r l l i b 3   [ r e q u i r e d :   > = 1 . 2 1 . 1 , < 3 ,   i n s t a l l e d :   2 . 5 . 0 ] 
+ 
+     -   r i c h   [ r e q u i r e d :   > = 1 2 . 4 ,   i n s t a l l e d :   1 4 . 1 . 0 ] 
+ 
+         -   m a r k d o w n - i t - p y   [ r e q u i r e d :   > = 2 . 2 . 0 ,   i n s t a l l e d :   4 . 0 . 0 ] 
+ 
+             -   m d u r l   [ r e q u i r e d :   ~ = 0 . 1 ,   i n s t a l l e d :   0 . 1 . 2 ] 
+ 
+         -   P y g m e n t s   [ r e q u i r e d :   > = 2 . 1 3 . 0 , < 3 . 0 . 0 ,   i n s t a l l e d :   2 . 1 9 . 2 ] 
+ 
+     -   t o m l   [ r e q u i r e d :   > = 0 . 1 0 ,   i n s t a l l e d :   0 . 1 0 . 2 ] 
+ 
+ p i p d e p t r e e = = 2 . 2 3 . 1 
+ 
+     -   p a c k a g i n g   [ r e q u i r e d :   > = 2 3 . 1 ,   i n s t a l l e d :   2 5 . 0 ] 
+ 
+     -   p i p   [ r e q u i r e d :   > = 2 3 . 1 . 2 ,   i n s t a l l e d :   2 5 . 2 ] 
+ 
+ p y t e s t = = 8 . 3 . 3 
+ 
+     -   c o l o r a m a   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   0 . 4 . 6 ] 
+ 
+     -   i n i c o n f i g   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   2 . 1 . 0 ] 
+ 
+     -   p a c k a g i n g   [ r e q u i r e d :   A n y ,   i n s t a l l e d :   2 5 . 0 ] 
+ 
+     -   p l u g g y   [ r e q u i r e d :   > = 1 . 5 , < 2 ,   i n s t a l l e d :   1 . 6 . 0 ] 
+ 
+ r u f f = = 0 . 6 . 8 
+ 
+ s e t u p t o o l s = = 6 5 . 5 . 0 
+ 
+ v u l t u r e = = 2 . 1 1 
+ 
+ 
+```
+
+
+## Security (pip-audit)
+
+```
+N a m e                 V e r s i o n   I D                                     F i x   V e r s i o n s 
+ 
+ - - - - - - - - - - -   - - - - - - -   - - - - - - - - - - - - - - - - - - -   - - - - - - - - - - - - 
+ 
+ e c d s a               0 . 1 9 . 1     G H S A - w j 6 h - 6 4 f c - 3 7 m p 
+ 
+ s t a r l e t t e       0 . 3 8 . 6     G H S A - f 9 6 h - p m f r - 6 6 v w   0 . 4 0 . 0 
+ 
+ s t a r l e t t e       0 . 3 8 . 6     G H S A - 2 c 2 j - 9 g v 5 - c j 7 3   0 . 4 7 . 2 
+ 
+ f u t u r e             1 . 0 . 0       G H S A - x q r q - 4 m g f - f f 3 2 
+ 
+ p y t h o n - j o s e   3 . 3 . 0       P Y S E C - 2 0 2 4 - 2 3 2             3 . 4 . 0 
+ 
+ p y t h o n - j o s e   3 . 3 . 0       P Y S E C - 2 0 2 4 - 2 3 3             3 . 4 . 0 
+ 
+ 
+```
+
+
+## Dead/Unused Code (vulture)
+
+```
+a p p \ c o n f i g . p y : 2 2 :   u n u s e d   a t t r i b u t e   ' A P P _ N A M E '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 2 8 :   u n u s e d   a t t r i b u t e   ' W H I S P E R _ M O D E L '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 3 1 :   u n u s e d   a t t r i b u t e   ' O P E N A I _ A P I _ K E Y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 3 2 :   u n u s e d   a t t r i b u t e   ' H F _ T O K E N '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 6 4 :   u n u s e d   a t t r i b u t e   ' C O R S _ A L L O W _ O R I G I N S '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 6 6 :   u n u s e d   a t t r i b u t e   ' C O R S _ A L L O W _ O R I G I N S '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 7 0 :   u n u s e d   a t t r i b u t e   ' B A S E _ D I R '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o n f i g . p y : 7 9 :   u n u s e d   a t t r i b u t e   ' A L L O W E D _ E X T E N S I O N S '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 7 :   u n u s e d   v a r i a b l e   ' m o d e l _ c o n f i g '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 1 4 :   u n u s e d   v a r i a b l e   ' e n v '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 1 5 :   u n u s e d   v a r i a b l e   ' a p i _ h o s t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 1 6 :   u n u s e d   v a r i a b l e   ' a p i _ p o r t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 1 9 :   u n u s e d   v a r i a b l e   ' c o r s _ o r i g i n s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 2 :   u n u s e d   v a r i a b l e   ' s e c r e t _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 3 :   u n u s e d   v a r i a b l e   ' a l g o r i t h m '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 4 :   u n u s e d   v a r i a b l e   ' a c c e s s _ t o k e n _ e x p i r e _ m i n u t e s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 5 :   u n u s e d   v a r i a b l e   ' j w t _ s e c r e t _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 6 :   u n u s e d   v a r i a b l e   ' j w t _ a l g o r i t h m '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 2 9 :   u n u s e d   v a r i a b l e   ' s t r i p e _ s e c r e t _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 0 :   u n u s e d   v a r i a b l e   ' s t r i p e _ w e b h o o k _ s e c r e t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 1 :   u n u s e d   v a r i a b l e   ' s t r i p e _ p u b l i c _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 2 :   u n u s e d   v a r i a b l e   ' s t r i p e _ p r i c e _ p r o '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 3 :   u n u s e d   v a r i a b l e   ' s t r i p e _ p r i c e _ p r e m i u m '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 6 :   u n u s e d   v a r i a b l e   ' a s r _ m o d e l '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 7 :   u n u s e d   v a r i a b l e   ' w h i s p e r _ m o d e l _ s i z e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 8 :   u n u s e d   v a r i a b l e   ' w h i s p e r _ d e v i c e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 3 9 :   u n u s e d   v a r i a b l e   ' w h i s p e r _ c o m p u t e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 0 :   u n u s e d   v a r i a b l e   ' h u g g i n g f a c e _ t o k e n '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 1 :   u n u s e d   v a r i a b l e   ' p y a n n o t e _ p i p e l i n e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 2 :   u n u s e d   v a r i a b l e   ' o p e n a i _ a p i _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 5 :   u n u s e d   v a r i a b l e   ' f r o m _ e m a i l '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 6 :   u n u s e d   v a r i a b l e   ' v i t e _ a p i _ b a s e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ c o r e \ s e t t i n g s . p y : 4 7 :   u n u s e d   v a r i a b l e   ' s m t p _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ d b . p y : 1 0 :   u n u s e d   v a r i a b l e   ' m o d e l _ c o n f i g '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ d b . p y : 4 3 :   u n u s e d   v a r i a b l e   ' d b _ s e s s i o n '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ d e p e n d e n c i e s . p y : 5 0 :   u n u s e d   f u n c t i o n   ' g e t _ a d m i n _ u s e r '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m a i n . p y : 3 9 :   u n u s e d   f u n c t i o n   ' h e a l t h z '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 1 8 :   u n u s e d   v a r i a b l e   ' p a s t _ d u e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 2 0 :   u n u s e d   v a r i a b l e   ' i n c o m p l e t e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 2 1 :   u n u s e d   v a r i a b l e   ' i n c o m p l e t e _ e x p i r e d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 2 2 :   u n u s e d   v a r i a b l e   ' t r i a l i n g '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 3 8 :   u n u s e d   v a r i a b l e   ' s u b s c r i p t i o n s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 6 4 :   u n u s e d   v a r i a b l e   ' s t r i p e _ c u s t o m e r _ i d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 7 8 :   u n u s e d   v a r i a b l e   ' r e n e w e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s . p y : 7 9 :   u n u s e d   v a r i a b l e   ' c a n c e l e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 9 :   u n u s e d   v a r i a b l e   ' A C T I V E '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 1 1 :   u n u s e d   v a r i a b l e   ' P A S T _ D U E '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 1 2 :   u n u s e d   v a r i a b l e   ' C A N C E L E D '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 1 3 :   u n u s e d   v a r i a b l e   ' I N C O M P L E T E '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 1 4 :   u n u s e d   v a r i a b l e   ' U N P A I D '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 3 0 :   u n u s e d   v a r i a b l e   ' s t r i p e _ c u s t o m e r _ i d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 3 3 :   u n u s e d   v a r i a b l e   ' c r e a t e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ s u b s c r i p t i o n . p y : 3 4 :   u n u s e d   v a r i a b l e   ' u p d a t e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ u s e r . p y : 1 5 :   u n u s e d   v a r i a b l e   ' i s _ v e r i f i e d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ u s e r . p y : 1 7 :   u n u s e d   v a r i a b l e   ' c r e a t e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ m o d e l s \ u s e r . p y : 1 8 :   u n u s e d   v a r i a b l e   ' u p d a t e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ c o n t a c t . p y : 1 3 :   u n u s e d   f u n c t i o n   ' s u b m i t _ c o n t a c t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ e x p o r t . p y : 1 5 :   u n u s e d   f u n c t i o n   ' e x p o r t _ t r a n s c r i p t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ f e e d b a c k . p y : 1 5 :   u n u s e d   f u n c t i o n   ' s u b m i t _ f e e d b a c k '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ n e w s l e t t e r . p y : 1 8 :   u n u s e d   f u n c t i o n   ' s u b s c r i b e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ n e w s l e t t e r . p y : 5 1 :   u n u s e d   f u n c t i o n   ' u n s u b s c r i b e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ s i g n u p . p y : 2 9 :   u n u s e d   f u n c t i o n   ' s i g n u p '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ s t r i p e _ w e b h o o k . p y : 1 6 :   u n u s e d   f u n c t i o n   ' s t r i p e _ w e b h o o k '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 1 0 3 :   u n u s e d   a t t r i b u t e   ' c a n c e l e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ t r a n s c r i b e . p y : 1 8 :   u n u s e d   f u n c t i o n   ' t r a n s c r i b e _ e n d p o i n t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ t r a n s c r i p t s . p y : 1 0 :   u n u s e d   f u n c t i o n   ' g e t _ t r a n s c r i p t s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ v i d e o _ t a s k . p y : 2 3 :   u n u s e d   v a r i a b l e   ' t a r g e t _ l a n g '   ( 1 0 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ r o u t e s \ v i d e o _ t a s k . p y : 2 9 :   u n u s e d   f u n c t i o n   ' v i d e o _ t a s k '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ a u t h . p y : 3 2 :   u n u s e d   v a r i a b l e   ' t o k e n _ t y p e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ a u t h . p y : 4 2 :   u n u s e d   v a r i a b l e   ' e x p '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ e x p o r t . p y : 2 9 :   u n u s e d   v a r i a b l e   ' s c h e m a _ e x t r a '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ f e e d b a c k . p y : 2 0 :   u n u s e d   v a r i a b l e   ' f e e d b a c k _ i d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ f e e d b a c k . p y : 2 7 :   u n u s e d   v a r i a b l e   ' s u b m i t t e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ h i s t o r y . p y : 1 0 :   u n u s e d   v a r i a b l e   ' c h a n g e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ h i s t o r y . p y : 1 3 :   u n u s e d   c l a s s   ' H i s t o r y R e q u e s t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ h i s t o r y . p y : 1 7 :   u n u s e d   c l a s s   ' H i s t o r y R e s p o n s e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ h i s t o r y . p y : 1 9 :   u n u s e d   v a r i a b l e   ' h i s t o r y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 2 6 :   u n u s e d   v a r i a b l e   ' r e a s o n '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 3 6 :   u n u s e d   v a r i a b l e   ' p l a n '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 3 8 :   u n u s e d   v a r i a b l e   ' s t a r t _ d a t e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 3 9 :   u n u s e d   v a r i a b l e   ' e n d _ d a t e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 4 1 :   u n u s e d   v a r i a b l e   ' m o d e l _ c o n f i g '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 5 1 :   u n u s e d   v a r i a b l e   ' s t r i p e _ c u s t o m e r _ i d '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 5 5 :   u n u s e d   v a r i a b l e   ' r e n e w e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 5 8 :   u n u s e d   v a r i a b l e   ' c a n c e l e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b s c r i p t i o n . p y : 6 2 :   u n u s e d   v a r i a b l e   ' m o d e l _ c o n f i g '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b t i t l e . p y : 1 0 :   u n u s e d   v a r i a b l e   ' s u b t i t l e s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u b t i t l e . p y : 2 4 :   u n u s e d   v a r i a b l e   ' o r m _ m o d e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ s u m m a r y . p y : 1 1 :   u n u s e d   v a r i a b l e   ' s u m m a r y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 0 :   u n u s e d   v a r i a b l e   ' t r a n s c r i p t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 1 :   u n u s e d   v a r i a b l e   ' s u m m a r y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 2 :   u n u s e d   v a r i a b l e   ' s e n t i m e n t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 3 :   u n u s e d   v a r i a b l e   ' k e y w o r d s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 4 :   u n u s e d   v a r i a b l e   ' s u b t i t l e s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ t r a n s c r i p t i o n . p y : 1 9 :   u n u s e d   v a r i a b l e   ' o r m _ m o d e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ u s e r . p y : 4 4 :   u n u s e d   v a r i a b l e   ' o r m _ m o d e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ u s e r . p y : 5 2 :   u n u s e d   v a r i a b l e   ' s u b s c r i p t i o n s '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ s c h e m a s \ u s e r . p y : 5 5 :   u n u s e d   v a r i a b l e   ' o r m _ m o d e '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 1 5 :   u n u s e d   a t t r i b u t e   ' a p i _ k e y '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 0 :   u n u s e d   a t t r i b u t e   ' r e n e w e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 5 :   u n u s e d   a t t r i b u t e   ' c a n c e l e d _ a t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ a p p \ w s \ s o c k e t _ t r a n s c r i b e r . p y : 5 :   u n u s e d   f u n c t i o n   ' w e b s o c k e t _ e n d p o i n t '   ( 6 0 %   c o n f i d e n c e ) 
+ 
+ 
+```
+
+
+## Mypy (types)
+
+```
+a p p \ r o u t e s \ h i s t o r y . p y : 1 1 :   e r r o r :   N e e d   t y p e   a n n o t a t i o n   f o r   " _ _ a l l _ _ "   ( h i n t :   " _ _ a l l _ _ :   l i s t [ < t y p e > ]   =   . . . " )     [ v a r - a n n o t a t e d ] 
+ 
+ s e e d _ u s e r . p y : 1 1 :   e r r o r :   M o d u l e   " a p p "   h a s   n o   a t t r i b u t e   " B a s e "     [ a t t r - d e f i n e d ] 
+ 
+ s e e d _ u s e r . p y : 1 1 :   e r r o r :   M o d u l e   " a p p "   h a s   n o   a t t r i b u t e   " U s e r "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ s e r v i c e s \ t r a n s c r i p t i o n . p y : 1 6 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a s g i _ d e v . p y : 4 3 :   e r r o r :   V a r i a b l e   " a s g i _ d e v . B a s e "   i s   n o t   v a l i d   a s   a   t y p e     [ v a l i d - t y p e ] 
+ 
+ a s g i _ d e v . p y : 4 3 :   n o t e :   S e e   h t t p s : / / m y p y . r e a d t h e d o c s . i o / e n / s t a b l e / c o m m o n _ i s s u e s . h t m l # v a r i a b l e s - v s - t y p e - a l i a s e s 
+ 
+ a s g i _ d e v . p y : 4 3 :   e r r o r :   I n v a l i d   b a s e   c l a s s   " B a s e "     [ m i s c ] 
+ 
+ a s g i _ d e v . p y : 5 2 :   e r r o r :   V a r i a b l e   " a s g i _ d e v . B a s e "   i s   n o t   v a l i d   a s   a   t y p e     [ v a l i d - t y p e ] 
+ 
+ a s g i _ d e v . p y : 5 2 :   n o t e :   S e e   h t t p s : / / m y p y . r e a d t h e d o c s . i o / e n / s t a b l e / c o m m o n _ i s s u e s . h t m l # v a r i a b l e s - v s - t y p e - a l i a s e s 
+ 
+ a s g i _ d e v . p y : 5 2 :   e r r o r :   I n v a l i d   b a s e   c l a s s   " B a s e "     [ m i s c ] 
+ 
+ s c r i p t s \ c r e a t e _ u s e r . p y : 5 8 :   e r r o r :   " s t r "   h a s   n o   a t t r i b u t e   " n a m e "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ u t i l s \ d b _ u t i l s . p y : 2 2 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ c o n f i g . p y : 5 :   e r r o r :   L i b r a r y   s t u b s   n o t   i n s t a l l e d   f o r   " r e d i s "     [ i m p o r t - u n t y p e d ] 
+ 
+ a p p \ c o n f i g . p y : 2 2 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 2 3 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 2 4 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 2 7 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 2 8 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 3 1 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 3 2 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 3 3 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 3 4 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 3 5 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 4 1 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 4 9 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 2 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 3 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 4 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 5 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 8 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 5 9 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 6 4 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 6 6 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 0 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 1 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 4 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 5 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 6 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ c o n f i g . p y : 7 9 :   n o t e :   B y   d e f a u l t   t h e   b o d i e s   o f   u n t y p e d   f u n c t i o n s   a r e   n o t   c h e c k e d ,   c o n s i d e r   u s i n g   - - c h e c k - u n t y p e d - d e f s     [ a n n o t a t i o n - u n c h e c k e d ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 4 2 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 5 6 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 8 9 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 0 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 2 :   e r r o r :   " t y p e [ S u b s c r i p t i o n S t a t u s ] "   h a s   n o   a t t r i b u t e   " c a n c e l e d "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 3 :   e r r o r :   " t y p e [ S u b s c r i p t i o n S t a t u s ] "   h a s   n o   a t t r i b u t e   " u n p a i d "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ u t i l s \ s t r i p e _ c l i e n t . p y : 9 5 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ u t i l s \ r e d i s _ c l i e n t . p y : 5 :   e r r o r :   L i b r a r y   s t u b s   n o t   i n s t a l l e d   f o r   " r e d i s "     [ i m p o r t - u n t y p e d ] 
+ 
+ a p p \ u t i l s \ r e d i s _ c l i e n t . p y : 5 :   n o t e :   H i n t :   " p y t h o n 3   - m   p i p   i n s t a l l   t y p e s - r e d i s " 
+ 
+ a p p \ u t i l s \ r e d i s _ c l i e n t . p y : 5 :   n o t e :   ( o r   r u n   " m y p y   - - i n s t a l l - t y p e s "   t o   i n s t a l l   a l l   m i s s i n g   s t u b   p a c k a g e s ) 
+ 
+ a p p \ u t i l s \ r e d i s _ c l i e n t . p y : 5 :   n o t e :   S e e   h t t p s : / / m y p y . r e a d t h e d o c s . i o / e n / s t a b l e / r u n n i n g _ m y p y . h t m l # m i s s i n g - i m p o r t s 
+ 
+ a p p \ u t i l s \ e x p o r t _ u t i l s . p y : 4 8 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ v e r i f y _ e m a i l . p y : 1 1 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ v e r i f y _ e m a i l . p y : 5 9 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 8 6 :   e r r o r :   " t y p e [ S u b s c r i p t i o n S t a t u s ] "   h a s   n o   a t t r i b u t e   " a c t i v e "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 1 0 2 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 1 0 2 :   e r r o r :   " t y p e [ S u b s c r i p t i o n S t a t u s ] "   h a s   n o   a t t r i b u t e   " c a n c e l e d "     [ a t t r - d e f i n e d ] 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 1 0 2 :   n o t e :   E r r o r   c o d e   " a t t r - d e f i n e d "   n o t   c o v e r e d   b y   " t y p e :   i g n o r e "   c o m m e n t 
+ 
+ a p p \ r o u t e s \ s u b s c r i p t i o n . p y : 1 0 3 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s t r i p e _ w e b h o o k . p y : 4 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s t r i p e _ w e b h o o k . p y : 4 5 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s i g n u p . p y : 1 5 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ s e n d _ r e s e t . p y : 1 2 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ p a s s w o r d _ r e s e t . p y : 1 1 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ a p p \ r o u t e s \ p a s s w o r d _ r e s e t . p y : 1 3 :   e r r o r :   U n u s e d   " t y p e :   i g n o r e "   c o m m e n t     [ u n u s e d - i g n o r e ] 
+ 
+ F o u n d   3 2   e r r o r s   i n   1 6   f i l e s   ( c h e c k e d   8 5   s o u r c e   f i l e s ) 
+ 
+ 
+```
+
+
+## Pytest (smoke)
+
+_missing_
+
+
+## Pydantic/FastAPI patterns
+
+```
+{ 
+ 
+     " f i n d i n g s " :   [ 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ r o u t e s \ \ p a s s w o r d _ r e s e t . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   4 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ r o u t e s \ \ s e n d _ r e s e t . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   6 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ r o u t e s \ \ s i g n u p . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   6 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ r o u t e s \ \ v e r i f y _ e m a i l . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   4 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ a u t h . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   5 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ c o n t a c t . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   2 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ e x p o r t . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ f i e l d s " , 
+ 
+             " l i n e " :   2 9 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ e x p o r t . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   5 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ f e e d b a c k . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   3 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ h i s t o r y . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   4 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ n e w s l e t t e r . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   1 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ s u b s c r i p t i o n . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   3 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ s u b t i t l e . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ f i e l d s " , 
+ 
+             " l i n e " :   2 4 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ s u b t i t l e . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   2 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ s u m m a r y . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   2 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ t r a n s c r i p t i o n . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ f i e l d s " , 
+ 
+             " l i n e " :   1 9 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ t r a n s c r i p t i o n . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   2 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ t r a n s l a t e . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   1 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ u s e r . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ f i e l d s " , 
+ 
+             " l i n e " :   4 4 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ u s e r . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ f i e l d s " , 
+ 
+             " l i n e " :   5 5 
+ 
+         } , 
+ 
+         { 
+ 
+             " f i l e " :   " a p p \ \ s c h e m a s \ \ u s e r . p y " , 
+ 
+             " i s s u e " :   " p y d a n t i c _ v 1 _ i m p o r t " , 
+ 
+             " l i n e " :   4 
+ 
+         } 
+ 
+     ] 
+ 
+ } 
+ 
+ 
+```
+
+
+===== FILE: Backend\.audit\vulture.txt =====
+
+app\config.py:22: unused attribute 'APP_NAME' (60% confidence)
+
+app\config.py:28: unused attribute 'WHISPER_MODEL' (60% confidence)
+
+app\config.py:31: unused attribute 'OPENAI_API_KEY' (60% confidence)
+
+app\config.py:32: unused attribute 'HF_TOKEN' (60% confidence)
+
+app\config.py:64: unused attribute 'CORS_ALLOW_ORIGINS' (60% confidence)
+
+app\config.py:66: unused attribute 'CORS_ALLOW_ORIGINS' (60% confidence)
+
+app\config.py:70: unused attribute 'BASE_DIR' (60% confidence)
+
+app\config.py:79: unused attribute 'ALLOWED_EXTENSIONS' (60% confidence)
+
+app\core\settings.py:7: unused variable 'model_config' (60% confidence)
+
+app\core\settings.py:14: unused variable 'env' (60% confidence)
+
+app\core\settings.py:15: unused variable 'api_host' (60% confidence)
+
+app\core\settings.py:16: unused variable 'api_port' (60% confidence)
+
+app\core\settings.py:19: unused variable 'cors_origins' (60% confidence)
+
+app\core\settings.py:22: unused variable 'secret_key' (60% confidence)
+
+app\core\settings.py:23: unused variable 'algorithm' (60% confidence)
+
+app\core\settings.py:24: unused variable 'access_token_expire_minutes' (60% confidence)
+
+app\core\settings.py:25: unused variable 'jwt_secret_key' (60% confidence)
+
+app\core\settings.py:26: unused variable 'jwt_algorithm' (60% confidence)
+
+app\core\settings.py:29: unused variable 'stripe_secret_key' (60% confidence)
+
+app\core\settings.py:30: unused variable 'stripe_webhook_secret' (60% confidence)
+
+app\core\settings.py:31: unused variable 'stripe_public_key' (60% confidence)
+
+app\core\settings.py:32: unused variable 'stripe_price_pro' (60% confidence)
+
+app\core\settings.py:33: unused variable 'stripe_price_premium' (60% confidence)
+
+app\core\settings.py:36: unused variable 'asr_model' (60% confidence)
+
+app\core\settings.py:37: unused variable 'whisper_model_size' (60% confidence)
+
+app\core\settings.py:38: unused variable 'whisper_device' (60% confidence)
+
+app\core\settings.py:39: unused variable 'whisper_compute' (60% confidence)
+
+app\core\settings.py:40: unused variable 'huggingface_token' (60% confidence)
+
+app\core\settings.py:41: unused variable 'pyannote_pipeline' (60% confidence)
+
+app\core\settings.py:42: unused variable 'openai_api_key' (60% confidence)
+
+app\core\settings.py:45: unused variable 'from_email' (60% confidence)
+
+app\core\settings.py:46: unused variable 'vite_api_base' (60% confidence)
+
+app\core\settings.py:47: unused variable 'smtp_key' (60% confidence)
+
+app\db.py:10: unused variable 'model_config' (60% confidence)
+
+app\db.py:43: unused variable 'db_session' (60% confidence)
+
+app\dependencies.py:50: unused function 'get_admin_user' (60% confidence)
+
+app\main.py:39: unused function 'healthz' (60% confidence)
+
+app\models.py:18: unused variable 'past_due' (60% confidence)
+
+app\models.py:20: unused variable 'incomplete' (60% confidence)
+
+app\models.py:21: unused variable 'incomplete_expired' (60% confidence)
+
+app\models.py:22: unused variable 'trialing' (60% confidence)
+
+app\models.py:38: unused variable 'subscriptions' (60% confidence)
+
+app\models.py:64: unused variable 'stripe_customer_id' (60% confidence)
+
+app\models.py:78: unused variable 'renewed_at' (60% confidence)
+
+app\models.py:79: unused variable 'canceled_at' (60% confidence)
+
+app\models\subscription.py:9: unused variable 'ACTIVE' (60% confidence)
+
+app\models\subscription.py:11: unused variable 'PAST_DUE' (60% confidence)
+
+app\models\subscription.py:12: unused variable 'CANCELED' (60% confidence)
+
+app\models\subscription.py:13: unused variable 'INCOMPLETE' (60% confidence)
+
+app\models\subscription.py:14: unused variable 'UNPAID' (60% confidence)
+
+app\models\subscription.py:30: unused variable 'stripe_customer_id' (60% confidence)
+
+app\models\subscription.py:33: unused variable 'created_at' (60% confidence)
+
+app\models\subscription.py:34: unused variable 'updated_at' (60% confidence)
+
+app\models\user.py:15: unused variable 'is_verified' (60% confidence)
+
+app\models\user.py:17: unused variable 'created_at' (60% confidence)
+
+app\models\user.py:18: unused variable 'updated_at' (60% confidence)
+
+app\routes\contact.py:13: unused function 'submit_contact' (60% confidence)
+
+app\routes\export.py:15: unused function 'export_transcript' (60% confidence)
+
+app\routes\feedback.py:15: unused function 'submit_feedback' (60% confidence)
+
+app\routes\newsletter.py:18: unused function 'subscribe' (60% confidence)
+
+app\routes\newsletter.py:51: unused function 'unsubscribe' (60% confidence)
+
+app\routes\signup.py:29: unused function 'signup' (60% confidence)
+
+app\routes\stripe_webhook.py:16: unused function 'stripe_webhook' (60% confidence)
+
+app\routes\subscription.py:103: unused attribute 'canceled_at' (60% confidence)
+
+app\routes\transcribe.py:18: unused function 'transcribe_endpoint' (60% confidence)
+
+app\routes\transcripts.py:10: unused function 'get_transcripts' (60% confidence)
+
+app\routes\video_task.py:23: unused variable 'target_lang' (100% confidence)
+
+app\routes\video_task.py:29: unused function 'video_task' (60% confidence)
+
+app\schemas\auth.py:32: unused variable 'token_type' (60% confidence)
+
+app\schemas\auth.py:42: unused variable 'exp' (60% confidence)
+
+app\schemas\export.py:29: unused variable 'schema_extra' (60% confidence)
+
+app\schemas\feedback.py:20: unused variable 'feedback_id' (60% confidence)
+
+app\schemas\feedback.py:27: unused variable 'submitted_at' (60% confidence)
+
+app\schemas\history.py:10: unused variable 'change' (60% confidence)
+
+app\schemas\history.py:13: unused class 'HistoryRequest' (60% confidence)
+
+app\schemas\history.py:17: unused class 'HistoryResponse' (60% confidence)
+
+app\schemas\history.py:19: unused variable 'history' (60% confidence)
+
+app\schemas\subscription.py:26: unused variable 'reason' (60% confidence)
+
+app\schemas\subscription.py:36: unused variable 'plan' (60% confidence)
+
+app\schemas\subscription.py:38: unused variable 'start_date' (60% confidence)
+
+app\schemas\subscription.py:39: unused variable 'end_date' (60% confidence)
+
+app\schemas\subscription.py:41: unused variable 'model_config' (60% confidence)
+
+app\schemas\subscription.py:51: unused variable 'stripe_customer_id' (60% confidence)
+
+app\schemas\subscription.py:55: unused variable 'renewed_at' (60% confidence)
+
+app\schemas\subscription.py:58: unused variable 'canceled_at' (60% confidence)
+
+app\schemas\subscription.py:62: unused variable 'model_config' (60% confidence)
+
+app\schemas\subtitle.py:10: unused variable 'subtitles' (60% confidence)
+
+app\schemas\subtitle.py:24: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\summary.py:11: unused variable 'summary' (60% confidence)
+
+app\schemas\transcription.py:10: unused variable 'transcript' (60% confidence)
+
+app\schemas\transcription.py:11: unused variable 'summary' (60% confidence)
+
+app\schemas\transcription.py:12: unused variable 'sentiment' (60% confidence)
+
+app\schemas\transcription.py:13: unused variable 'keywords' (60% confidence)
+
+app\schemas\transcription.py:14: unused variable 'subtitles' (60% confidence)
+
+app\schemas\transcription.py:19: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\user.py:44: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\user.py:52: unused variable 'subscriptions' (60% confidence)
+
+app\schemas\user.py:55: unused variable 'orm_mode' (60% confidence)
+
+app\utils\stripe_client.py:15: unused attribute 'api_key' (60% confidence)
+
+app\utils\stripe_client.py:90: unused attribute 'renewed_at' (60% confidence)
+
+app\utils\stripe_client.py:95: unused attribute 'canceled_at' (60% confidence)
+
+app\ws\socket_transcriber.py:5: unused function 'websocket_endpoint' (60% confidence)
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\git-diff-names.txt =====
+
+Dockerfile
+
+app/config.py
+
+app/core/settings.py
+
+app/db.py
+
+app/main.py
+
+app/models.py
+
+app/models/create_user.py
+
+app/models/init_db.py
+
+app/routes/password_reset.py
+
+app/routes/signup.py
+
+app/routes/stripe_webhook.py
+
+app/routes/subscription.py
+
+app/routes/transcribe.py
+
+app/routes/transcripts.py
+
+app/routes/video_task.py
+
+app/schemas/auth.py
+
+app/schemas/contact.py
+
+app/schemas/feedback.py
+
+app/schemas/history.py
+
+app/schemas/subscription.py
+
+app/schemas/subtitle.py
+
+app/schemas/transcription.py
+
+app/schemas/user.py
+
+app/services/transcription.py
+
+app/utils/auth_utils.py
+
+app/utils/db_utils.py
+
+app/utils/export_utils.py
+
+app/utils/file_helpers.py
+
+app/utils/redis_client.py
+
+app/utils/safety_check.py
+
+app/utils/send_email.py
+
+app/utils/stripe_client.py
+
+asgi_dev.py
+
+echoscript_backend_20250915_153911/app/config.py
+
+echoscript_backend_20250915_153911/app/core/settings.py
+
+echoscript_backend_20250915_153911/app/db.py
+
+echoscript_backend_20250915_153911/app/models.py
+
+echoscript_backend_20250915_153911/app/models/create_user.py
+
+echoscript_backend_20250915_153911/app/models/init_db.py
+
+echoscript_backend_20250915_153911/app/routes/password_reset.py
+
+echoscript_backend_20250915_153911/app/routes/signup.py
+
+echoscript_backend_20250915_153911/app/routes/stripe_webhook.py
+
+echoscript_backend_20250915_153911/app/routes/subscription.py
+
+echoscript_backend_20250915_153911/app/routes/transcribe.py
+
+echoscript_backend_20250915_153911/app/routes/transcripts.py
+
+echoscript_backend_20250915_153911/app/routes/video_task.py
+
+echoscript_backend_20250915_153911/app/schemas/auth.py
+
+echoscript_backend_20250915_153911/app/schemas/contact.py
+
+echoscript_backend_20250915_153911/app/schemas/feedback.py
+
+echoscript_backend_20250915_153911/app/schemas/history.py
+
+echoscript_backend_20250915_153911/app/schemas/subscription.py
+
+echoscript_backend_20250915_153911/app/schemas/subtitle.py
+
+echoscript_backend_20250915_153911/app/schemas/transcription.py
+
+echoscript_backend_20250915_153911/app/schemas/user.py
+
+echoscript_backend_20250915_153911/app/services/transcription.py
+
+echoscript_backend_20250915_153911/app/utils/auth_utils.py
+
+echoscript_backend_20250915_153911/app/utils/db_utils.py
+
+echoscript_backend_20250915_153911/app/utils/export_utils.py
+
+echoscript_backend_20250915_153911/app/utils/file_helpers.py
+
+echoscript_backend_20250915_153911/app/utils/redis_client.py
+
+echoscript_backend_20250915_153911/app/utils/safety_check.py
+
+echoscript_backend_20250915_153911/app/utils/send_email.py
+
+echoscript_backend_20250915_153911/app/utils/stripe_client.py
+
+echoscript_backend_20250915_153911/asgi_dev.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/config.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/core/settings.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/db.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/create_user.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/init_db.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/password_reset.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/signup.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/stripe_webhook.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/subscription.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/transcribe.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/transcripts.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/video_task.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/auth.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/contact.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/feedback.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/history.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/subscription.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/subtitle.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/transcription.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/user.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/services/transcription.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/auth_utils.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/db_utils.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/export_utils.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/file_helpers.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/redis_client.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/safety_check.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/send_email.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/stripe_client.py
+
+echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/asgi_dev.py
+
+echoscript_backend_20250915_153911/scripts/create_user.py
+
+echoscript_backend_20250915_153911/scripts/init_db.py
+
+echoscript_backend_20250915_153911/tests/test_assistant.py
+
+echoscript_backend_20250915_153911/tests/test_contact.py
+
+echoscript_backend_20250915_153911/tests/test_export.py
+
+echoscript_backend_20250915_153911/tests/test_feedback.py
+
+echoscript_backend_20250915_153911/tests/test_newsletter.py
+
+echoscript_backend_20250915_153911/tests/test_password_reset.py
+
+echoscript_backend_20250915_153911/tests/test_stripe_webhook.py
+
+echoscript_backend_20250915_153911/tests/test_subscription.py
+
+echoscript_backend_20250915_153911/tests/test_transcribe.py
+
+echoscript_backend_20250915_153911/tests/test_transcripts.py
+
+scripts/create_user.py
+
+scripts/init_db.py
+
+tests/test_assistant.py
+
+tests/test_contact.py
+
+tests/test_export.py
+
+tests/test_feedback.py
+
+tests/test_newsletter.py
+
+tests/test_password_reset.py
+
+tests/test_stripe_webhook.py
+
+tests/test_subscription.py
+
+tests/test_transcribe.py
+
+tests/test_transcripts.py
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\git-log.txt =====
+
+c30c9aa chore: refresh requirements for faster-whisper + pyannote
+
+6d2083e chore: repo hygiene (drop node_modules, logs; expand .gitignore)
+
+fccb9a7 Remove GPT logic from transcription route
+
+f6a4683 Install whisperx via Dockerfile
+
+1c2c3ab Move whisperx install to Dockerfile and update requirements
+
+b6cb9e2 Add whisperx to requirements
+
+b55f7f4 Update backend files
+
+5264af9 Update backend files
+
+ac88e4c Update backend files
+
+4626779 Update backend files
+
+d89826d Update backend files
+
+7060c8d Your commit message here
+
+72eff26 Initial commit
+
+ee83713 Initial backend commit
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\git-remotes.txt =====
+
+origin	https://github.com/arizzo729/echoscript-backend.git (fetch)
+
+origin	https://github.com/arizzo729/echoscript-backend.git (push)
+
+

@@ -1,0 +1,1629 @@
+﻿# AI Review Pack 2
+
+Note: Paths are relative to repo root.
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\git-status.txt =====
+
+R  docker_compose.yml -> $null
+
+A  .dockerignore
+
+M  .gitignore
+
+M  .mypy.ini
+
+M  .pre-commit-config.yaml
+
+MM Dockerfile
+
+M  Read.md
+
+M  app/__init__.py
+
+MM app/config.py
+
+A  app/core/__init__.py
+
+AM app/core/settings.py
+
+MM app/db.py
+
+MM app/main.py
+
+ M app/models.py
+
+A  app/models/__init__.py
+
+A  app/models/base.py
+
+AM app/models/create_user.py
+
+A  app/models/db.py
+
+AM app/models/init_db.py
+
+A  app/models/subscription.py
+
+A  app/models/user.py
+
+A  app/routes/__init__.py
+
+M  app/routes/auth.py
+
+M  app/routes/contact.py
+
+M  app/routes/feedback.py
+
+M  app/routes/history.py
+
+M  app/routes/newsletter.py
+
+MM app/routes/password_reset.py
+
+M  app/routes/send_reset.py
+
+ M app/routes/signup.py
+
+MM app/routes/stripe_webhook.py
+
+MM app/routes/subscription.py
+
+MM app/routes/transcribe.py
+
+ M app/routes/transcripts.py
+
+M  app/routes/verify_email.py
+
+MM app/routes/video_task.py
+
+MM app/schemas/auth.py
+
+ M app/schemas/contact.py
+
+M  app/schemas/export.py
+
+MM app/schemas/feedback.py
+
+ M app/schemas/history.py
+
+MM app/schemas/subscription.py
+
+ M app/schemas/subtitle.py
+
+MM app/schemas/transcription.py
+
+ M app/schemas/user.py
+
+AM app/services/transcription.py
+
+M  app/utils/__init__.py
+
+MM app/utils/auth_utils.py
+
+ M app/utils/db_utils.py
+
+ M app/utils/export_utils.py
+
+ M app/utils/file_helpers.py
+
+M  app/utils/logger.py
+
+ M app/utils/redis_client.py
+
+ M app/utils/safety_check.py
+
+MM app/utils/send_email.py
+
+MM app/utils/stripe_client.py
+
+AM asgi_dev.py
+
+A  data/0dab32c1-b5bc-4f19-a1b4-6d44c74c1960.mp3
+
+A  data/1f08e754-da07-4144-9df2-78fca75bfeca.mp3
+
+A  data/407c225b-9795-4b03-9aa7-1fb5bc21474e.mp3
+
+A  data/57915094-044f-4518-8077-6a06b86c6e11.mp3
+
+A  data/73a788d8-8d19-49fe-ab73-676861ac0311.mp3
+
+A  data/880b3055-9fcf-443f-b2cf-c62d9a250ea8.mp3
+
+A  data/8ab2b314-e4e9-4cb5-82d3-88a9b696179b.mp3
+
+A  data/95cb8988-df24-4c1a-9330-c0cd9a6607ee.mp3
+
+A  data/a38b5ea8-721c-4ee9-8f88-ee49fbe7634d.mp3
+
+A  data/a63750a9-0542-40e7-9850-0eedcbd3d69f.mp3
+
+A  data/d64fefc3-b7a9-4f0c-a023-ba2cbb5725cb.mp3
+
+A  data/e3839918-5218-4ea2-a3ad-e9030c517d60.mp3
+
+A  db.sqlite3
+
+A  db_ping.py
+
+A  "docker-compose (2).yml"
+
+A  docker-compose.yml
+
+A  echoscript-web
+
+A  echoscript_backend_20250915_153911.zip
+
+A  echoscript_backend_20250915_153911/$null
+
+A  echoscript_backend_20250915_153911/.dockerignore
+
+A  echoscript_backend_20250915_153911/.flake8
+
+A  echoscript_backend_20250915_153911/.githubworkflowsci.yml
+
+A  echoscript_backend_20250915_153911/.gitignore
+
+A  echoscript_backend_20250915_153911/.mypy.ini
+
+A  echoscript_backend_20250915_153911/.pre-commit-config.yaml
+
+A  echoscript_backend_20250915_153911/Dockerfile
+
+A  echoscript_backend_20250915_153911/Read.md
+
+A  echoscript_backend_20250915_153911/app/__init__.py
+
+AM echoscript_backend_20250915_153911/app/config.py
+
+A  echoscript_backend_20250915_153911/app/core/__init__.py
+
+AM echoscript_backend_20250915_153911/app/core/settings.py
+
+AM echoscript_backend_20250915_153911/app/db.py
+
+A  echoscript_backend_20250915_153911/app/dependencies.py
+
+A  echoscript_backend_20250915_153911/app/main.py
+
+AM echoscript_backend_20250915_153911/app/models.py
+
+A  echoscript_backend_20250915_153911/app/models/__init__.py
+
+A  echoscript_backend_20250915_153911/app/models/base.py
+
+AM echoscript_backend_20250915_153911/app/models/create_user.py
+
+A  echoscript_backend_20250915_153911/app/models/db.py
+
+AM echoscript_backend_20250915_153911/app/models/init_db.py
+
+A  echoscript_backend_20250915_153911/app/models/subscription.py
+
+A  echoscript_backend_20250915_153911/app/models/user.py
+
+A  echoscript_backend_20250915_153911/app/routes/__init__.py
+
+A  echoscript_backend_20250915_153911/app/routes/auth.py
+
+A  echoscript_backend_20250915_153911/app/routes/contact.py
+
+A  echoscript_backend_20250915_153911/app/routes/export.py
+
+A  echoscript_backend_20250915_153911/app/routes/feedback.py
+
+A  echoscript_backend_20250915_153911/app/routes/history.py
+
+A  echoscript_backend_20250915_153911/app/routes/newsletter.py
+
+AM echoscript_backend_20250915_153911/app/routes/password_reset.py
+
+A  echoscript_backend_20250915_153911/app/routes/send_reset.py
+
+AM echoscript_backend_20250915_153911/app/routes/signup.py
+
+AM echoscript_backend_20250915_153911/app/routes/stripe_webhook.py
+
+AM echoscript_backend_20250915_153911/app/routes/subscription.py
+
+A  echoscript_backend_20250915_153911/app/routes/summary.py
+
+AM echoscript_backend_20250915_153911/app/routes/transcribe.py
+
+AM echoscript_backend_20250915_153911/app/routes/transcripts.py
+
+A  echoscript_backend_20250915_153911/app/routes/translate.py
+
+A  echoscript_backend_20250915_153911/app/routes/verify_email.py
+
+AM echoscript_backend_20250915_153911/app/routes/video_task.py
+
+A  echoscript_backend_20250915_153911/app/schemas/__init__.py
+
+AM echoscript_backend_20250915_153911/app/schemas/auth.py
+
+AM echoscript_backend_20250915_153911/app/schemas/contact.py
+
+A  echoscript_backend_20250915_153911/app/schemas/export.py
+
+AM echoscript_backend_20250915_153911/app/schemas/feedback.py
+
+AM echoscript_backend_20250915_153911/app/schemas/history.py
+
+A  echoscript_backend_20250915_153911/app/schemas/newsletter.py
+
+AM echoscript_backend_20250915_153911/app/schemas/subscription.py
+
+AM echoscript_backend_20250915_153911/app/schemas/subtitle.py
+
+A  echoscript_backend_20250915_153911/app/schemas/summary.py
+
+AM echoscript_backend_20250915_153911/app/schemas/transcription.py
+
+A  echoscript_backend_20250915_153911/app/schemas/translate.py
+
+AM echoscript_backend_20250915_153911/app/schemas/user.py
+
+AM echoscript_backend_20250915_153911/app/services/transcription.py
+
+A  echoscript_backend_20250915_153911/app/utils/__init__.py
+
+AM echoscript_backend_20250915_153911/app/utils/auth_utils.py
+
+AM echoscript_backend_20250915_153911/app/utils/db_utils.py
+
+AM echoscript_backend_20250915_153911/app/utils/export_utils.py
+
+AM echoscript_backend_20250915_153911/app/utils/file_helpers.py
+
+A  echoscript_backend_20250915_153911/app/utils/logger.py
+
+AM echoscript_backend_20250915_153911/app/utils/redis_client.py
+
+AM echoscript_backend_20250915_153911/app/utils/safety_check.py
+
+AM echoscript_backend_20250915_153911/app/utils/send_email.py
+
+AM echoscript_backend_20250915_153911/app/utils/stripe_client.py
+
+A  echoscript_backend_20250915_153911/app/ws/socket_transcriber.py
+
+AM echoscript_backend_20250915_153911/asgi_dev.py
+
+A  echoscript_backend_20250915_153911/data/0dab32c1-b5bc-4f19-a1b4-6d44c74c1960.mp3
+
+A  echoscript_backend_20250915_153911/data/1f08e754-da07-4144-9df2-78fca75bfeca.mp3
+
+A  echoscript_backend_20250915_153911/data/407c225b-9795-4b03-9aa7-1fb5bc21474e.mp3
+
+A  echoscript_backend_20250915_153911/data/57915094-044f-4518-8077-6a06b86c6e11.mp3
+
+A  echoscript_backend_20250915_153911/data/73a788d8-8d19-49fe-ab73-676861ac0311.mp3
+
+A  echoscript_backend_20250915_153911/data/880b3055-9fcf-443f-b2cf-c62d9a250ea8.mp3
+
+A  echoscript_backend_20250915_153911/data/8ab2b314-e4e9-4cb5-82d3-88a9b696179b.mp3
+
+A  echoscript_backend_20250915_153911/data/95cb8988-df24-4c1a-9330-c0cd9a6607ee.mp3
+
+A  echoscript_backend_20250915_153911/data/a38b5ea8-721c-4ee9-8f88-ee49fbe7634d.mp3
+
+A  echoscript_backend_20250915_153911/data/a63750a9-0542-40e7-9850-0eedcbd3d69f.mp3
+
+A  echoscript_backend_20250915_153911/data/d64fefc3-b7a9-4f0c-a023-ba2cbb5725cb.mp3
+
+A  echoscript_backend_20250915_153911/data/e3839918-5218-4ea2-a3ad-e9030c517d60.mp3
+
+A  echoscript_backend_20250915_153911/db_ping.py
+
+A  "echoscript_backend_20250915_153911/docker-compose (2).yml"
+
+A  echoscript_backend_20250915_153911/docker-compose.yml
+
+A  echoscript_backend_20250915_153911/echoscript-web/.dockerignore
+
+A  echoscript_backend_20250915_153911/echoscript-web/.gitignore
+
+A  echoscript_backend_20250915_153911/echoscript-web/Dockerfile
+
+A  echoscript_backend_20250915_153911/echoscript-web/README.md
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/app.css
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/root.tsx
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/routes.ts
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/routes/home.tsx
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/welcome/logo-dark.svg
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/welcome/logo-light.svg
+
+A  echoscript_backend_20250915_153911/echoscript-web/app/welcome/welcome.tsx
+
+A  echoscript_backend_20250915_153911/echoscript-web/package-lock.json
+
+A  echoscript_backend_20250915_153911/echoscript-web/package.json
+
+A  echoscript_backend_20250915_153911/echoscript-web/public/favicon.ico
+
+A  echoscript_backend_20250915_153911/echoscript-web/react-router.config.ts
+
+A  echoscript_backend_20250915_153911/echoscript-web/tsconfig.json
+
+A  echoscript_backend_20250915_153911/echoscript-web/vite.config.ts
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/$null
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.dockerignore
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.flake8
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.githubworkflowsci.yml
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.gitignore
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.mypy.ini
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/.pre-commit-config.yaml
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/Dockerfile
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/Read.md
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/__init__.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/config.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/core/__init__.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/core/settings.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/db.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/dependencies.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/main.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/__init__.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/base.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/create_user.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/db.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/init_db.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/subscription.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/models/user.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/__init__.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/auth.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/contact.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/export.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/feedback.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/history.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/newsletter.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/password_reset.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/send_reset.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/signup.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/stripe_webhook.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/subscription.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/summary.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/transcribe.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/transcripts.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/translate.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/verify_email.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/routes/video_task.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/__init__.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/auth.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/contact.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/export.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/feedback.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/history.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/newsletter.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/subscription.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/subtitle.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/summary.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/transcription.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/translate.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/schemas/user.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/services/transcription.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/__init__.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/auth_utils.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/db_utils.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/export_utils.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/file_helpers.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/logger.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/redis_client.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/safety_check.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/send_email.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/utils/stripe_client.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/app/ws/socket_transcriber.py
+
+AM echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/asgi_dev.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/0dab32c1-b5bc-4f19-a1b4-6d44c74c1960.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/1f08e754-da07-4144-9df2-78fca75bfeca.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/407c225b-9795-4b03-9aa7-1fb5bc21474e.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/57915094-044f-4518-8077-6a06b86c6e11.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/73a788d8-8d19-49fe-ab73-676861ac0311.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/880b3055-9fcf-443f-b2cf-c62d9a250ea8.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/8ab2b314-e4e9-4cb5-82d3-88a9b696179b.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/95cb8988-df24-4c1a-9330-c0cd9a6607ee.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/a38b5ea8-721c-4ee9-8f88-ee49fbe7634d.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/a63750a9-0542-40e7-9850-0eedcbd3d69f.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/d64fefc3-b7a9-4f0c-a023-ba2cbb5725cb.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/data/e3839918-5218-4ea2-a3ad-e9030c517d60.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/db_ping.py
+
+A  "echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/docker-compose (2).yml"
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/docker-compose.yml
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/.dockerignore
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/.gitignore
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/Dockerfile
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/README.md
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/app.css
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/root.tsx
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/routes.ts
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/routes/home.tsx
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/welcome/logo-dark.svg
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/welcome/logo-light.svg
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/app/welcome/welcome.tsx
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/package-lock.json
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/package.json
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/public/favicon.ico
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/react-router.config.ts
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/tsconfig.json
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/echoscript-web/vite.config.ts
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/package-lock.json
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/requirements.in
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/requirements.txt
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/seed_user.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/seed_user_sql.py
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/setup.cfg
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/test.mp3
+
+A  echoscript_backend_20250915_153911/echoscript_backend_20250915_153911/testintro.mp3
+
+A  echoscript_backend_20250915_153911/file_list.txt
+
+A  echoscript_backend_20250915_153911/package-lock.json
+
+A  echoscript_backend_20250915_153911/pip_freeze.txt
+
+A  echoscript_backend_20250915_153911/python_version.txt
+
+A  echoscript_backend_20250915_153911/requirements.in
+
+A  echoscript_backend_20250915_153911/requirements.txt
+
+R  asr_smoketest.py -> echoscript_backend_20250915_153911/scripts/asr_smoketest.py
+
+AM echoscript_backend_20250915_153911/scripts/create_user.py
+
+R  diagnose_audio_stack.py -> echoscript_backend_20250915_153911/scripts/diagnose_audio_stack.py
+
+AM echoscript_backend_20250915_153911/scripts/init_db.py
+
+A  echoscript_backend_20250915_153911/seed_user.py
+
+A  echoscript_backend_20250915_153911/seed_user_sql.py
+
+A  echoscript_backend_20250915_153911/setup.cfg
+
+A  echoscript_backend_20250915_153911/test.mp3
+
+A  echoscript_backend_20250915_153911/testintro.mp3
+
+A  echoscript_backend_20250915_153911/tests/__init__.py
+
+A  echoscript_backend_20250915_153911/tests/conftest.py
+
+AM echoscript_backend_20250915_153911/tests/test_assistant.py
+
+A  echoscript_backend_20250915_153911/tests/test_auth.py
+
+AM echoscript_backend_20250915_153911/tests/test_contact.py
+
+AM echoscript_backend_20250915_153911/tests/test_export.py
+
+AM echoscript_backend_20250915_153911/tests/test_feedback.py
+
+AM echoscript_backend_20250915_153911/tests/test_newsletter.py
+
+AM echoscript_backend_20250915_153911/tests/test_password_reset.py
+
+A  echoscript_backend_20250915_153911/tests/test_signup.py
+
+AM echoscript_backend_20250915_153911/tests/test_stripe_webhook.py
+
+AM echoscript_backend_20250915_153911/tests/test_subscription.py
+
+AM echoscript_backend_20250915_153911/tests/test_transcribe.py
+
+AM echoscript_backend_20250915_153911/tests/test_transcripts.py
+
+A  echoscript_backend_20250915_153911/tests/test_verify_email.py
+
+A  echoscript_backend_20250915_153911/tests/test_video_task.py
+
+A  echoscript_backend_20250915_153911/web_dist/assets/chunk-PVWAREVJ-BGDX7Rsd.js
+
+A  echoscript_backend_20250915_153911/web_dist/assets/entry.client-BWBOP0Ds.js
+
+A  echoscript_backend_20250915_153911/web_dist/assets/home-CK7DOD9F.js
+
+A  echoscript_backend_20250915_153911/web_dist/assets/logo-dark-pX2395Y0.svg
+
+A  echoscript_backend_20250915_153911/web_dist/assets/logo-light-CVbx2LBR.svg
+
+A  echoscript_backend_20250915_153911/web_dist/assets/manifest-240cade0.js
+
+A  echoscript_backend_20250915_153911/web_dist/assets/root-BEBfRjT7.js
+
+A  echoscript_backend_20250915_153911/web_dist/assets/root-L-Bv-Fnr.css
+
+A  echoscript_backend_20250915_153911/web_dist/favicon.ico
+
+M  node_modules/pocketbase/README.md
+
+M  package-lock.json
+
+D  package.json
+
+M  requirements.txt
+
+D  scripts/__init.py__
+
+A  scripts/asr_smoketest.py
+
+AM scripts/create_user.py
+
+A  scripts/diagnose_audio_stack.py
+
+AM scripts/init_db.py
+
+D  scriptsinit_db.py
+
+A  seed_user.py
+
+A  seed_user_sql.py
+
+M  setup.cfg
+
+M  test.mp3
+
+A  testintro.mp3
+
+MM tests/test_assistant.py
+
+M  tests/test_auth.py
+
+MM tests/test_contact.py
+
+MM tests/test_export.py
+
+MM tests/test_feedback.py
+
+MM tests/test_newsletter.py
+
+MM tests/test_password_reset.py
+
+M  tests/test_signup.py
+
+MM tests/test_stripe_webhook.py
+
+MM tests/test_subscription.py
+
+MM tests/test_transcribe.py
+
+MM tests/test_transcripts.py
+
+M  tests/test_verify_email.py
+
+M  tests/test_video_task.py
+
+A  web_dist/assets/chunk-PVWAREVJ-BGDX7Rsd.js
+
+A  web_dist/assets/entry.client-BWBOP0Ds.js
+
+A  web_dist/assets/home-CK7DOD9F.js
+
+A  web_dist/assets/logo-dark-pX2395Y0.svg
+
+A  web_dist/assets/logo-light-CVbx2LBR.svg
+
+A  web_dist/assets/manifest-240cade0.js
+
+A  web_dist/assets/root-BEBfRjT7.js
+
+A  web_dist/assets/root-L-Bv-Fnr.css
+
+A  web_dist/favicon.ico
+
+?? .audit/
+
+?? .audit_bundle_20250917_163813/
+
+?? .venv_audit/
+
+?? pyproject.toml
+
+?? requirements.audit.txt
+
+?? tests/test_smoke.py
+
+?? tools/
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\import_boot.py =====
+
+import importlib
+import json
+import pkgutil
+import sys
+from pathlib import Path
+
+out = {"fastapi_version": "unknown", "pydantic_version": "unknown", "import_errors": []}
+try:
+    import fastapi
+    import pydantic
+
+    out["fastapi_version"] = getattr(fastapi, "__version__", "unknown")
+    out["pydantic_version"] = getattr(pydantic, "__version__", "unknown")
+except Exception:
+    pass
+ROOT = Path("app")
+if ROOT.exists():
+    for mod in pkgutil.walk_packages([str(ROOT)]):
+        name = f"app.{mod.name}" if not mod.ispkg else None
+        try:
+            if name:
+                importlib.import_module(name)
+        except Exception as e:
+            out["import_errors"].append({"module": name, "error": repr(e)})
+print(json.dumps(out, indent=2))
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\import-boot.json =====
+
+{
+
+  "fastapi_version": "0.115.0",
+
+  "pydantic_version": "2.9.2",
+
+  "import_errors": [
+
+    {
+
+      "module": "app.config",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.db",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.dependencies",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    },
+
+    {
+
+      "module": "app.main",
+
+      "error": "ModuleNotFoundError(\"No module named 'app'\")"
+
+    }
+
+  ]
+
+}
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\mypy.txt =====
+
+app\services\transcription.py:16: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\schemas\newsletter.py:5: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\newsletter.py:13: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\newsletter.py:21: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:7: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:8: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:9: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:14: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:20: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:21: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:26: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+app\schemas\feedback.py:27: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+.venv_audit\Lib\site-packages\pydantic\fields.py:685: note: "Field" defined here
+
+seed_user_sql.py:9: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+seed_user.py:11: error: Module "app" has no attribute "Base"  [attr-defined]
+
+seed_user.py:11: error: Module "app" has no attribute "User"  [attr-defined]
+
+seed_user.py:14: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+db_ping.py:10: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+db_ping.py:12: error: Item "None" of "Any | None" has no attribute "split"  [union-attr]
+
+scripts\create_user.py:58: error: "str" has no attribute "name"  [attr-defined]
+
+app\config.py:22: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:23: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:24: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:27: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:31: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:32: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:33: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:34: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:35: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:41: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:49: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:52: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:53: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:54: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:55: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:58: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:59: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:64: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:66: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:70: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:71: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:74: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:75: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:76: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:79: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\models\subscription.py:24: error: Need type annotation for "status"  [var-annotated]
+
+app\utils\redis_client.py:41: error: Incompatible return value type (got "bool | Awaitable[Any] | Any", expected "bool")  [return-value]
+
+app\utils\redis_client.py:49: error: Incompatible return value type (got "Awaitable[Any] | Any", expected "str | None")  [return-value]
+
+app\utils\redis_client.py:57: error: Incompatible return value type (got "Awaitable[Any] | Any", expected "int")  [return-value]
+
+app\utils\export_utils.py:48: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:42: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:56: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:90: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:92: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\utils\stripe_client.py:93: error: "type[SubscriptionStatus]" has no attribute "unpaid"  [attr-defined]
+
+app\utils\stripe_client.py:95: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\verify_email.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\signup.py:15: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\send_reset.py:12: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:13: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\history.py:11: error: Need type annotation for "__all__" (hint: "__all__: list[<type>] = ...")  [var-annotated]
+
+app\routes\contact.py:24: error: Missing named argument "message" for "ContactResponse"  [call-arg]
+
+asgi_dev.py:36: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+asgi_dev.py:43: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:43: error: Invalid base class "Base"  [misc]
+
+asgi_dev.py:52: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:52: error: Invalid base class "Base"  [misc]
+
+asgi_dev.py:75: error: The return type of a generator function should be "Generator" or one of its supertypes  [misc]
+
+asgi_dev.py:174: error: Argument 2 to "verify_password" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:176: error: Argument "sub" to "create_access_token" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:201: error: Argument 1 to "Path" has incompatible type "str | None"; expected "str | PathLike[str]"  [arg-type]
+
+asgi_dev.py:245: error: Argument "job_id" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "status" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "filename" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "transcript" to "JobOut" has incompatible type "Column[str]"; expected "str | None"  [arg-type]
+
+app\routes\stripe_webhook.py:4: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\stripe_webhook.py:45: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\subscription.py:86: error: "type[SubscriptionStatus]" has no attribute "active"  [attr-defined]
+
+app\routes\subscription.py:102: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\subscription.py:102: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\routes\subscription.py:102: note: Error code "attr-defined" not covered by "type: ignore" comment
+
+app\routes\subscription.py:103: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\feedback.py:40: error: Missing named argument "feedback_id" for "FeedbackResponse"  [call-arg]
+
+app\routes\feedback.py:40: error: Missing named argument "message" for "FeedbackResponse"  [call-arg]
+
+app\routes\feedback.py:40: error: Missing named argument "submitted_at" for "FeedbackResponse"  [call-arg]
+
+Found 59 errors in 21 files (checked 86 source files)
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\pip-audit.txt =====
+
+Name        Version ID                  Fix Versions
+
+----------- ------- ------------------- ------------
+
+ecdsa       0.19.1  GHSA-wj6h-64fc-37mp
+
+starlette   0.38.6  GHSA-f96h-pmfr-66vw 0.40.0
+
+starlette   0.38.6  GHSA-2c2j-9gv5-cj73 0.47.2
+
+future      1.0.0   GHSA-xqrq-4mgf-ff32
+
+python-jose 3.3.0   PYSEC-2024-232      3.4.0
+
+python-jose 3.3.0   PYSEC-2024-233      3.4.0
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\pipdeptree.txt =====
+
+fastapi==0.115.0
+
+  - pydantic [required: >=1.7.4,<3.0.0,!=2.1.0,!=2.0.1,!=2.0.0,!=1.8.1,!=1.8, installed: 2.9.2]
+
+    - annotated-types [required: >=0.6.0, installed: 0.7.0]
+
+    - pydantic_core [required: ==2.23.4, installed: 2.23.4]
+
+      - typing_extensions [required: >=4.6.0,!=4.7.0, installed: 4.15.0]
+
+    - typing_extensions [required: >=4.6.1, installed: 4.15.0]
+
+  - starlette [required: >=0.37.2,<0.39.0, installed: 0.38.6]
+
+    - anyio [required: >=3.4.0,<5, installed: 4.10.0]
+
+      - idna [required: >=2.8, installed: 3.10]
+
+      - sniffio [required: >=1.1, installed: 1.3.1]
+
+      - typing_extensions [required: >=4.5, installed: 4.15.0]
+
+  - typing_extensions [required: >=4.8.0, installed: 4.15.0]
+
+filelock==3.19.1
+
+httptools==0.6.4
+
+mypy==1.11.2
+
+  - mypy_extensions [required: >=1.0.0, installed: 1.1.0]
+
+  - typing_extensions [required: >=4.6.0, installed: 4.15.0]
+
+pip_audit==2.7.3
+
+  - CacheControl [required: >=0.13.0, installed: 0.14.3]
+
+    - msgpack [required: >=0.5.2,<2.0.0, installed: 1.1.1]
+
+    - requests [required: >=2.16.0, installed: 2.32.5]
+
+      - certifi [required: >=2017.4.17, installed: 2025.8.3]
+
+      - charset-normalizer [required: >=2,<4, installed: 3.4.3]
+
+      - idna [required: >=2.5,<4, installed: 3.10]
+
+      - urllib3 [required: >=1.21.1,<3, installed: 2.5.0]
+
+  - cyclonedx-python-lib [required: >=5,<8, installed: 7.6.2]
+
+    - license-expression [required: >=30,<31, installed: 30.4.4]
+
+      - boolean.py [required: >=4.0, installed: 5.0]
+
+    - packageurl-python [required: >=0.11,<2, installed: 0.17.5]
+
+    - py-serializable [required: >=1.1.0,<2.0.0, installed: 1.1.2]
+
+      - defusedxml [required: >=0.7.1,<0.8.0, installed: 0.7.1]
+
+    - sortedcontainers [required: >=2.4.0,<3.0.0, installed: 2.4.0]
+
+  - html5lib [required: >=1.1, installed: 1.1]
+
+    - six [required: >=1.9, installed: 1.17.0]
+
+    - webencodings [required: Any, installed: 0.5.1]
+
+  - packaging [required: >=23.0.0, installed: 25.0]
+
+  - pip-api [required: >=0.0.28, installed: 0.0.34]
+
+    - pip [required: Any, installed: 25.2]
+
+  - pip-requirements-parser [required: >=32.0.0, installed: 32.0.1]
+
+    - packaging [required: Any, installed: 25.0]
+
+    - pyparsing [required: Any, installed: 3.2.4]
+
+  - requests [required: >=2.31.0, installed: 2.32.5]
+
+    - certifi [required: >=2017.4.17, installed: 2025.8.3]
+
+    - charset-normalizer [required: >=2,<4, installed: 3.4.3]
+
+    - idna [required: >=2.5,<4, installed: 3.10]
+
+    - urllib3 [required: >=1.21.1,<3, installed: 2.5.0]
+
+  - rich [required: >=12.4, installed: 14.1.0]
+
+    - markdown-it-py [required: >=2.2.0, installed: 4.0.0]
+
+      - mdurl [required: ~=0.1, installed: 0.1.2]
+
+    - Pygments [required: >=2.13.0,<3.0.0, installed: 2.19.2]
+
+  - toml [required: >=0.10, installed: 0.10.2]
+
+pipdeptree==2.23.1
+
+  - packaging [required: >=23.1, installed: 25.0]
+
+  - pip [required: >=23.1.2, installed: 25.2]
+
+pydantic-settings==2.6.0
+
+  - pydantic [required: >=2.7.0, installed: 2.9.2]
+
+    - annotated-types [required: >=0.6.0, installed: 0.7.0]
+
+    - pydantic_core [required: ==2.23.4, installed: 2.23.4]
+
+      - typing_extensions [required: >=4.6.0,!=4.7.0, installed: 4.15.0]
+
+    - typing_extensions [required: >=4.6.1, installed: 4.15.0]
+
+  - python-dotenv [required: >=0.21.0, installed: 1.1.1]
+
+pytest==8.3.3
+
+  - colorama [required: Any, installed: 0.4.6]
+
+  - iniconfig [required: Any, installed: 2.1.0]
+
+  - packaging [required: Any, installed: 25.0]
+
+  - pluggy [required: >=1.5,<2, installed: 1.6.0]
+
+python-jose==3.3.0
+
+  - ecdsa [required: !=0.15, installed: 0.19.1]
+
+    - six [required: >=1.9.0, installed: 1.17.0]
+
+  - pyasn1 [required: Any, installed: 0.6.1]
+
+  - rsa [required: Any, installed: 4.9.1]
+
+    - pyasn1 [required: >=0.1.3, installed: 0.6.1]
+
+python-multipart==0.0.9
+
+PyYAML==6.0.2
+
+redis==5.0.8
+
+  - async-timeout [required: >=4.0.3, installed: 5.0.1]
+
+ruff==0.6.8
+
+setuptools==65.5.0
+
+SQLAlchemy==2.0.34
+
+  - greenlet [required: !=0.4.17, installed: 3.2.4]
+
+  - typing_extensions [required: >=4.6.0, installed: 4.15.0]
+
+uvicorn==0.30.6
+
+  - click [required: >=7.0, installed: 8.2.1]
+
+    - colorama [required: Any, installed: 0.4.6]
+
+  - h11 [required: >=0.8, installed: 0.16.0]
+
+vulture==2.11
+
+watchfiles==1.1.0
+
+  - anyio [required: >=3.0.0, installed: 4.10.0]
+
+    - idna [required: >=2.8, installed: 3.10]
+
+    - sniffio [required: >=1.1, installed: 1.3.1]
+
+    - typing_extensions [required: >=4.5, installed: 4.15.0]
+
+websockets==15.0.1
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\pip-freeze.txt =====
+
+annotated-types==0.7.0
+
+anyio==4.10.0
+
+async-timeout==5.0.1
+
+boolean.py==5.0
+
+CacheControl==0.14.3
+
+certifi==2025.8.3
+
+charset-normalizer==3.4.3
+
+click==8.2.1
+
+colorama==0.4.6
+
+cyclonedx-python-lib==7.6.2
+
+defusedxml==0.7.1
+
+ecdsa==0.19.1
+
+fastapi==0.115.0
+
+filelock==3.19.1
+
+greenlet==3.2.4
+
+h11==0.16.0
+
+html5lib==1.1
+
+httptools==0.6.4
+
+idna==3.10
+
+iniconfig==2.1.0
+
+license-expression==30.4.4
+
+markdown-it-py==4.0.0
+
+mdurl==0.1.2
+
+msgpack==1.1.1
+
+mypy==1.11.2
+
+mypy_extensions==1.1.0
+
+packageurl-python==0.17.5
+
+packaging==25.0
+
+pip-api==0.0.34
+
+pip-requirements-parser==32.0.1
+
+pip_audit==2.7.3
+
+pipdeptree==2.23.1
+
+pluggy==1.6.0
+
+py-serializable==1.1.2
+
+pyasn1==0.6.1
+
+pydantic==2.9.2
+
+pydantic-settings==2.6.0
+
+pydantic_core==2.23.4
+
+Pygments==2.19.2
+
+pyparsing==3.2.4
+
+pytest==8.3.3
+
+python-dotenv==1.1.1
+
+python-jose==3.3.0
+
+python-multipart==0.0.9
+
+PyYAML==6.0.2
+
+redis==5.0.8
+
+requests==2.32.5
+
+rich==14.1.0
+
+rsa==4.9.1
+
+ruff==0.6.8
+
+six==1.17.0
+
+sniffio==1.3.1
+
+sortedcontainers==2.4.0
+
+SQLAlchemy==2.0.34
+
+starlette==0.38.6
+
+toml==0.10.2
+
+typing_extensions==4.15.0
+
+urllib3==2.5.0
+
+uvicorn==0.30.6
+
+vulture==2.11
+
+watchfiles==1.1.0
+
+webencodings==0.5.1
+
+websockets==15.0.1
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\pip-install.txt =====
+
+Requirement already satisfied: pip in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (25.2)
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\pip-tools.txt =====
+
+Requirement already satisfied: ruff==0.6.8 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (0.6.8)
+
+Requirement already satisfied: mypy==1.11.2 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (1.11.2)
+
+Requirement already satisfied: vulture==2.11 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (2.11)
+
+Requirement already satisfied: pipdeptree==2.23.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (2.23.1)
+
+Requirement already satisfied: pip-audit==2.7.3 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (2.7.3)
+
+Requirement already satisfied: typing-extensions>=4.6.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from mypy==1.11.2) (4.15.0)
+
+Requirement already satisfied: mypy-extensions>=1.0.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from mypy==1.11.2) (1.1.0)
+
+Requirement already satisfied: packaging>=23.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pipdeptree==2.23.1) (25.0)
+
+Requirement already satisfied: pip>=23.1.2 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pipdeptree==2.23.1) (25.2)
+
+Requirement already satisfied: CacheControl>=0.13.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from CacheControl[filecache]>=0.13.0->pip-audit==2.7.3) (0.14.3)
+
+Requirement already satisfied: cyclonedx-python-lib<8,>=5 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (7.6.2)
+
+Requirement already satisfied: html5lib>=1.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (1.1)
+
+Requirement already satisfied: pip-api>=0.0.28 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (0.0.34)
+
+Requirement already satisfied: pip-requirements-parser>=32.0.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (32.0.1)
+
+Requirement already satisfied: requests>=2.31.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (2.32.5)
+
+Requirement already satisfied: rich>=12.4 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (14.1.0)
+
+Requirement already satisfied: toml>=0.10 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-audit==2.7.3) (0.10.2)
+
+Requirement already satisfied: license-expression<31,>=30 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (30.4.4)
+
+Requirement already satisfied: packageurl-python<2,>=0.11 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (0.17.5)
+
+Requirement already satisfied: py-serializable<2.0.0,>=1.1.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (1.1.2)
+
+Requirement already satisfied: sortedcontainers<3.0.0,>=2.4.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (2.4.0)
+
+Requirement already satisfied: boolean.py>=4.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from license-expression<31,>=30->cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (5.0)
+
+Requirement already satisfied: defusedxml<0.8.0,>=0.7.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from py-serializable<2.0.0,>=1.1.0->cyclonedx-python-lib<8,>=5->pip-audit==2.7.3) (0.7.1)
+
+Requirement already satisfied: msgpack<2.0.0,>=0.5.2 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from CacheControl>=0.13.0->CacheControl[filecache]>=0.13.0->pip-audit==2.7.3) (1.1.1)
+
+Requirement already satisfied: filelock>=3.8.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from CacheControl[filecache]>=0.13.0->pip-audit==2.7.3) (3.19.1)
+
+Requirement already satisfied: six>=1.9 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from html5lib>=1.1->pip-audit==2.7.3) (1.17.0)
+
+Requirement already satisfied: webencodings in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from html5lib>=1.1->pip-audit==2.7.3) (0.5.1)
+
+Requirement already satisfied: pyparsing in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from pip-requirements-parser>=32.0.0->pip-audit==2.7.3) (3.2.4)
+
+Requirement already satisfied: charset_normalizer<4,>=2 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from requests>=2.31.0->pip-audit==2.7.3) (3.4.3)
+
+Requirement already satisfied: idna<4,>=2.5 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from requests>=2.31.0->pip-audit==2.7.3) (3.10)
+
+Requirement already satisfied: urllib3<3,>=1.21.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from requests>=2.31.0->pip-audit==2.7.3) (2.5.0)
+
+Requirement already satisfied: certifi>=2017.4.17 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from requests>=2.31.0->pip-audit==2.7.3) (2025.8.3)
+
+Requirement already satisfied: markdown-it-py>=2.2.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from rich>=12.4->pip-audit==2.7.3) (4.0.0)
+
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from rich>=12.4->pip-audit==2.7.3) (2.19.2)
+
+Requirement already satisfied: mdurl~=0.1 in c:\ai collaberation\echoscriptai\backend\.venv_audit\lib\site-packages (from markdown-it-py>=2.2.0->rich>=12.4->pip-audit==2.7.3) (0.1.2)
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\requirements.audit.txt =====
+
+aiofiles==23.2.1
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.14
+aiosignal==1.4.0
+alembic==1.13.2
+annotated-types==0.7.0
+antlr4-python3-runtime==4.9.3
+anyio==4.9.0
+asteroid-filterbanks==0.4.0
+async-timeout==5.0.1
+attrs==25.3.0
+audioread==3.0.1
+autoflake==2.3.1
+av==13.1.0
+bcrypt==4.3.0
+certifi==2025.7.14
+cffi==1.17.1
+charset-normalizer==3.4.2
+click==8.2.1
+colorama==0.4.6
+coloredlogs==15.0.1
+colorlog==6.9.0
+contourpy==1.3.2
+cryptography==45.0.5
+ctranslate2==4.6.0
+cycler==0.12.1
+decorator==5.2.1
+distro==1.9.0
+dnspython==2.7.0
+docopt==0.6.2
+ecdsa==0.19.1
+einops==0.8.1
+email_validator==2.2.0
+exceptiongroup==1.3.0
+fastapi==0.115.0
+fastapi-crudrouter==0.8.6
+faster-whisper==1.1.1
+ffmpeg-python==0.2.0
+filelock==3.18.0
+flake8==7.3.0
+flatbuffers==25.2.10
+fonttools==4.59.0
+fpdf==1.7.2
+frozenlist==1.7.0
+fsspec==2025.7.0
+future==1.0.0
+greenlet==3.2.3
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.27.2
+huggingface-hub==0.33.4
+humanfriendly==10.0
+HyperPyYAML==1.2.2
+idna==3.10
+iniconfig==2.1.0
+Jinja2==3.1.6
+jiter==0.10.0
+joblib==1.5.1
+julius==0.2.7
+kiwisolver==1.4.8
+lazy_loader==0.4
+librosa==0.10.2
+lightning==2.5.2
+lightning-utilities==0.14.3
+llvmlite==0.44.0
+lxml==5.4.0
+Mako==1.3.10
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+matplotlib==3.10.3
+mccabe==0.7.0
+mdurl==0.1.2
+mpmath==1.3.0
+msgpack==1.1.1
+multidict==6.6.3
+mypy==1.17.0
+mypy_extensions==1.1.0
+networkx==3.4.2
+nltk==3.9.1
+noisereduce==3.0.3
+numba==0.61.2
+numpy==1.26.4
+omegaconf==2.3.0
+onnxruntime==1.17.3
+openai==1.97.0
+optuna==4.4.0
+packaging==25.0
+pandas==2.3.1
+passlib==1.7.4
+pathspec==0.12.1
+pillow==11.3.0
+platformdirs==4.3.8
+pluggy==1.6.0
+pooch==1.8.2
+primePy==1.3
+propcache==0.3.2
+protobuf==6.31.1
+psycopg2-binary==2.9.9
+pyannote.audio==3.3.2
+pyannote.core==5.0.0
+pyannote.database==5.1.3
+pyannote.metrics==3.2.1
+pyannote.pipeline==3.0.1
+pyasn1==0.6.1
+pycodestyle==2.14.0
+pycparser==2.22
+pydantic==2.9.2
+pydantic_core==2.23.4
+pyflakes==3.4.0
+Pygments==2.19.2
+PyJWT==2.9.0
+pyparsing==3.2.3
+pyreadline3==3.5.4
+pytest==8.3.0
+pytest-asyncio==0.21.0
+python-dateutil==2.9.0.post0
+python-docx==1.1.2
+python-dotenv==1.0.1
+python-http-client==3.3.7
+python-jose==3.3.0
+python-multipart==0.0.20
+pytorch-lightning==2.5.2
+pytorch-metric-learning==2.8.1
+pytz==2025.2
+PyYAML==6.0.2
+redis==5.0.8
+regex==2024.11.6
+requests==2.32.4
+rich==14.0.0
+rsa==4.9.1
+ruamel.yaml==0.18.14
+ruamel.yaml.clib==0.2.12
+safetensors==0.5.3
+scikit-learn==1.7.1
+scipy==1.15.3
+semver==3.0.4
+sendgrid==6.10.0
+sentence-transformers==2.2.2
+sentencepiece==0.1.99
+shellingham==1.5.4
+six==1.17.0
+sniffio==1.3.1
+sortedcontainers==2.4.0
+soundfile==0.13.1
+soxr==0.5.0.post1
+speechbrain==1.0.3
+SQLAlchemy==2.0.36
+starkbank-ecdsa==2.2.0
+starlette==0.38.6
+stripe==10.11.0
+sympy==1.14.0
+tabulate==0.9.0
+tensorboardX==2.6.4
+threadpoolctl==3.6.0
+tiktoken==0.9.0
+tokenizers==0.21.2
+tomli==2.2.1
+torch-audiomentations==0.12.0
+torch_pitch_shift==1.2.5
+torchmetrics==1.7.4
+tqdm==4.67.1
+transformers==4.53.2
+typer==0.16.0
+types-cffi==1.17.0.20250523
+types-fpdf2==2.8.3.20250516
+types-passlib==1.7.7.20250602
+types-pyasn1==0.6.0.20250516
+types-pyOpenSSL==24.1.0.20240722
+types-python-jose==3.5.0.20250531
+types-redis==4.6.0.20241004
+types-setuptools==80.9.0.20250529
+typing-inspection==0.4.1
+typing_extensions==4.14.1
+tzdata==2025.2
+urllib3==2.5.0
+uvicorn==0.30.6
+watchfiles==1.1.0
+websockets==15.0.1
+yarl==1.20.1
+
+pydantic-settings>=2,<3
+

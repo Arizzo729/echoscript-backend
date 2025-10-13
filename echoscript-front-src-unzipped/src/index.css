@@ -1,0 +1,66 @@
+/* Inter font for a professional look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Tailwind v3 directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Base ===== */
+@layer base {
+  html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+         Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+         "Segoe UI Emoji", "Segoe UI Symbol"; }
+
+  body {
+    @apply min-h-screen antialiased;
+    /* Subtle nebula gradient */
+    background:
+      radial-gradient(1200px 800px at 10% -10%, oklch(0.24 0.04 210 / .55), transparent 60%),
+      radial-gradient(900px 600px at 90% 0%, oklch(0.22 0.05 200 / .45), transparent 55%),
+      linear-gradient(to bottom right, oklch(0.14 0.02 250), oklch(0.10 0.02 250));
+    color: #e7e7ea; /* light zinc */
+  }
+}
+
+/* ===== Components ===== */
+@layer components {
+  .surface {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-lg shadow-black/30;
+  }
+  .card { @apply surface p-5 md:p-6; }
+  .muted { @apply text-zinc-400; }
+
+  .heading {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    background: linear-gradient(135deg, #0ea5a2 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+           border border-white/10 bg-white/10 hover:bg-white/15 active:bg-white/20
+           text-white transition-colors;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-br from-teal-500 to-sky-600 hover:from-teal-400 hover:to-sky-500
+           text-white border-0 shadow-md shadow-black/30;
+  }
+  .btn-ghost { @apply bg-transparent border-white/10 hover:bg-white/5; }
+}
+
+/* ===== Utilities ===== */
+@layer utilities {
+  .container-prose { @apply max-w-6xl mx-auto px-4 sm:px-6; }
+  .glass { @apply surface; }
+}
+
+/* ===== NProgress polish ===== */
+#nprogress .bar {
+  background: linear-gradient(90deg, #155e75, #38bdf8);
+  height: 3px !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px #38bdf8, 0 0 5px #38bdf8;
+}

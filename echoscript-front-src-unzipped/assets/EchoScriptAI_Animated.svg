@@ -1,0 +1,18 @@
+<svg width="256" height="64" viewBox="0 0 256 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .wave { animation: rise 1s ease-out forwards; transform: translateY(20px); opacity: 0; }
+    .wave:nth-child(2) { animation-delay: 0.1s; }
+    .wave:nth-child(3) { animation-delay: 0.2s; }
+    .wave:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes rise {
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+
+  <path d="M32 32C32 14 46 0 64 0C82 0 96 14 96 32" stroke="#2E2E2E" stroke-width="4" stroke-linecap="round"/>
+  <rect class="wave" x="60" y="8" width="4" height="32" rx="2" fill="#2CA5A9"/>
+  <rect class="wave" x="52" y="12" width="4" height="24" rx="2" fill="#2CA5A9"/>
+  <rect class="wave" x="68" y="12" width="4" height="24" rx="2" fill="#2CA5A9"/>
+  <rect class="wave" x="76" y="16" width="4" height="16" rx="2" fill="#2CA5A9"/>
+</svg>

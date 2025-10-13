@@ -1,0 +1,260 @@
+﻿# AI Review Bundle
+
+**How to use**:
+1) Read this file first to understand structure.
+2) Ask me questions if any env/key files are missing.
+3) Review packs in order: smaller, coherent chunks prevent timeouts/freezes.
+
+## Repo Summary
+- Root: $(Split-Path -Leaf C:\AI collaberation\EchoScriptAI)
+- Inventory: RepoInventory.csv (path, bytes, lines, ext)
+- Total files included: 4416
+- Pack size target: 150000 bytes
+
+## Packs (in order)
+- pack_001.txt
+- pack_002.txt
+- pack_003.txt
+- pack_004.txt
+- pack_005.txt
+- pack_006.txt
+- pack_007.txt
+- pack_008.txt
+- pack_009.txt
+- pack_010.txt
+- pack_011.txt
+- pack_012.txt
+- pack_013.txt
+- pack_014.txt
+- pack_015.txt
+- pack_016.txt
+- pack_017.txt
+- pack_018.txt
+- pack_019.txt
+- pack_020.txt
+- pack_021.txt
+- pack_022.txt
+- pack_023.txt
+- pack_024.txt
+- pack_025.txt
+- pack_026.txt
+- pack_027.txt
+- pack_028.txt
+- pack_029.txt
+- pack_030.txt
+- pack_031.txt
+- pack_032.txt
+- pack_033.txt
+- pack_034.txt
+- pack_035.txt
+- pack_036.txt
+- pack_037.txt
+- pack_038.txt
+- pack_039.txt
+- pack_040.txt
+- pack_041.txt
+- pack_042.txt
+- pack_043.txt
+- pack_044.txt
+- pack_045.txt
+- pack_046.txt
+- pack_047.txt
+- pack_048.txt
+- pack_049.txt
+- pack_050.txt
+- pack_051.txt
+- pack_052.txt
+- pack_053.txt
+- pack_054.txt
+- pack_055.txt
+- pack_056.txt
+- pack_057.txt
+- pack_058.txt
+- pack_059.txt
+- pack_060.txt
+- pack_061.txt
+- pack_062.txt
+- pack_063.txt
+- pack_064.txt
+- pack_065.txt
+- pack_066.txt
+- pack_067.txt
+- pack_068.txt
+- pack_069.txt
+- pack_070.txt
+- pack_071.txt
+- pack_072.txt
+- pack_073.txt
+- pack_074.txt
+- pack_075.txt
+- pack_076.txt
+- pack_077.txt
+- pack_078.txt
+- pack_079.txt
+- pack_080.txt
+- pack_081.txt
+- pack_082.txt
+- pack_083.txt
+- pack_084.txt
+- pack_085.txt
+- pack_086.txt
+- pack_087.txt
+- pack_088.txt
+- pack_089.txt
+- pack_090.txt
+- pack_091.txt
+- pack_092.txt
+- pack_093.txt
+- pack_094.txt
+- pack_095.txt
+- pack_096.txt
+- pack_097.txt
+- pack_098.txt
+- pack_099.txt
+- pack_100.txt
+- pack_101.txt
+- pack_102.txt
+- pack_103.txt
+- pack_104.txt
+- pack_105.txt
+- pack_106.txt
+- pack_107.txt
+- pack_108.txt
+- pack_109.txt
+- pack_110.txt
+- pack_111.txt
+- pack_112.txt
+- pack_113.txt
+- pack_114.txt
+- pack_115.txt
+- pack_116.txt
+- pack_117.txt
+- pack_118.txt
+- pack_119.txt
+- pack_120.txt
+- pack_121.txt
+- pack_122.txt
+- pack_123.txt
+- pack_124.txt
+- pack_125.txt
+- pack_126.txt
+- pack_127.txt
+- pack_128.txt
+- pack_129.txt
+- pack_130.txt
+- pack_131.txt
+- pack_132.txt
+- pack_133.txt
+- pack_134.txt
+- pack_135.txt
+- pack_136.txt
+- pack_137.txt
+- pack_138.txt
+- pack_139.txt
+- pack_140.txt
+- pack_141.txt
+- pack_142.txt
+- pack_143.txt
+- pack_144.txt
+- pack_145.txt
+- pack_146.txt
+- pack_147.txt
+- pack_148.txt
+- pack_149.txt
+- pack_150.txt
+- pack_151.txt
+- pack_152.txt
+- pack_153.txt
+- pack_154.txt
+- pack_155.txt
+- pack_156.txt
+- pack_157.txt
+- pack_158.txt
+- pack_159.txt
+- pack_160.txt
+- pack_161.txt
+- pack_162.txt
+- pack_163.txt
+- pack_164.txt
+- pack_165.txt
+- pack_166.txt
+- pack_167.txt
+- pack_168.txt
+- pack_169.txt
+- pack_170.txt
+- pack_171.txt
+- pack_172.txt
+- pack_173.txt
+- pack_174.txt
+- pack_175.txt
+- pack_176.txt
+- pack_177.txt
+- pack_178.txt
+- pack_179.txt
+- pack_180.txt
+- pack_181.txt
+- pack_182.txt
+- pack_183.txt
+- pack_184.txt
+- pack_185.txt
+- pack_186.txt
+- pack_187.txt
+- pack_188.txt
+- pack_189.txt
+- pack_190.txt
+- pack_191.txt
+- pack_192.txt
+- pack_193.txt
+- pack_194.txt
+- pack_195.txt
+- pack_196.txt
+- pack_197.txt
+- pack_198.txt
+- pack_199.txt
+- pack_200.txt
+- pack_201.txt
+- pack_202.txt
+- pack_203.txt
+- pack_204.txt
+- pack_205.txt
+- pack_206.txt
+- pack_207.txt
+- pack_208.txt
+- pack_209.txt
+- pack_210.txt
+- pack_211.txt
+- pack_212.txt
+- pack_213.txt
+- pack_214.txt
+- pack_215.txt
+- pack_216.txt
+- pack_217.txt
+- pack_218.txt
+- pack_219.txt
+- pack_220.txt
+- pack_221.txt
+- pack_222.txt
+- pack_223.txt
+- pack_224.txt
+- pack_225.txt
+- pack_226.txt
+- pack_227.txt
+- pack_228.txt
+
+## Suggested Review Order
+1. Backend config & routers (e.g., \pp/main.py\, \pp/routes/*\)
+2. Frontend entrypoints (\index.html\, \src/main.tsx\, \src/App.*\)
+3. API clients/SDK calls (\src/lib/*\)
+4. Auth/payments (\uth.*\, \stripe.*\, \paypal.*\)
+5. Transcribe/translate features
+6. UI components and state management
+7. Tests & scripts
+
+## Key Manifests to prioritize
+- Python: \pyproject.toml\ or \equirements.txt\
+- Node: \package.json\, \ite.config.*\, \	sconfig.*\
+- FastAPI/Proc: \pp/main.py\, server cmd, env vars
+- Netlify: \
+etlify.toml\ or \_redirects\
+- Docker/CI: \Dockerfile\, \.github/workflows/*\
+

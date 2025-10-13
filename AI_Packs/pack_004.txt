@@ -1,0 +1,656 @@
+﻿# AI Review Pack 4
+
+Note: Paths are relative to repo root.
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\tree.txt =====
+
+[top-level tree]
+
+.audit
+
+.audit_bundle_20250917_163813
+
+.mypy_cache
+
+.ruff_cache
+
+.venv
+
+.venv_audit
+
+app
+
+data
+
+echoscript-web
+
+echoscript_backend_20250915_153911
+
+logs
+
+node_modules
+
+scripts
+
+tests
+
+tools
+
+transcripts
+
+web_dist
+
+__pycache__
+
+$null
+
+.dockerignore
+
+.env
+
+.flake8
+
+.githubworkflowsci.yml
+
+.gitignore
+
+.mypy.ini
+
+.pre-commit-config.yaml
+
+asgi_dev.py
+
+db.sqlite3
+
+db_ping.py
+
+docker-compose (2).yml
+
+docker-compose.yml
+
+Dockerfile
+
+echoscript_backend_20250915_153911.zip
+
+loaded-config.txt
+
+package-lock.json
+
+pyproject.toml
+
+Read.md
+
+requirements.audit.txt
+
+requirements.in
+
+requirements.txt
+
+seed_user.py
+
+seed_user_sql.py
+
+setup.cfg
+
+test.mp3
+
+testintro.mp3
+
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\vulture.txt =====
+
+app\config.py:22: unused attribute 'APP_NAME' (60% confidence)
+
+app\config.py:28: unused attribute 'WHISPER_MODEL' (60% confidence)
+
+app\config.py:31: unused attribute 'OPENAI_API_KEY' (60% confidence)
+
+app\config.py:32: unused attribute 'HF_TOKEN' (60% confidence)
+
+app\config.py:64: unused attribute 'CORS_ALLOW_ORIGINS' (60% confidence)
+
+app\config.py:66: unused attribute 'CORS_ALLOW_ORIGINS' (60% confidence)
+
+app\config.py:70: unused attribute 'BASE_DIR' (60% confidence)
+
+app\config.py:79: unused attribute 'ALLOWED_EXTENSIONS' (60% confidence)
+
+app\core\settings.py:7: unused variable 'model_config' (60% confidence)
+
+app\core\settings.py:14: unused variable 'env' (60% confidence)
+
+app\core\settings.py:15: unused variable 'api_host' (60% confidence)
+
+app\core\settings.py:16: unused variable 'api_port' (60% confidence)
+
+app\core\settings.py:19: unused variable 'cors_origins' (60% confidence)
+
+app\core\settings.py:22: unused variable 'secret_key' (60% confidence)
+
+app\core\settings.py:23: unused variable 'algorithm' (60% confidence)
+
+app\core\settings.py:24: unused variable 'access_token_expire_minutes' (60% confidence)
+
+app\core\settings.py:25: unused variable 'jwt_secret_key' (60% confidence)
+
+app\core\settings.py:26: unused variable 'jwt_algorithm' (60% confidence)
+
+app\core\settings.py:29: unused variable 'stripe_secret_key' (60% confidence)
+
+app\core\settings.py:30: unused variable 'stripe_webhook_secret' (60% confidence)
+
+app\core\settings.py:31: unused variable 'stripe_public_key' (60% confidence)
+
+app\core\settings.py:32: unused variable 'stripe_price_pro' (60% confidence)
+
+app\core\settings.py:33: unused variable 'stripe_price_premium' (60% confidence)
+
+app\core\settings.py:36: unused variable 'asr_model' (60% confidence)
+
+app\core\settings.py:37: unused variable 'whisper_model_size' (60% confidence)
+
+app\core\settings.py:38: unused variable 'whisper_device' (60% confidence)
+
+app\core\settings.py:39: unused variable 'whisper_compute' (60% confidence)
+
+app\core\settings.py:40: unused variable 'huggingface_token' (60% confidence)
+
+app\core\settings.py:41: unused variable 'pyannote_pipeline' (60% confidence)
+
+app\core\settings.py:42: unused variable 'openai_api_key' (60% confidence)
+
+app\core\settings.py:45: unused variable 'from_email' (60% confidence)
+
+app\core\settings.py:46: unused variable 'vite_api_base' (60% confidence)
+
+app\core\settings.py:47: unused variable 'smtp_key' (60% confidence)
+
+app\db.py:10: unused variable 'model_config' (60% confidence)
+
+app\db.py:43: unused variable 'db_session' (60% confidence)
+
+app\dependencies.py:50: unused function 'get_admin_user' (60% confidence)
+
+app\main.py:39: unused function 'healthz' (60% confidence)
+
+app\models.py:18: unused variable 'past_due' (60% confidence)
+
+app\models.py:20: unused variable 'incomplete' (60% confidence)
+
+app\models.py:21: unused variable 'incomplete_expired' (60% confidence)
+
+app\models.py:22: unused variable 'trialing' (60% confidence)
+
+app\models.py:38: unused variable 'subscriptions' (60% confidence)
+
+app\models.py:64: unused variable 'stripe_customer_id' (60% confidence)
+
+app\models.py:78: unused variable 'renewed_at' (60% confidence)
+
+app\models.py:79: unused variable 'canceled_at' (60% confidence)
+
+app\models\subscription.py:9: unused variable 'ACTIVE' (60% confidence)
+
+app\models\subscription.py:11: unused variable 'PAST_DUE' (60% confidence)
+
+app\models\subscription.py:12: unused variable 'CANCELED' (60% confidence)
+
+app\models\subscription.py:13: unused variable 'INCOMPLETE' (60% confidence)
+
+app\models\subscription.py:14: unused variable 'UNPAID' (60% confidence)
+
+app\models\subscription.py:30: unused variable 'stripe_customer_id' (60% confidence)
+
+app\models\subscription.py:33: unused variable 'created_at' (60% confidence)
+
+app\models\subscription.py:34: unused variable 'updated_at' (60% confidence)
+
+app\models\user.py:15: unused variable 'is_verified' (60% confidence)
+
+app\models\user.py:17: unused variable 'created_at' (60% confidence)
+
+app\models\user.py:18: unused variable 'updated_at' (60% confidence)
+
+app\routes\contact.py:13: unused function 'submit_contact' (60% confidence)
+
+app\routes\export.py:15: unused function 'export_transcript' (60% confidence)
+
+app\routes\feedback.py:15: unused function 'submit_feedback' (60% confidence)
+
+app\routes\newsletter.py:18: unused function 'subscribe' (60% confidence)
+
+app\routes\newsletter.py:51: unused function 'unsubscribe' (60% confidence)
+
+app\routes\signup.py:29: unused function 'signup' (60% confidence)
+
+app\routes\stripe_webhook.py:16: unused function 'stripe_webhook' (60% confidence)
+
+app\routes\subscription.py:103: unused attribute 'canceled_at' (60% confidence)
+
+app\routes\transcribe.py:18: unused function 'transcribe_endpoint' (60% confidence)
+
+app\routes\transcripts.py:10: unused function 'get_transcripts' (60% confidence)
+
+app\routes\video_task.py:23: unused variable 'target_lang' (100% confidence)
+
+app\routes\video_task.py:29: unused function 'video_task' (60% confidence)
+
+app\schemas\auth.py:32: unused variable 'token_type' (60% confidence)
+
+app\schemas\auth.py:42: unused variable 'exp' (60% confidence)
+
+app\schemas\export.py:29: unused variable 'schema_extra' (60% confidence)
+
+app\schemas\feedback.py:20: unused variable 'feedback_id' (60% confidence)
+
+app\schemas\feedback.py:27: unused variable 'submitted_at' (60% confidence)
+
+app\schemas\history.py:10: unused variable 'change' (60% confidence)
+
+app\schemas\history.py:13: unused class 'HistoryRequest' (60% confidence)
+
+app\schemas\history.py:17: unused class 'HistoryResponse' (60% confidence)
+
+app\schemas\history.py:19: unused variable 'history' (60% confidence)
+
+app\schemas\subscription.py:26: unused variable 'reason' (60% confidence)
+
+app\schemas\subscription.py:36: unused variable 'plan' (60% confidence)
+
+app\schemas\subscription.py:38: unused variable 'start_date' (60% confidence)
+
+app\schemas\subscription.py:39: unused variable 'end_date' (60% confidence)
+
+app\schemas\subscription.py:41: unused variable 'model_config' (60% confidence)
+
+app\schemas\subscription.py:51: unused variable 'stripe_customer_id' (60% confidence)
+
+app\schemas\subscription.py:55: unused variable 'renewed_at' (60% confidence)
+
+app\schemas\subscription.py:58: unused variable 'canceled_at' (60% confidence)
+
+app\schemas\subscription.py:62: unused variable 'model_config' (60% confidence)
+
+app\schemas\subtitle.py:10: unused variable 'subtitles' (60% confidence)
+
+app\schemas\subtitle.py:24: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\summary.py:11: unused variable 'summary' (60% confidence)
+
+app\schemas\transcription.py:10: unused variable 'transcript' (60% confidence)
+
+app\schemas\transcription.py:11: unused variable 'summary' (60% confidence)
+
+app\schemas\transcription.py:12: unused variable 'sentiment' (60% confidence)
+
+app\schemas\transcription.py:13: unused variable 'keywords' (60% confidence)
+
+app\schemas\transcription.py:14: unused variable 'subtitles' (60% confidence)
+
+app\schemas\transcription.py:19: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\user.py:44: unused variable 'orm_mode' (60% confidence)
+
+app\schemas\user.py:52: unused variable 'subscriptions' (60% confidence)
+
+app\schemas\user.py:55: unused variable 'orm_mode' (60% confidence)
+
+app\utils\stripe_client.py:15: unused attribute 'api_key' (60% confidence)
+
+app\utils\stripe_client.py:90: unused attribute 'renewed_at' (60% confidence)
+
+app\utils\stripe_client.py:95: unused attribute 'canceled_at' (60% confidence)
+
+app\ws\socket_transcriber.py:5: unused function 'websocket_endpoint' (60% confidence)
+
+
+
+===== FILE: Backend\.audit_mypy_after.txt =====
+
+app\services\transcription.py:16: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\schemas\newsletter.py:5: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\newsletter.py:13: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\newsletter.py:21: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:7: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:8: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:9: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:14: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:20: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:21: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:26: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+app\schemas\feedback.py:27: error: Unexpected keyword argument "example" for "Field"; did you mean "examples"?  [call-arg]
+
+seed_user_sql.py:9: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+seed_user.py:11: error: Module "app" has no attribute "Base"  [attr-defined]
+
+seed_user.py:11: error: Module "app" has no attribute "User"  [attr-defined]
+
+seed_user.py:14: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+db_ping.py:10: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+db_ping.py:12: error: Item "None" of "Any | None" has no attribute "split"  [union-attr]
+
+scripts\create_user.py:58: error: "str" has no attribute "name"  [attr-defined]
+
+app\config.py:22: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:23: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:24: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:27: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:31: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:32: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:33: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:34: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:35: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:41: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:49: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:52: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:53: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:54: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:55: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:58: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:59: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:64: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:66: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:70: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:71: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:74: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:75: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:76: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\config.py:79: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+
+app\models\subscription.py:24: error: Need type annotation for "status"  [var-annotated]
+
+app\utils\redis_client.py:41: error: Incompatible return value type (got "bool | Awaitable[Any] | Any", expected "bool")  [return-value]
+
+app\utils\redis_client.py:49: error: Incompatible return value type (got "Awaitable[Any] | Any", expected "str | None")  [return-value]
+
+app\utils\redis_client.py:57: error: Incompatible return value type (got "Awaitable[Any] | Any", expected "int")  [return-value]
+
+app\utils\export_utils.py:48: error: Unused "type: ignore" comment  [unused-ignore]
+
+asgi_dev.py:36: error: Argument 1 to "create_engine" has incompatible type "str | None"; expected "str | URL"  [arg-type]
+
+asgi_dev.py:43: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:43: error: Invalid base class "Base"  [misc]
+
+asgi_dev.py:52: error: Variable "asgi_dev.Base" is not valid as a type  [valid-type]
+
+asgi_dev.py:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+
+asgi_dev.py:52: error: Invalid base class "Base"  [misc]
+
+asgi_dev.py:75: error: The return type of a generator function should be "Generator" or one of its supertypes  [misc]
+
+asgi_dev.py:174: error: Argument 2 to "verify_password" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:176: error: Argument "sub" to "create_access_token" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:201: error: Argument 1 to "Path" has incompatible type "str | None"; expected "str | PathLike[str]"  [arg-type]
+
+asgi_dev.py:245: error: Argument "job_id" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "status" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "filename" to "JobOut" has incompatible type "Column[str]"; expected "str"  [arg-type]
+
+asgi_dev.py:245: error: Argument "transcript" to "JobOut" has incompatible type "Column[str]"; expected "str | None"  [arg-type]
+
+app\utils\stripe_client.py:42: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:56: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:90: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\utils\stripe_client.py:92: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\utils\stripe_client.py:93: error: "type[SubscriptionStatus]" has no attribute "unpaid"  [attr-defined]
+
+app\utils\stripe_client.py:95: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\verify_email.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\signup.py:15: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\send_reset.py:12: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\password_reset.py:13: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\history.py:11: error: Need type annotation for "__all__" (hint: "__all__: list[<type>] = ...")  [var-annotated]
+
+app\routes\contact.py:24: error: Missing named argument "message" for "ContactResponse"  [call-arg]
+
+app\routes\subscription.py:86: error: "type[SubscriptionStatus]" has no attribute "active"  [attr-defined]
+
+app\routes\subscription.py:102: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\subscription.py:102: error: "type[SubscriptionStatus]" has no attribute "canceled"  [attr-defined]
+
+app\routes\subscription.py:102: note: Error code "attr-defined" not covered by "type: ignore" comment
+
+app\routes\subscription.py:103: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\stripe_webhook.py:4: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\stripe_webhook.py:45: error: Unused "type: ignore" comment  [unused-ignore]
+
+app\routes\feedback.py:40: error: Missing named argument "feedback_id" for "FeedbackResponse"  [call-arg]
+
+app\routes\feedback.py:40: error: Missing named argument "message" for "FeedbackResponse"  [call-arg]
+
+app\routes\feedback.py:40: error: Missing named argument "submitted_at" for "FeedbackResponse"  [call-arg]
+
+Found 59 errors in 21 files (checked 88 source files)
+
+
+
+===== FILE: Backend\.github\workflows\gemini-dispatch.yml =====
+
+# .github/workflows/gemini-dispatch.yml
+name: Gemini Dispatch
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Handle @gemini-cli comments
+        uses: google-github-actions/run-gemini-cli@v0.1.13
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-2.5-pro
+
+
+===== FILE: Backend\.github\workflows\gemini-pr-review.yml =====
+
+name: Gemini PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gemini CLI for PR review
+        uses: google-github-actions/run-gemini-cli@v0.1.13
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-2.5-pro
+          # Optional: a simple prompt to guide the review
+          prompt: >
+            Review this pull request. Summarize changes, identify risks,
+            suggest fixes, and propose tests. Be concise but specific.
+
+
+===== FILE: Backend\.githubworkflowsci.yml =====
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Compile requirements
+        run: pip-compile requirements.in --output-file requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install dev tools
+        run: |
+          pip install pre-commit
+          pre-commit install --install-hooks
+
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
+
+      - name: Run Flake8
+        run: flake8 .
+
+      - name: Run MyPy
+        run: mypy --ignore-missing-imports app
+
+      - name: Run Bandit security scan
+        run: bandit -r app
+
+      - name: Run tests
+        run: pytest --maxfail=1 --disable-warnings -q
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: .coverage
+
+
+===== FILE: Backend\.mypy.ini =====
+
+[mypy]
+files = app, tests
+exclude = \.venv
+python_version = 3.10
+ignore_missing_imports = True
+plugins = pydantic.mypy
+
+# Reasonable safety without being noisy
+warn_unused_ignores = True
+warn_redundant_casts = True
+warn_unreachable = True
+no_implicit_optional = True
+strict_optional = True
+
+# Keep your existing per-file ignores for pragmatic spots
+per-file-ignores =
+    tests/*.py: no-redef
+    app/utils/stripe_client.py: return-value, arg-type, attr-defined, assignment
+    app/utils/export_utils.py: arg-type
+    app/routes/history.py: attr-defined
+    app/routes/stripe_webhook.py: attr-defined
+    app/routes/subscription.py: assignment
+    app/routes/verify_email.py: assignment
+    app/routes/auth.py: arg-type
+
+
+===== FILE: Backend\.mypy_cache\3.10\@plugins_snapshot.json =====
+
+{"pydantic.mypy":"2:7624e990167d84e3401b2114d27a683e756a7fbace95e2822280476feaaa8ad4"}
+
+===== FILE: Backend\.mypy_cache\3.10\__future__.data.json =====
+
+{".class":"MypyFile","_fullname":"__future__","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","TypeAlias":{".class":"SymbolTableNode","cross_ref":"typing.TypeAlias","kind":"Gdef","module_hidden":true,"module_public":false},"_Feature":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"__future__._Feature","name":"_Feature","type_vars":[]},"deletable_attributes":[],"flags":[],"fullname":"__future__._Feature","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"__future__","mro":["__future__._Feature","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0,0],"arg_names":["self","optionalRelease","mandatoryRelease","compiler_flag"],"dataclass_transform_spec":null,"flags":[],"fullname":"__future__._Feature.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0,0],"arg_names":["self","optionalRelease","mandatoryRelease","compiler_flag"],"arg_types":["__future__._Feature",{".class":"TypeAliasType","args":[],"type_ref":"__future__._VersionInfo"},{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"__future__._VersionInfo"},{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.int"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of _Feature","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"compiler_flag":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"__future__._Feature.compiler_flag","name":"compiler_flag","type":"builtins.int"}},"getMandatoryRelease":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"flags":[],"fullname":"__future__._Feature.getMandatoryRelease","name":"getMandatoryRelease","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["__future__._Feature"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"getMandatoryRelease of _Feature","ret_type":{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"__future__._VersionInfo"},{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"getOptionalRelease":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"flags":[],"fullname":"__future__._Feature.getOptionalRelease","name":"getOptionalRelease","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["__future__._Feature"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"getOptionalRelease of _Feature","ret_type":{".class":"TypeAliasType","args":[],"type_ref":"__future__._VersionInfo"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"__future__._Feature.Self","id":0,"name":"Self","namespace":"","upper_bound":"__future__._Feature","values":[],"variance":0},"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"_VersionInfo":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"__future__._VersionInfo","line":3,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"TupleType","implicit":false,"items":["builtins.int","builtins.int","builtins.int","builtins.str","builtins.int"],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"__future__.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.__spec__","name":"__spec__","type":"importlib.machinery.ModuleSpec"}},"absolute_import":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.absolute_import","name":"absolute_import","type":"__future__._Feature"}},"all_feature_names":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.all_feature_names","name":"all_feature_names","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"annotations":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.annotations","name":"annotations","type":"__future__._Feature"}},"barry_as_FLUFL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.barry_as_FLUFL","name":"barry_as_FLUFL","type":"__future__._Feature"}},"division":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.division","name":"division","type":"__future__._Feature"}},"generator_stop":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.generator_stop","name":"generator_stop","type":"__future__._Feature"}},"generators":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.generators","name":"generators","type":"__future__._Feature"}},"nested_scopes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.nested_scopes","name":"nested_scopes","type":"__future__._Feature"}},"print_function":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.print_function","name":"print_function","type":"__future__._Feature"}},"unicode_literals":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.unicode_literals","name":"unicode_literals","type":"__future__._Feature"}},"with_statement":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__future__.with_statement","name":"with_statement","type":"__future__._Feature"}}},"path":"C:\\Users\\mroid\\.cache\\pre-commit\\repogk62lwhp\\py_env-python3.10\\lib\\site-packages\\mypy\\typeshed\\stdlib\\__future__.pyi"}
+
+===== FILE: Backend\.mypy_cache\3.10\__future__.meta.json =====
+
+{"data_mtime":1758307384,"dep_lines":[1,1,1,1,1,1,1],"dep_prios":[5,5,30,30,30,30,30],"dependencies":["typing_extensions","builtins","abc","importlib","importlib.machinery","types","typing"],"hash":"b3e63c2093f92f412cc06fd0491ff110db6df5d102d08b4bfdab25680d5498c1","id":"__future__","ignore_all":true,"interface_hash":"56f913bf6e9c95eafbd30636c6dbd6cda78c2d75ae56f9612b694af742dafa6d","mtime":1756840288,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"ignore_errors":false,"ignore_missing_imports":true,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"win32","plugins":["pydantic.mypy"],"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"C:\\Users\\mroid\\.cache\\pre-commit\\repogk62lwhp\\py_env-python3.10\\lib\\site-packages\\mypy\\typeshed\\stdlib\\__future__.pyi","plugin_data":[{"debug_dataclass_transform":false,"init_forbid_extra":false,"init_typed":false,"warn_required_dynamic_aliases":false},null],"size":951,"suppressed":[],"version_id":"1.11.2"}
+
+===== FILE: Backend\.mypy_cache\3.10\__main__.data.json =====
+
+{".class":"MypyFile","_fullname":"__main__","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__annotations__","name":"__annotations__","setter_type":null,"type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__doc__","name":"__doc__","setter_type":null,"type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__file__","name":"__file__","setter_type":null,"type":"builtins.str"}},"__getattr__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":[null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"__main__.__getattr__","name":"__getattr__","type":{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":["builtins.str"],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_bound":false,"is_ellipsis_args":false,"name":"__getattr__","ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__name__","name":"__name__","setter_type":null,"type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__package__","name":"__package__","setter_type":null,"type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"__main__.__spec__","name":"__spec__","setter_type":null,"type":{".class":"UnionType","items":["_frozen_importlib.ModuleSpec",{".class":"NoneType"}],"uses_pep604_syntax":false}}}},"path":"C:\\AI collaberation\\EchoScriptAI\\Backend\\.venv\\lib\\site-packages\\mypy\\typeshed\\stdlib\\__main__.pyi"}
+
+===== FILE: Backend\.mypy_cache\3.10\__main__.meta.json =====
+
+{"data_mtime":1753294694,"dep_lines":[1,1,1,1],"dep_prios":[5,30,30,30],"dependencies":["builtins","_frozen_importlib","abc","typing"],"hash":"fbe79a1e35410f3739a5495cd2f19c3dfb0d5f8e","id":"__main__","ignore_all":true,"interface_hash":"05f66ea69434ed3560e7f92ce011c5c279b97bbb","mtime":1753283498,"options":{"allow_redefinition":false,"allow_redefinition_new":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":true,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"win32","plugins":["pydantic.mypy"],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"C:\\AI collaberation\\EchoScriptAI\\Backend\\.venv\\lib\\site-packages\\mypy\\typeshed\\stdlib\\__main__.pyi","plugin_data":[{"debug_dataclass_transform":false,"init_forbid_extra":false,"init_typed":false,"warn_required_dynamic_aliases":false},null],"size":54,"suppressed":[],"version_id":"1.17.0"}

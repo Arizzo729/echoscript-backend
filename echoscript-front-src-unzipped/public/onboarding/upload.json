@@ -1,0 +1,28 @@
+{
+  "limits": {
+    "maxFileSizeMB": 300,
+    "maxFilesPerUpload": 5,
+    "acceptedFormats": ["mp3", "mp4", "m4a", "wav", "webm"]
+  },
+  "processing": {
+    "autoTranscribe": true,
+    "languageDetection": true,
+    "queuePriority": "standard"
+  },
+  "storage": {
+    "provider": "local",
+    "uploadPath": "/mnt/data/uploads",
+    "retentionPolicyDays": 14,
+    "s3": {
+      "bucket": "echoscript-ai-uploads",
+      "region": "us-east-1",
+      "accessKey": "YOUR_ACCESS_KEY",
+      "secretKey": "YOUR_SECRET_KEY"
+    },
+    "gcs": {
+      "bucket": "echoscript-uploads",
+      "credentialsPath": "/path/to/credentials.json"
+    }
+  }
+}
+

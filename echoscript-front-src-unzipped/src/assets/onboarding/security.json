@@ -1,0 +1,24 @@
+
+{
+  "auth": {
+    "2FA": true,
+    "emailVerification": true,
+    "sessionTimeoutMinutes": 30,
+    "passwordPolicy": {
+      "minLength": 12,
+      "requireSymbols": true,
+      "requireUppercase": true
+    }
+  },
+  "headers": {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; connect-src 'self' https://api.stripe.com",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer-when-downgrade"
+  },
+  "rateLimiting": {
+    "enabled": true,
+    "windowSeconds": 60,
+    "maxRequestsPerWindow": 100
+  }
+}

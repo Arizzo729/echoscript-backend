@@ -1,0 +1,32 @@
+# netlify.toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy /api/* and /v1/* to your API host
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.echoscript.ai/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/v1/*"
+  to = "https://api.echoscript.ai/v1/:splat"
+  status = 200
+  force = true
+
+# SPA routes (prevents Netlify 404 on deep links)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Allow microphone (fixes: “Permissions policy violation: microphone is not allowed”)
+[[headers]]
+  for = "/*"
+  [headers.values]
+  Permissions-Policy = "microphone=(self)"
+  Referrer-Policy = "strict-origin-when-cross-origin"
+  X-Content-Type-Options = "nosniff"
+  X-Frame-Options = "SAMEORIGIN"

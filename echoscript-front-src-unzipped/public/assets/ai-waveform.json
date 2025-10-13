@@ -1,0 +1,9 @@
+import shutil
+
+# Copy the AI waveform JSON to a new path for public/assets
+src = '/mnt/data/ai-waveform.json'
+dst = '/mnt/data/public_assets_ai-waveform.json'
+shutil.copy(src, dst)
+
+# Provide the user with the download link
+print(f"Created updated JSON at: sandbox:{dst}")

@@ -1,0 +1,47 @@
+﻿{
+  "id": "/",
+  "name": "EchoScript.AI",
+  "short_name": "EchoScript",
+  "description": "EchoScript.AI is the most advanced transcription platform — accurate, fast, and beautifully easy to use.",
+  "lang": "en-US",
+  "dir": "ltr",
+  "start_url": "/?utm_source=web_app_manifest",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#14b8a6",
+  "categories": ["productivity", "utilities", "audio", "business"],
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon", "purpose": "any" },
+    { "src": "/logo192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screens/dashboard-preview.png", "sizes": "1280x720", "type": "image/png", "label": "Dashboard View" },
+    { "src": "/screens/transcribe-upload.png", "sizes": "1280x720", "type": "image/png", "label": "Transcription Workflow" }
+  ],
+  "shortcuts": [
+    { "name": "Upload", "short_name": "Upload", "url": "/upload", "icons": [{ "src": "/logo192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Transcribe", "short_name": "Transcribe", "url": "/transcribe", "icons": [{ "src": "/logo192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Dashboard", "short_name": "Dashboard", "url": "/dashboard", "icons": [{ "src": "/logo192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
+  "share_target": {
+    "action": "/upload",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": { "files": [ { "name": "file", "accept": ["audio/*", "video/*"] } ] }
+  },
+  "file_handlers": [
+    { "action": "/upload",
+      "accept": {
+        "audio/*": [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".webm"],
+        "video/*": [".mp4", ".mkv", ".mov", ".webm"]
+      }
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

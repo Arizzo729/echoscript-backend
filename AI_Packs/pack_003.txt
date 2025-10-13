@@ -1,0 +1,3860 @@
+﻿# AI Review Pack 3
+
+Note: Paths are relative to repo root.
+
+
+===== FILE: Backend\.audit_bundle_20250917_163813\ruff.txt =====
+
+app\dependencies.py:16:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 | def get_current_user(
+
+15 |     token: str = Depends(oauth2_scheme),
+
+16 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+17 | ) -> User:
+
+18 |     """
+
+   |
+
+
+
+app\dependencies.py:39:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+37 |     except (JWTError, ValueError, TypeError):
+
+38 |         # JWTError covers signature/expiration issues; ValueError/TypeError for int conversion
+
+39 |         raise credentials_exc
+
+   |         ^^^^^^^^^^^^^^^^^^^^^ B904
+
+40 | 
+
+41 |     user = db.query(User).filter(User.id == user_id).first()
+
+   |
+
+
+
+app\dependencies.py:51:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+50 | def get_admin_user(
+
+51 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+52 | ) -> User:
+
+53 |     """
+
+   |
+
+
+
+app\routes\auth.py:31:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+29 | async def login(
+
+30 |     creds: LoginRequest,
+
+31 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+32 | ) -> Token:
+
+33 |     """
+
+   |
+
+
+
+app\routes\auth.py:68:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+66 | async def refresh_token(
+
+67 |     req: RefreshRequest,
+
+68 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+69 | ) -> Token:
+
+70 |     """
+
+   |
+
+
+
+app\routes\contact.py:27:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+25 |       except Exception as e:
+
+26 |           logger.error(f"Failed to process contact form: {e}")
+
+27 |           raise HTTPException(
+
+   |  _________^
+
+28 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+29 | |             detail="Unable to send contact message at this time",
+
+30 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\export.py:23:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+21 |     transcript_id: int,
+
+22 |     format: Literal["txt", "json", "pdf", "docx"],
+
+23 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+24 | ) -> FileResponse:
+
+25 |     """
+
+   |
+
+
+
+app\routes\export.py:42:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+40 |     except ValueError as e:
+
+41 |         logger.error(f"Export error: {e}")
+
+42 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+43 |     except Exception as e:
+
+44 |         logger.error(f"Unexpected export error: {e}")
+
+   |
+
+
+
+app\routes\export.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Unexpected export error: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Failed to export transcript.",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\feedback.py:18:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+16 | async def submit_feedback(
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+19 |     current_user=Depends(get_current_user),
+
+20 | ) -> FeedbackResponse:
+
+   |
+
+
+
+app\routes\feedback.py:19:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+19 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+20 | ) -> FeedbackResponse:
+
+21 |     """
+
+   |
+
+
+
+app\routes\feedback.py:43:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+41 |       except Exception as e:
+
+42 |           logger.error(f"Error processing feedback: {e}")
+
+43 |           raise HTTPException(
+
+   |  _________^
+
+44 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+45 | |             detail="Unable to submit feedback at this time",
+
+46 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\newsletter.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Newsletter subscribe error for {request.email}: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Unable to subscribe to newsletter",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\newsletter.py:67:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+65 |       except Exception as e:
+
+66 |           logger.error(f"Newsletter unsubscribe error for {request.email}: {e}")
+
+67 |           raise HTTPException(
+
+   |  _________^
+
+68 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+69 | |             detail="Unable to unsubscribe from newsletter",
+
+70 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\password_reset.py:56:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+54 | async def request_password_reset(
+
+55 |     req: PasswordResetRequest,
+
+56 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+57 | ) -> PasswordResetResponse:
+
+58 |     # Validate user exists
+
+   |
+
+
+
+app\routes\password_reset.py:75:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |       except Exception as e:
+
+74 |           logger.error(f"Could not store reset code in Redis: {e}")
+
+75 |           raise HTTPException(
+
+   |  _________^
+
+76 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |             detail="Internal error generating reset code",
+
+78 | |         )
+
+   | |_________^ B904
+
+79 |   
+
+80 |       # Send email
+
+   |
+
+
+
+app\routes\password_reset.py:89:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+87 |       except Exception as e:
+
+88 |           logger.error(f"Failed to send reset email: {e}")
+
+89 |           raise HTTPException(
+
+   |  _________^
+
+90 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+91 | |             detail="Failed to send reset email",
+
+92 | |         )
+
+   | |_________^ B904
+
+93 |   
+
+94 |       return PasswordResetResponse(status="sent")
+
+   |
+
+
+
+app\routes\password_reset.py:104:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+102 | async def verify_password_reset(
+
+103 |     req: PasswordResetVerifyRequest,
+
+104 |     db: Session = Depends(get_db),
+
+    |                   ^^^^^^^^^^^^^^^ B008
+
+105 | ) -> PasswordResetResponse:
+
+106 |     # Retrieve and validate code
+
+    |
+
+
+
+app\routes\password_reset.py:111:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+109 |       except Exception as e:
+
+110 |           logger.error(f"Error accessing Redis for code: {e}")
+
+111 |           raise HTTPException(
+
+    |  _________^
+
+112 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+113 | |             detail="Internal error verifying code",
+
+114 | |         )
+
+    | |_________^ B904
+
+115 |   
+
+116 |       if stored is None or stored != req.code:
+
+    |
+
+
+
+app\routes\password_reset.py:128:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+126 |       except Exception as e:
+
+127 |           logger.error(f"Database error updating password: {e}")
+
+128 |           raise HTTPException(
+
+    |  _________^
+
+129 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+130 | |             detail="Failed to update password",
+
+131 | |         )
+
+    | |_________^ B904
+
+132 |   
+
+133 |       if not success:
+
+    |
+
+
+
+app\routes\send_reset.py:43:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+41 | async def send_reset_code(
+
+42 |     req: PasswordResetRequest,
+
+43 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+44 | ) -> PasswordResetResponse:
+
+45 |     # 1) Verify that the user exists in the database
+
+   |
+
+
+
+app\routes\send_reset.py:62:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+60 |       except Exception as e:
+
+61 |           logger.error(f"Error writing reset code to Redis: {e}")
+
+62 |           raise HTTPException(
+
+   |  _________^
+
+63 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+64 | |             detail="Internal error generating reset code",
+
+65 | |         )
+
+   | |_________^ B904
+
+66 |   
+
+67 |       # 4) Email the code to the user
+
+   |
+
+
+
+app\routes\send_reset.py:76:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+74 |       except Exception as e:
+
+75 |           logger.error(f"Error sending reset email: {e}")
+
+76 |           raise HTTPException(
+
+   |  _________^
+
+77 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+78 | |             detail="Failed to send reset email",
+
+79 | |         )
+
+   | |_________^ B904
+
+80 |   
+
+81 |       # 5) Return a simple acknowledgement
+
+   |
+
+
+
+app\routes\signup.py:36:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+34 | async def signup(
+
+35 |     req: SignupRequest,
+
+36 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+37 | ) -> SignupResponse:
+
+38 |     # 1) Prevent duplicate registrations
+
+   |
+
+
+
+app\routes\signup.py:59:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+57 |       except Exception as e:
+
+58 |           logger.error(f"Redis error while storing signup code: {e}")
+
+59 |           raise HTTPException(
+
+   |  _________^
+
+60 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+61 | |             detail="Internal error generating verification code",
+
+62 | |         )
+
+   | |_________^ B904
+
+63 |   
+
+64 |       # 5) Send verification email
+
+   |
+
+
+
+app\routes\signup.py:77:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+75 |       except Exception as e:
+
+76 |           logger.error(f"Failed to send signup verification email: {e}")
+
+77 |           raise HTTPException(
+
+   |  _________^
+
+78 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+79 | |             detail="Failed to send verification email",
+
+80 | |         )
+
+   | |_________^ B904
+
+81 |   
+
+82 |       return SignupResponse(status="sent")
+
+   |
+
+
+
+app\routes\stripe_webhook.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |     except ValueError:
+
+43 |         logger.warning("Invalid payload in Stripe webhook.")
+
+44 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+   |
+
+
+
+app\routes\stripe_webhook.py:47:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+47 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+   |
+
+
+
+app\routes\stripe_webhook.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |       except Exception as e:
+
+49 |           logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+50 |           raise HTTPException(
+
+   |  _________^
+
+51 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+52 | |             detail="Webhook verification failed",
+
+53 | |         )
+
+   | |_________^ B904
+
+54 |   
+
+55 |       event_type = event.get("type", "")
+
+   |
+
+
+
+app\routes\subscription.py:22:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+app\routes\subscription.py:22:59: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                                                           ^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+app\routes\subscription.py:47:45: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+45 | )
+
+46 | async def create_checkout_session(
+
+47 |     request: SubscribeRequest, current_user=Depends(get_current_user)
+
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+48 | ) -> dict[str, str]:
+
+49 |     """
+
+   |
+
+
+
+app\routes\subscription.py:63:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+61 |       except Exception as e:
+
+62 |           logger.error(f"Error creating checkout session: {e}")
+
+63 |           raise HTTPException(
+
+   |  _________^
+
+64 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+65 | |             detail="Unable to create checkout session",
+
+66 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\routes\subscription.py:76:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+74 | async def cancel_subscription(
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+77 |     db: Session = Depends(get_db),
+
+78 | ) -> SubscriptionOut:
+
+   |
+
+
+
+app\routes\subscription.py:77:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+77 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+78 | ) -> SubscriptionOut:
+
+79 |     """
+
+   |
+
+
+
+app\routes\subscription.py:113:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+111 |       except Exception as e:
+
+112 |           logger.error(f"Error cancelling subscription: {e}")
+
+113 |           raise HTTPException(
+
+    |  _________^
+
+114 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+115 | |             detail="Unable to cancel subscription",
+
+116 | |         )
+
+    | |_________^ B904
+
+    |
+
+
+
+app\routes\summary.py:15:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 | async def summarize_transcript(
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+16 |     current_user: User = Depends(get_current_user),
+
+17 | ):
+
+   |
+
+
+
+app\routes\summary.py:16:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+16 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+17 | ):
+
+18 |     """
+
+   |
+
+
+
+app\routes\transcribe.py:20:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+18 | @router.post("/transcribe")
+
+19 | async def transcribe_endpoint(
+
+20 |     file: UploadFile = File(...),
+
+   |                        ^^^^^^^^^ B008
+
+21 |     diarize: bool = False,
+
+22 |     language: str | None = None,
+
+   |
+
+
+
+app\routes\transcribe.py:24:10: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+22 |     language: str | None = None,
+
+23 |     vad: bool = True,  # on by default; will auto-fallback if onnxruntime missing
+
+24 |     user=Depends(get_current_user),
+
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+25 | ):
+
+26 |     if not file.filename:
+
+   |
+
+
+
+app\routes\transcribe.py:70:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+68 |         raise
+
+69 |     except Exception as e:
+
+70 |         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+71 |     finally:
+
+72 |         if tmp_path:
+
+   |
+
+
+
+app\routes\transcripts.py:15:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     summary="List all saved transcripts for the current user",
+
+14 | )
+
+15 | async def get_transcripts(current_user=Depends(get_current_user)) -> list[str]:
+
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 |     """
+
+17 |     Retrieve a list of transcript filenames saved for the authenticated user.
+
+   |
+
+
+
+app\routes\translate.py:14:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+12 | async def translate_text(
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+15 |     current_user: User = Depends(get_current_user),
+
+16 | ):
+
+   |
+
+
+
+app\routes\translate.py:15:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+15 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 | ):
+
+17 |     """
+
+   |
+
+
+
+app\routes\verify_email.py:38:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+36 | async def verify_email(
+
+37 |     payload: VerifyEmailRequest,
+
+38 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+39 | ) -> Token:
+
+40 |     """
+
+   |
+
+
+
+app\routes\video_task.py:31:20: UP007 Use `X | Y` for type annotations
+
+   |
+
+29 | @router.post(
+
+30 |     "/",
+
+31 |     response_model=Union[TranscriptionOut, SubtitleOut],
+
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+
+32 |     summary="Process uploaded video for transcription or subtitle generation",
+
+33 | )
+
+   |
+
+   = help: Convert to `X | Y`
+
+
+
+app\routes\video_task.py:35:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+33 | )
+
+34 | async def video_task(
+
+35 |     file: UploadFile = File(..., description="Video or audio file to process"),
+
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+36 |     task_type: str = Form(
+
+37 |         ...,
+
+   |
+
+
+
+app\routes\video_task.py:49:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+47 |         description="Whether to translate the output into the subtitle_target language",
+
+48 |     ),
+
+49 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+50 | ) -> TranscriptionOut | SubtitleOut:
+
+51 |     """
+
+   |
+
+
+
+app\routes\video_task.py:75:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |           except ffmpeg.Error as e:
+
+74 |               logger.error(f"Audio extraction failed: {e}")
+
+75 |               raise HTTPException(
+
+   |  _____________^
+
+76 | |                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |                 detail="Failed to extract audio from video",
+
+78 | |             )
+
+   | |_____________^ B904
+
+79 |   
+
+80 |           # Run faster-whisper transcription
+
+   |
+
+
+
+app\utils\send_email.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Failed to send email to {to_address}: {e}")
+
+50 |         raise RuntimeError(f"Error sending email: {e}")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+   |
+
+
+
+app\utils\stripe_client.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |           return cast(str, session.url)  # type: ignore
+
+43 |       except Exception as e:
+
+44 |           raise HTTPException(
+
+   |  _________^
+
+45 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+46 | |             detail=f"Error creating Stripe Checkout session: {e}",
+
+47 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+app\utils\stripe_client.py:60:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+58 |           # Catch any Stripe exception (e.g. invalid ID, permission error, etc.)
+
+59 |           msg = getattr(e, "user_message", None) or str(e)
+
+60 |           raise HTTPException(
+
+   |  _________^
+
+61 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+62 | |             detail=f"Error cancelling subscription: {msg}",
+
+63 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+asgi_dev.py:172:50: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                  ^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+asgi_dev.py:172:75: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                                           ^^^^^^^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+asgi_dev.py:199:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                        ^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+asgi_dev.py:199:49: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                                                 ^^^^^^^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+asgi_dev.py:240:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+239 | @app.get("/api/v1/jobs/{job_id}", response_model=JobOut)
+
+240 | def get_job(job_id: str, db: Session = Depends(get_db)):
+
+    |                                        ^^^^^^^^^^^^^^^ B008
+
+241 |     row = db.execute(select(Job).where(Job.id == job_id)).scalars().first()
+
+242 |     if not row:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\app\dependencies.py:16:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 | def get_current_user(
+
+15 |     token: str = Depends(oauth2_scheme),
+
+16 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+17 | ) -> User:
+
+18 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\dependencies.py:39:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+37 |     except (JWTError, ValueError, TypeError):
+
+38 |         # JWTError covers signature/expiration issues; ValueError/TypeError for int conversion
+
+39 |         raise credentials_exc
+
+   |         ^^^^^^^^^^^^^^^^^^^^^ B904
+
+40 | 
+
+41 |     user = db.query(User).filter(User.id == user_id).first()
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\dependencies.py:51:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+50 | def get_admin_user(
+
+51 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+52 | ) -> User:
+
+53 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\main.py:49:1: E402 Module level import not at top of file
+
+   |
+
+48 | # --- Routers ---
+
+49 | from app.routes import transcribe as transcribe_router
+
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+
+50 | 
+
+51 | app.include_router(transcribe_router.router)
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\auth.py:31:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+29 | async def login(
+
+30 |     creds: LoginRequest,
+
+31 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+32 | ) -> Token:
+
+33 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\auth.py:68:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+66 | async def refresh_token(
+
+67 |     req: RefreshRequest,
+
+68 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+69 | ) -> Token:
+
+70 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\contact.py:27:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+25 |       except Exception as e:
+
+26 |           logger.error(f"Failed to process contact form: {e}")
+
+27 |           raise HTTPException(
+
+   |  _________^
+
+28 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+29 | |             detail="Unable to send contact message at this time",
+
+30 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\export.py:23:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+21 |     transcript_id: int,
+
+22 |     format: Literal["txt", "json", "pdf", "docx"],
+
+23 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+24 | ) -> FileResponse:
+
+25 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\export.py:42:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+40 |     except ValueError as e:
+
+41 |         logger.error(f"Export error: {e}")
+
+42 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+43 |     except Exception as e:
+
+44 |         logger.error(f"Unexpected export error: {e}")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\export.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Unexpected export error: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Failed to export transcript.",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\feedback.py:18:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+16 | async def submit_feedback(
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+19 |     current_user=Depends(get_current_user),
+
+20 | ) -> FeedbackResponse:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\feedback.py:19:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+19 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+20 | ) -> FeedbackResponse:
+
+21 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\feedback.py:43:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+41 |       except Exception as e:
+
+42 |           logger.error(f"Error processing feedback: {e}")
+
+43 |           raise HTTPException(
+
+   |  _________^
+
+44 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+45 | |             detail="Unable to submit feedback at this time",
+
+46 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\newsletter.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Newsletter subscribe error for {request.email}: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Unable to subscribe to newsletter",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\newsletter.py:67:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+65 |       except Exception as e:
+
+66 |           logger.error(f"Newsletter unsubscribe error for {request.email}: {e}")
+
+67 |           raise HTTPException(
+
+   |  _________^
+
+68 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+69 | |             detail="Unable to unsubscribe from newsletter",
+
+70 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:56:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+54 | async def request_password_reset(
+
+55 |     req: PasswordResetRequest,
+
+56 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+57 | ) -> PasswordResetResponse:
+
+58 |     # Validate user exists
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:75:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |       except Exception as e:
+
+74 |           logger.error(f"Could not store reset code in Redis: {e}")
+
+75 |           raise HTTPException(
+
+   |  _________^
+
+76 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |             detail="Internal error generating reset code",
+
+78 | |         )
+
+   | |_________^ B904
+
+79 |   
+
+80 |       # Send email
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:89:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+87 |       except Exception as e:
+
+88 |           logger.error(f"Failed to send reset email: {e}")
+
+89 |           raise HTTPException(
+
+   |  _________^
+
+90 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+91 | |             detail="Failed to send reset email",
+
+92 | |         )
+
+   | |_________^ B904
+
+93 |   
+
+94 |       return PasswordResetResponse(status="sent")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:104:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+102 | async def verify_password_reset(
+
+103 |     req: PasswordResetVerifyRequest,
+
+104 |     db: Session = Depends(get_db),
+
+    |                   ^^^^^^^^^^^^^^^ B008
+
+105 | ) -> PasswordResetResponse:
+
+106 |     # Retrieve and validate code
+
+    |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:111:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+109 |       except Exception as e:
+
+110 |           logger.error(f"Error accessing Redis for code: {e}")
+
+111 |           raise HTTPException(
+
+    |  _________^
+
+112 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+113 | |             detail="Internal error verifying code",
+
+114 | |         )
+
+    | |_________^ B904
+
+115 |   
+
+116 |       if stored is None or stored != req.code:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\app\routes\password_reset.py:128:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+126 |       except Exception as e:
+
+127 |           logger.error(f"Database error updating password: {e}")
+
+128 |           raise HTTPException(
+
+    |  _________^
+
+129 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+130 | |             detail="Failed to update password",
+
+131 | |         )
+
+    | |_________^ B904
+
+132 |   
+
+133 |       if not success:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\app\routes\send_reset.py:43:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+41 | async def send_reset_code(
+
+42 |     req: PasswordResetRequest,
+
+43 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+44 | ) -> PasswordResetResponse:
+
+45 |     # 1) Verify that the user exists in the database
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\send_reset.py:62:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+60 |       except Exception as e:
+
+61 |           logger.error(f"Error writing reset code to Redis: {e}")
+
+62 |           raise HTTPException(
+
+   |  _________^
+
+63 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+64 | |             detail="Internal error generating reset code",
+
+65 | |         )
+
+   | |_________^ B904
+
+66 |   
+
+67 |       # 4) Email the code to the user
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\send_reset.py:76:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+74 |       except Exception as e:
+
+75 |           logger.error(f"Error sending reset email: {e}")
+
+76 |           raise HTTPException(
+
+   |  _________^
+
+77 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+78 | |             detail="Failed to send reset email",
+
+79 | |         )
+
+   | |_________^ B904
+
+80 |   
+
+81 |       # 5) Return a simple acknowledgement
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\signup.py:36:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+34 | async def signup(
+
+35 |     req: SignupRequest,
+
+36 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+37 | ) -> SignupResponse:
+
+38 |     # 1) Prevent duplicate registrations
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\signup.py:59:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+57 |       except Exception as e:
+
+58 |           logger.error(f"Redis error while storing signup code: {e}")
+
+59 |           raise HTTPException(
+
+   |  _________^
+
+60 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+61 | |             detail="Internal error generating verification code",
+
+62 | |         )
+
+   | |_________^ B904
+
+63 |   
+
+64 |       # 5) Send verification email
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\signup.py:77:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+75 |       except Exception as e:
+
+76 |           logger.error(f"Failed to send signup verification email: {e}")
+
+77 |           raise HTTPException(
+
+   |  _________^
+
+78 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+79 | |             detail="Failed to send verification email",
+
+80 | |         )
+
+   | |_________^ B904
+
+81 |   
+
+82 |       return SignupResponse(status="sent")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |     except ValueError:
+
+43 |         logger.warning("Invalid payload in Stripe webhook.")
+
+44 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:47:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+47 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |       except Exception as e:
+
+49 |           logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+50 |           raise HTTPException(
+
+   |  _________^
+
+51 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+52 | |             detail="Webhook verification failed",
+
+53 | |         )
+
+   | |_________^ B904
+
+54 |   
+
+55 |       event_type = event.get("type", "")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:22:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:22:59: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                                                           ^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:47:45: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+45 | )
+
+46 | async def create_checkout_session(
+
+47 |     request: SubscribeRequest, current_user=Depends(get_current_user)
+
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+48 | ) -> dict[str, str]:
+
+49 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:63:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+61 |       except Exception as e:
+
+62 |           logger.error(f"Error creating checkout session: {e}")
+
+63 |           raise HTTPException(
+
+   |  _________^
+
+64 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+65 | |             detail="Unable to create checkout session",
+
+66 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:76:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+74 | async def cancel_subscription(
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+77 |     db: Session = Depends(get_db),
+
+78 | ) -> SubscriptionOut:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:77:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+77 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+78 | ) -> SubscriptionOut:
+
+79 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\subscription.py:113:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+111 |       except Exception as e:
+
+112 |           logger.error(f"Error cancelling subscription: {e}")
+
+113 |           raise HTTPException(
+
+    |  _________^
+
+114 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+115 | |             detail="Unable to cancel subscription",
+
+116 | |         )
+
+    | |_________^ B904
+
+    |
+
+
+
+echoscript_backend_20250915_153911\app\routes\summary.py:15:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 | async def summarize_transcript(
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+16 |     current_user: User = Depends(get_current_user),
+
+17 | ):
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\summary.py:16:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+16 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+17 | ):
+
+18 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\transcribe.py:20:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+18 | @router.post("/transcribe")
+
+19 | async def transcribe_endpoint(
+
+20 |     file: UploadFile = File(...),
+
+   |                        ^^^^^^^^^ B008
+
+21 |     diarize: bool = False,
+
+22 |     language: str | None = None,
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\transcribe.py:24:10: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+22 |     language: str | None = None,
+
+23 |     vad: bool = True,  # on by default; will auto-fallback if onnxruntime missing
+
+24 |     user=Depends(get_current_user),
+
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+25 | ):
+
+26 |     if not file.filename:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\transcribe.py:70:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+68 |         raise
+
+69 |     except Exception as e:
+
+70 |         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+71 |     finally:
+
+72 |         if tmp_path:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\transcripts.py:15:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     summary="List all saved transcripts for the current user",
+
+14 | )
+
+15 | async def get_transcripts(current_user=Depends(get_current_user)) -> list[str]:
+
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 |     """
+
+17 |     Retrieve a list of transcript filenames saved for the authenticated user.
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\translate.py:14:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+12 | async def translate_text(
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+15 |     current_user: User = Depends(get_current_user),
+
+16 | ):
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\translate.py:15:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+15 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 | ):
+
+17 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\verify_email.py:38:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+36 | async def verify_email(
+
+37 |     payload: VerifyEmailRequest,
+
+38 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+39 | ) -> Token:
+
+40 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\video_task.py:31:20: UP007 Use `X | Y` for type annotations
+
+   |
+
+29 | @router.post(
+
+30 |     "/",
+
+31 |     response_model=Union[TranscriptionOut, SubtitleOut],
+
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+
+32 |     summary="Process uploaded video for transcription or subtitle generation",
+
+33 | )
+
+   |
+
+   = help: Convert to `X | Y`
+
+
+
+echoscript_backend_20250915_153911\app\routes\video_task.py:35:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+33 | )
+
+34 | async def video_task(
+
+35 |     file: UploadFile = File(..., description="Video or audio file to process"),
+
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+36 |     task_type: str = Form(
+
+37 |         ...,
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\video_task.py:49:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+47 |         description="Whether to translate the output into the subtitle_target language",
+
+48 |     ),
+
+49 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+50 | ) -> TranscriptionOut | SubtitleOut:
+
+51 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\routes\video_task.py:75:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |           except ffmpeg.Error as e:
+
+74 |               logger.error(f"Audio extraction failed: {e}")
+
+75 |               raise HTTPException(
+
+   |  _____________^
+
+76 | |                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |                 detail="Failed to extract audio from video",
+
+78 | |             )
+
+   | |_____________^ B904
+
+79 |   
+
+80 |           # Run faster-whisper transcription
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\utils\send_email.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Failed to send email to {to_address}: {e}")
+
+50 |         raise RuntimeError(f"Error sending email: {e}")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\utils\stripe_client.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |           return cast(str, session.url)  # type: ignore
+
+43 |       except Exception as e:
+
+44 |           raise HTTPException(
+
+   |  _________^
+
+45 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+46 | |             detail=f"Error creating Stripe Checkout session: {e}",
+
+47 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\app\utils\stripe_client.py:60:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+58 |           # Catch any Stripe exception (e.g. invalid ID, permission error, etc.)
+
+59 |           msg = getattr(e, "user_message", None) or str(e)
+
+60 |           raise HTTPException(
+
+   |  _________^
+
+61 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+62 | |             detail=f"Error cancelling subscription: {msg}",
+
+63 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\asgi_dev.py:172:50: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                  ^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+echoscript_backend_20250915_153911\asgi_dev.py:172:75: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                                           ^^^^^^^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+echoscript_backend_20250915_153911\asgi_dev.py:199:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                        ^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+echoscript_backend_20250915_153911\asgi_dev.py:199:49: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                                                 ^^^^^^^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+echoscript_backend_20250915_153911\asgi_dev.py:240:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+239 | @app.get("/api/v1/jobs/{job_id}", response_model=JobOut)
+
+240 | def get_job(job_id: str, db: Session = Depends(get_db)):
+
+    |                                        ^^^^^^^^^^^^^^^ B008
+
+241 |     row = db.execute(select(Job).where(Job.id == job_id)).scalars().first()
+
+242 |     if not row:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\dependencies.py:16:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 | def get_current_user(
+
+15 |     token: str = Depends(oauth2_scheme),
+
+16 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+17 | ) -> User:
+
+18 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\dependencies.py:39:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+37 |     except (JWTError, ValueError, TypeError):
+
+38 |         # JWTError covers signature/expiration issues; ValueError/TypeError for int conversion
+
+39 |         raise credentials_exc
+
+   |         ^^^^^^^^^^^^^^^^^^^^^ B904
+
+40 | 
+
+41 |     user = db.query(User).filter(User.id == user_id).first()
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\dependencies.py:51:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+50 | def get_admin_user(
+
+51 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+52 | ) -> User:
+
+53 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\main.py:49:1: E402 Module level import not at top of file
+
+   |
+
+48 | # --- Routers ---
+
+49 | from app.routes import transcribe as transcribe_router
+
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+
+50 | 
+
+51 | app.include_router(transcribe_router.router)
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\auth.py:31:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+29 | async def login(
+
+30 |     creds: LoginRequest,
+
+31 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+32 | ) -> Token:
+
+33 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\auth.py:68:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+66 | async def refresh_token(
+
+67 |     req: RefreshRequest,
+
+68 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+69 | ) -> Token:
+
+70 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\contact.py:27:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+25 |       except Exception as e:
+
+26 |           logger.error(f"Failed to process contact form: {e}")
+
+27 |           raise HTTPException(
+
+   |  _________^
+
+28 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+29 | |             detail="Unable to send contact message at this time",
+
+30 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\export.py:23:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+21 |     transcript_id: int,
+
+22 |     format: Literal["txt", "json", "pdf", "docx"],
+
+23 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+24 | ) -> FileResponse:
+
+25 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\export.py:42:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+40 |     except ValueError as e:
+
+41 |         logger.error(f"Export error: {e}")
+
+42 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+43 |     except Exception as e:
+
+44 |         logger.error(f"Unexpected export error: {e}")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\export.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Unexpected export error: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Failed to export transcript.",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\feedback.py:18:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+16 | async def submit_feedback(
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+19 |     current_user=Depends(get_current_user),
+
+20 | ) -> FeedbackResponse:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\feedback.py:19:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+17 |     request: FeedbackRequest,
+
+18 |     db: Session = Depends(get_db),
+
+19 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+20 | ) -> FeedbackResponse:
+
+21 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\feedback.py:43:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+41 |       except Exception as e:
+
+42 |           logger.error(f"Error processing feedback: {e}")
+
+43 |           raise HTTPException(
+
+   |  _________^
+
+44 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+45 | |             detail="Unable to submit feedback at this time",
+
+46 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\newsletter.py:45:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+43 |       except Exception as e:
+
+44 |           logger.error(f"Newsletter subscribe error for {request.email}: {e}")
+
+45 |           raise HTTPException(
+
+   |  _________^
+
+46 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+47 | |             detail="Unable to subscribe to newsletter",
+
+48 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\newsletter.py:67:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+65 |       except Exception as e:
+
+66 |           logger.error(f"Newsletter unsubscribe error for {request.email}: {e}")
+
+67 |           raise HTTPException(
+
+   |  _________^
+
+68 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+69 | |             detail="Unable to unsubscribe from newsletter",
+
+70 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:56:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+54 | async def request_password_reset(
+
+55 |     req: PasswordResetRequest,
+
+56 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+57 | ) -> PasswordResetResponse:
+
+58 |     # Validate user exists
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:75:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |       except Exception as e:
+
+74 |           logger.error(f"Could not store reset code in Redis: {e}")
+
+75 |           raise HTTPException(
+
+   |  _________^
+
+76 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |             detail="Internal error generating reset code",
+
+78 | |         )
+
+   | |_________^ B904
+
+79 |   
+
+80 |       # Send email
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:89:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+87 |       except Exception as e:
+
+88 |           logger.error(f"Failed to send reset email: {e}")
+
+89 |           raise HTTPException(
+
+   |  _________^
+
+90 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+91 | |             detail="Failed to send reset email",
+
+92 | |         )
+
+   | |_________^ B904
+
+93 |   
+
+94 |       return PasswordResetResponse(status="sent")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:104:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+102 | async def verify_password_reset(
+
+103 |     req: PasswordResetVerifyRequest,
+
+104 |     db: Session = Depends(get_db),
+
+    |                   ^^^^^^^^^^^^^^^ B008
+
+105 | ) -> PasswordResetResponse:
+
+106 |     # Retrieve and validate code
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:111:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+109 |       except Exception as e:
+
+110 |           logger.error(f"Error accessing Redis for code: {e}")
+
+111 |           raise HTTPException(
+
+    |  _________^
+
+112 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+113 | |             detail="Internal error verifying code",
+
+114 | |         )
+
+    | |_________^ B904
+
+115 |   
+
+116 |       if stored is None or stored != req.code:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\password_reset.py:128:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+126 |       except Exception as e:
+
+127 |           logger.error(f"Database error updating password: {e}")
+
+128 |           raise HTTPException(
+
+    |  _________^
+
+129 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+130 | |             detail="Failed to update password",
+
+131 | |         )
+
+    | |_________^ B904
+
+132 |   
+
+133 |       if not success:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\send_reset.py:43:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+41 | async def send_reset_code(
+
+42 |     req: PasswordResetRequest,
+
+43 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+44 | ) -> PasswordResetResponse:
+
+45 |     # 1) Verify that the user exists in the database
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\send_reset.py:62:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+60 |       except Exception as e:
+
+61 |           logger.error(f"Error writing reset code to Redis: {e}")
+
+62 |           raise HTTPException(
+
+   |  _________^
+
+63 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+64 | |             detail="Internal error generating reset code",
+
+65 | |         )
+
+   | |_________^ B904
+
+66 |   
+
+67 |       # 4) Email the code to the user
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\send_reset.py:76:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+74 |       except Exception as e:
+
+75 |           logger.error(f"Error sending reset email: {e}")
+
+76 |           raise HTTPException(
+
+   |  _________^
+
+77 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+78 | |             detail="Failed to send reset email",
+
+79 | |         )
+
+   | |_________^ B904
+
+80 |   
+
+81 |       # 5) Return a simple acknowledgement
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\signup.py:36:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+34 | async def signup(
+
+35 |     req: SignupRequest,
+
+36 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+37 | ) -> SignupResponse:
+
+38 |     # 1) Prevent duplicate registrations
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\signup.py:59:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+57 |       except Exception as e:
+
+58 |           logger.error(f"Redis error while storing signup code: {e}")
+
+59 |           raise HTTPException(
+
+   |  _________^
+
+60 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+61 | |             detail="Internal error generating verification code",
+
+62 | |         )
+
+   | |_________^ B904
+
+63 |   
+
+64 |       # 5) Send verification email
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\signup.py:77:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+75 |       except Exception as e:
+
+76 |           logger.error(f"Failed to send signup verification email: {e}")
+
+77 |           raise HTTPException(
+
+   |  _________^
+
+78 | |             status_code=status.HTTP_502_BAD_GATEWAY,
+
+79 | |             detail="Failed to send verification email",
+
+80 | |         )
+
+   | |_________^ B904
+
+81 |   
+
+82 |       return SignupResponse(status="sent")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |     except ValueError:
+
+43 |         logger.warning("Invalid payload in Stripe webhook.")
+
+44 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:47:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+45 |     except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+
+46 |         logger.warning("Invalid signature in Stripe webhook.")
+
+47 |         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\stripe_webhook.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |       except Exception as e:
+
+49 |           logger.error(f"Unexpected error verifying Stripe webhook: {e}")
+
+50 |           raise HTTPException(
+
+   |  _________^
+
+51 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+52 | |             detail="Webhook verification failed",
+
+53 | |         )
+
+   | |_________^ B904
+
+54 |   
+
+55 |       event_type = event.get("type", "")
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:22:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:22:59: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+20 | )
+
+21 | async def get_subscription(
+
+22 |     current_user=Depends(get_current_user), db: Session = Depends(get_db)
+
+   |                                                           ^^^^^^^^^^^^^^^ B008
+
+23 | ) -> SubscriptionOut:
+
+24 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:47:45: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+45 | )
+
+46 | async def create_checkout_session(
+
+47 |     request: SubscribeRequest, current_user=Depends(get_current_user)
+
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+48 | ) -> dict[str, str]:
+
+49 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:63:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+61 |       except Exception as e:
+
+62 |           logger.error(f"Error creating checkout session: {e}")
+
+63 |           raise HTTPException(
+
+   |  _________^
+
+64 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+65 | |             detail="Unable to create checkout session",
+
+66 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:76:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+74 | async def cancel_subscription(
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+77 |     db: Session = Depends(get_db),
+
+78 | ) -> SubscriptionOut:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:77:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+75 |     request: CancelRequest,
+
+76 |     current_user=Depends(get_current_user),
+
+77 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+78 | ) -> SubscriptionOut:
+
+79 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\subscription.py:113:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+    |
+
+111 |       except Exception as e:
+
+112 |           logger.error(f"Error cancelling subscription: {e}")
+
+113 |           raise HTTPException(
+
+    |  _________^
+
+114 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+115 | |             detail="Unable to cancel subscription",
+
+116 | |         )
+
+    | |_________^ B904
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\summary.py:15:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 | async def summarize_transcript(
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+16 |     current_user: User = Depends(get_current_user),
+
+17 | ):
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\summary.py:16:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+14 |     payload: SummaryRequest,
+
+15 |     db: Session = Depends(get_db),
+
+16 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+17 | ):
+
+18 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\transcribe.py:20:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+18 | @router.post("/transcribe")
+
+19 | async def transcribe_endpoint(
+
+20 |     file: UploadFile = File(...),
+
+   |                        ^^^^^^^^^ B008
+
+21 |     diarize: bool = False,
+
+22 |     language: str | None = None,
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\transcribe.py:24:10: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+22 |     language: str | None = None,
+
+23 |     vad: bool = True,  # on by default; will auto-fallback if onnxruntime missing
+
+24 |     user=Depends(get_current_user),
+
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+25 | ):
+
+26 |     if not file.filename:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\transcribe.py:70:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+68 |         raise
+
+69 |     except Exception as e:
+
+70 |         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+71 |     finally:
+
+72 |         if tmp_path:
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\transcripts.py:15:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     summary="List all saved transcripts for the current user",
+
+14 | )
+
+15 | async def get_transcripts(current_user=Depends(get_current_user)) -> list[str]:
+
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 |     """
+
+17 |     Retrieve a list of transcript filenames saved for the authenticated user.
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\translate.py:14:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+12 | async def translate_text(
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+15 |     current_user: User = Depends(get_current_user),
+
+16 | ):
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\translate.py:15:26: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+13 |     payload: TranslateRequest,
+
+14 |     db: Session = Depends(get_db),
+
+15 |     current_user: User = Depends(get_current_user),
+
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+16 | ):
+
+17 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\verify_email.py:38:19: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+36 | async def verify_email(
+
+37 |     payload: VerifyEmailRequest,
+
+38 |     db: Session = Depends(get_db),
+
+   |                   ^^^^^^^^^^^^^^^ B008
+
+39 | ) -> Token:
+
+40 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\video_task.py:31:20: UP007 Use `X | Y` for type annotations
+
+   |
+
+29 | @router.post(
+
+30 |     "/",
+
+31 |     response_model=Union[TranscriptionOut, SubtitleOut],
+
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+
+32 |     summary="Process uploaded video for transcription or subtitle generation",
+
+33 | )
+
+   |
+
+   = help: Convert to `X | Y`
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\video_task.py:35:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+33 | )
+
+34 | async def video_task(
+
+35 |     file: UploadFile = File(..., description="Video or audio file to process"),
+
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+36 |     task_type: str = Form(
+
+37 |         ...,
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\video_task.py:49:18: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+   |
+
+47 |         description="Whether to translate the output into the subtitle_target language",
+
+48 |     ),
+
+49 |     current_user=Depends(get_current_user),
+
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ B008
+
+50 | ) -> TranscriptionOut | SubtitleOut:
+
+51 |     """
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\routes\video_task.py:75:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+73 |           except ffmpeg.Error as e:
+
+74 |               logger.error(f"Audio extraction failed: {e}")
+
+75 |               raise HTTPException(
+
+   |  _____________^
+
+76 | |                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+77 | |                 detail="Failed to extract audio from video",
+
+78 | |             )
+
+   | |_____________^ B904
+
+79 |   
+
+80 |           # Run faster-whisper transcription
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\utils\send_email.py:50:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+48 |     except Exception as e:
+
+49 |         logger.error(f"Failed to send email to {to_address}: {e}")
+
+50 |         raise RuntimeError(f"Error sending email: {e}")
+
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\utils\stripe_client.py:44:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+42 |           return cast(str, session.url)  # type: ignore
+
+43 |       except Exception as e:
+
+44 |           raise HTTPException(
+
+   |  _________^
+
+45 | |             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+46 | |             detail=f"Error creating Stripe Checkout session: {e}",
+
+47 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\app\utils\stripe_client.py:60:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+58 |           # Catch any Stripe exception (e.g. invalid ID, permission error, etc.)
+
+59 |           msg = getattr(e, "user_message", None) or str(e)
+
+60 |           raise HTTPException(
+
+   |  _________^
+
+61 | |             status_code=status.HTTP_400_BAD_REQUEST,
+
+62 | |             detail=f"Error cancelling subscription: {msg}",
+
+63 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\asgi_dev.py:172:50: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                  ^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\asgi_dev.py:172:75: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+171 | @app.post("/api/auth/login", response_model=Token)
+
+172 | def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    |                                                                           ^^^^^^^^^^^^^^^ B008
+
+173 |     row = db.execute(select(User).where(User.email == form_data.username.lower())).scalars().first()
+
+174 |     if not row or not verify_password(form_data.password, row.hashed_password):
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\asgi_dev.py:199:24: B008 Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                        ^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\asgi_dev.py:199:49: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+197 | @app.post("/api/v1/transcribe", response_model=JobOut)
+
+198 | async def transcribe(
+
+199 |     file: UploadFile = File(...), db: Session = Depends(get_db), language: str | None = "en"
+
+    |                                                 ^^^^^^^^^^^^^^^ B008
+
+200 | ):
+
+201 |     ext = Path(file.filename).suffix.lower() or ".bin"
+
+    |
+
+
+
+echoscript_backend_20250915_153911\echoscript_backend_20250915_153911\asgi_dev.py:240:40: B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+
+    |
+
+239 | @app.get("/api/v1/jobs/{job_id}", response_model=JobOut)
+
+240 | def get_job(job_id: str, db: Session = Depends(get_db)):
+
+    |                                        ^^^^^^^^^^^^^^^ B008
+
+241 |     row = db.execute(select(Job).where(Job.id == job_id)).scalars().first()
+
+242 |     if not row:
+
+    |
+
+
+
+echoscript_backend_20250915_153911\scripts\create_user.py:81:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+79 |       except Exception:
+
+80 |           available = inspector.get_table_names()
+
+81 |           raise NoSuchTableError(
+
+   |  _________^
+
+82 | |             f"No user table found. Checked {CANDIDATE_TABLES}. Existing tables: {available}"
+
+83 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+echoscript_backend_20250915_153911\scripts\create_user.py:86:5: C901 `main` is too complex (13 > 10)
+
+   |
+
+86 | def main():
+
+   |     ^^^^ C901
+
+87 |     parser = argparse.ArgumentParser(
+
+88 |         description="Create or verify a user in the DB (no app.models import needed)."
+
+   |
+
+
+
+scripts\create_user.py:81:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+
+   |
+
+79 |       except Exception:
+
+80 |           available = inspector.get_table_names()
+
+81 |           raise NoSuchTableError(
+
+   |  _________^
+
+82 | |             f"No user table found. Checked {CANDIDATE_TABLES}. Existing tables: {available}"
+
+83 | |         )
+
+   | |_________^ B904
+
+   |
+
+
+
+scripts\create_user.py:86:5: C901 `main` is too complex (13 > 10)
+
+   |
+
+86 | def main():
+
+   |     ^^^^ C901
+
+87 |     parser = argparse.ArgumentParser(
+
+88 |         description="Create or verify a user in the DB (no app.models import needed)."
+
+   |
+
+
+
+Found 182 errors (5 fixed, 177 remaining).
+
+

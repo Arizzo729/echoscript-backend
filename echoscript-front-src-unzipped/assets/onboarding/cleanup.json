@@ -1,0 +1,22 @@
+
+{
+  "policies": {
+    "fileRetentionDays": 7,
+    "transcriptRetentionDays": 30,
+    "inactiveUserPurgeDays": 365
+  },
+  "tasks": [
+    {
+      "name": "deleteExpiredFiles",
+      "schedule": "0 3 * * *",
+      "type": "daily",
+      "enabled": true
+    },
+    {
+      "name": "purgeOrphanedTranscripts",
+      "schedule": "0 4 * * *",
+      "type": "daily",
+      "enabled": true
+    }
+  ]
+}

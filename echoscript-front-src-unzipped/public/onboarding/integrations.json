@@ -1,0 +1,25 @@
+
+{
+  "services": {
+    "stripe": {
+      "enabled": true,
+      "mode": "live",
+      "webhookSecretEnv": "STRIPE_WEBHOOK_SECRET"
+    },
+    "auth0": {
+      "enabled": true,
+      "clientIdEnv": "AUTH0_CLIENT_ID",
+      "domainEnv": "AUTH0_DOMAIN"
+    },
+    "openai": {
+      "enabled": true,
+      "apiKeyEnv": "OPENAI_API_KEY",
+      "model": "whisper-large-v3"
+    },
+    "analytics": {
+      "provider": "plausible",
+      "endpoint": "https://analytics.echoscriptai.com",
+      "respectDoNotTrack": true
+    }
+  }
+}

@@ -1,0 +1,52 @@
+﻿Frontend
+├── .netlify
+│   ├── blobs-serve
+│   ├── functions
+│   └── v1
+│       └── functions
+├── assets
+│   ├── icons
+│   ├── lottie
+│   ├── onboarding
+│   ├── sounds
+│   └── videos
+├── public
+│   ├── assets
+│   │   └── videos
+│   ├── avatars
+│   ├── onboarding
+│   └── sounds
+├── src
+│   ├── api
+│   │   └── auth
+│   ├── assets
+│   │   ├── icons
+│   │   ├── lottie
+│   │   ├── onboarding
+│   │   ├── sounds
+│   │   └── videos
+│   ├── components
+│   │   ├── hooks
+│   │   ├── toast
+│   │   └── ui
+│   ├── context
+│   ├── hooks
+│   ├── i18n
+│   ├── lib
+│   ├── locales
+│   │   ├── en
+│   │   ├── es
+│   │   └── zh
+│   ├── pages
+│   ├── services
+│   ├── styles
+│   └── utils
+│       └── __tests__
+└── venv
+    ├── Include
+    │   └── site
+    ├── Lib
+    │   └── site-packages
+    ├── Scripts
+    └── share
+        └── man
