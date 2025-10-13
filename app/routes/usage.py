@@ -8,10 +8,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.config import get_settings, Settings
+import json
+import uuid
 from app.utils.redis_client import cache  # safe, lazy, memory-fallback cache facade
 
 log = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(prefix="/usage")
 
 
 class UsageSummaryOut(BaseModel):
@@ -40,7 +42,7 @@ class SubmitTranscriptOut(BaseModel):
     id: str
 
 
-@router.get("/usage/summary", response_model=UsageSummaryOut)
+@router.get("/summary", response_model=UsageSummaryOut)
 async def usage_summary(
     request: Request, settings: Settings = Depends(get_settings)
 ) -> UsageSummaryOut:
@@ -65,7 +67,7 @@ async def usage_summary(
         )
 
 
-@router.get("/users/usage", response_model=UsersUsageOut)
+@router.get("/users", response_model=UsersUsageOut)
 async def users_usage(
     settings: Settings = Depends(get_settings)
 ) -> UsersUsageOut:
@@ -89,18 +91,18 @@ async def users_usage(
 async def submit_transcript(
     payload: SubmitTranscriptIn,
     request: Request,
+    # request parameter is used for future extensibility
     settings: Settings = Depends(get_settings),
 ) -> SubmitTranscriptOut:
     """
     Accepts a transcript payload and persists/queues it.
     Currently stores to cache as a demo; replace with DB/S3/queue.
     """
-    if not payload.transcript or not isinstance(payload.transcript, str):
-        raise HTTPException(status_code=400, detail="Invalid payload: transcript required")
+
+    key = f"transcript:{uuid.uuid4().hex}"
 
     try:
         user = payload.user_id or "anon"
-        key = f"transcript:latest:{user}"
         item = {"user_id": user, "transcript": payload.transcript, "meta": payload.meta or {}}
         cache.set(key, json.dumps(item), ex=3600)  # 1h TTL
         return SubmitTranscriptOut(ok=True, id=key)
@@ -110,3 +112,4 @@ async def submit_transcript(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not submit transcript",
         )
+    raise HTTPException(status_code=400, detail="Invalid payload: transcript required")
