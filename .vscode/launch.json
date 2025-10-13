@@ -1,0 +1,64 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "EchoScript: Backend (FastAPI – uvicorn)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--host", "0.0.0.0",
+        "--port", "8000",
+        "--reload",
+        "--reload-dir", "app"
+      ],
+      "cwd": "${workspaceFolder}/Backend",
+      "envFile": "${workspaceFolder}/Backend/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "subProcess": true
+    },
+    {
+      "name": "EchoScript: Frontend (launch Chrome to Vite)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/Frontend",
+      "preLaunchTask": "Vite: dev",
+      "userDataDir": false
+    },
+    {
+      "name": "EchoScript: Attach Chrome (5173)",
+      "type": "pwa-chrome",
+      "request": "attach",
+      "webRoot": "${workspaceFolder}/Frontend",
+      "urlFilter": "http://localhost:5173/*"
+    },
+    {
+      "name": "EchoScript: Node (Vite dev server)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/Frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Local: http://localhost:(\\d+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "EchoScript: Full Stack (Backend + Frontend)",
+      "configurations": [
+        "EchoScript: Backend (FastAPI – uvicorn)",
+        "EchoScript: Frontend (launch Chrome to Vite)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
+

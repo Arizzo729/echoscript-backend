@@ -1,117 +1,152 @@
-# app/utils/redis_client.py
-from __future__ import annotations
+"""
+Central place to get a Redis-like cache.
 
-import logging
+- If REDIS_ENABLED=false or REDIS_URL is missing/unreachable, we fall back to an
+  in-memory dict with TTL so local dev keeps working.
+- We do not connect at import time; first use will try once.
+"""
+
+from __future__ import annotations
+import logging, time, threading
 from typing import Any, Optional
 
-from redis import ConnectionError as RedisConnectionError
-from redis import Redis
+from app.config import get_settings
 
-from app.config import config
+log = logging.getLogger(__name__)
 
-logger = logging.getLogger("echoscript")
+_redis_client = None
+_redis_checked = False
+_lock = threading.Lock()
 
 
-class _MemoryRedis:
-    def __init__(self) -> None:
-        self._store: dict[str, bytes] = {}
+def _connect_redis():
+    global _redis_client, _redis_checked
+    with _lock:
+        if _redis_checked:
+            return _redis_client
+        _redis_checked = True
 
-    def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
-        if isinstance(value, str):
-            value = value.encode("utf-8")
-        elif not isinstance(value, (bytes, bytearray)):
-            value = str(value).encode("utf-8")
-        self._store[key] = value
-        return True
+        settings = get_settings()
+        if not settings.REDIS_ENABLED:
+            log.info("Redis disabled via REDIS_ENABLED=false")
+            _redis_client = None
+            return None
 
-    def get(self, key: str) -> Optional[bytes]:
-        return self._store.get(key)
+        url = settings.REDIS_URL
+        if not url:
+            log.info("REDIS_URL not set; using in-memory cache fallback")
+            _redis_client = None
+            return None
 
-    def delete(self, key: str) -> int:
-        return 1 if self._store.pop(key, None) is not None else 0
+        try:
+            import redis  # pip install redis
+            client = redis.from_url(url, decode_responses=True, socket_timeout=2)
+            # Optional: a light liveness check (won't run until first use)
+            client.ping()
+            log.info("Connected to Redis at %s", url.split("@")[-1])
+            _redis_client = client
+            return client
+        except Exception as e:
+            log.warning("Redis unavailable (%s). Using in-memory cache.", e)
+            _redis_client = None
+            return None
 
-    def exists(self, key: str) -> int:
-        return 1 if key in self._store else 0
+
+# -------- In-memory fallback with TTL --------
+
+class _MemoryCache:
+    def __init__(self):
+        self._store: dict[str, tuple[Any, Optional[float]]] = {}
+        self._lock = threading.Lock()
+
+    def _expired(self, key: str) -> bool:
+        item = self._store.get(key)
+        if not item:
+            return True
+        _, exp = item
+        return exp is not None and exp < time.time()
+
+    def get(self, key: str) -> Optional[str]:
+        with self._lock:
+            if self._expired(key):
+                self._store.pop(key, None)
+                return None
+            val, _ = self._store[key]
+            return val
+
+    def set(self, key: str, value: Any, ex: Optional[int] = None) -> None:
+        with self._lock:
+            if not isinstance(value, (str, bytes, int, float)):
+                import json
+                value = json.dumps(value)
+            exp_ts = time.time() + ex if ex else None
+            self._store[key] = (value, exp_ts)
+
+    def delete(self, key: str) -> None:
+        with self._lock:
+            self._store.pop(key, None)
+
+    # common aliases
+    def setex(self, key: str, ex: int, value: Any) -> None:
+        self.set(key, value, ex=ex)
+
+    def expire(self, key: str, ex: int) -> None:
+        with self._lock:
+            if key in self._store:
+                val, _ = self._store[key]
+                self._store[key] = (val, time.time() + ex)
 
     def ping(self) -> bool:
         return True
 
 
-_cached_client: Optional[Redis | _MemoryRedis] = None
+_memory_cache = _MemoryCache()
 
 
-def _build_real_redis() -> Redis:
-    url = config.REDIS_URL or "redis://localhost:6379/0"
-    logger.info(f"Connecting to Redis at {url}")
-    client = Redis.from_url(url, decode_responses=False)
-    client.ping()
-    return client
+class Cache:
+    """Facade that exposes a subset of redis-py API against Redis or memory."""
+
+    @property
+    def _client(self):
+        return _connect_redis()
+
+    def get(self, key: str) -> Optional[str]:
+        client = self._client
+        if client is None:
+            return _memory_cache.get(key)
+        return client.get(key)
+
+    def set(self, key: str, value: Any, ex: Optional[int] = None) -> None:
+        client = self._client
+        if client is None:
+            _memory_cache.set(key, value, ex=ex)
+            return
+        if ex is None:
+            client.set(key, value)
+        else:
+            client.setex(key, ex, value)
+
+    def delete(self, key: str) -> None:
+        client = self._client
+        if client is None:
+            _memory_cache.delete(key)
+            return
+        client.delete(key)
+
+    def expire(self, key: str, ex: int) -> None:
+        client = self._client
+        if client is None:
+            _memory_cache.expire(key, ex)
+            return
+        client.expire(key, ex)
+
+    def ping(self) -> bool:
+        client = self._client
+        if client is None:
+            return _memory_cache.ping()
+        return bool(client.ping())
 
 
-def get_redis() -> Redis | _MemoryRedis:
-    global _cached_client
-    if _cached_client is not None:
-        return _cached_client
-    try:
-        _cached_client = _build_real_redis()
-        logger.info("Connected to Redis successfully.")
-    except (RedisConnectionError, OSError) as e:
-        logger.warning(f"Redis unavailable, using in-memory shim. Reason: {e}")
-        _cached_client = _MemoryRedis()
-    except Exception as e:
-        logger.error(f"Unexpected Redis error '{e}', using in-memory shim.")
-        _cached_client = _MemoryRedis()
-    return _cached_client
+# A ready-to-import singleton
+cache = Cache()
 
-
-def set_value(key: str, value: Any, ex: Optional[int] = None) -> bool:
-    try:
-        return bool(get_redis().set(key, value, ex=ex))  # type: ignore[attr-defined]
-    except Exception as e:
-        logger.error(f"Redis set failed for {key}: {e}")
-        return False
-
-
-def get_value(key: str, as_text: bool = True) -> Optional[str | bytes]:
-    try:
-        raw = get_redis().get(key)  # type: ignore[attr-defined]
-        if raw is None:
-            return None
-        if as_text:
-            try:
-                return raw.decode("utf-8")
-            except Exception:
-                return None
-        return raw
-    except Exception as e:
-        logger.error(f"Redis get failed for {key}: {e}")
-        return None
-
-
-def delete_key(key: str) -> int:
-    try:
-        return int(get_redis().delete(key))  # type: ignore[attr-defined]
-    except Exception as e:
-        logger.error(f"Redis delete failed for {key}: {e}")
-        return 0
-
-
-def exists(key: str) -> bool:
-    try:
-        return int(get_redis().exists(key)) == 1  # type: ignore[attr-defined]
-    except Exception as e:
-        logger.error(f"Redis exists failed for {key}: {e}")
-        return False
-
-
-# legacy export
-redis_client = get_redis()
-
-__all__ = [
-    "get_redis",
-    "set_value",
-    "get_value",
-    "delete_key",
-    "exists",
-    "redis_client",
-]
