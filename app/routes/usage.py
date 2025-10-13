@@ -49,8 +49,9 @@ async def usage_summary(
     Replace the placeholder 'computed' block with real DB aggregation if available.
     """
     try:
-        summary = cache.get("usage:summary")
-        if summary:
+        raw_summary = cache.get("usage:summary")
+        if raw_summary:
+            summary = json.loads(raw_summary)
             return UsageSummaryOut(cached=True, summary=summary)
         # Placeholder compute (replace with your real logic)
         computed = {"users": 0, "minutes": 0, "items": 0}
