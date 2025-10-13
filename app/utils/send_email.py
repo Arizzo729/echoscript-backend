@@ -1,5 +1,5 @@
+from __future__ import annotations
 import os, json, smtplib, ssl, http.client, logging
-﻿from __future__ import annotations
 from email.message import EmailMessage
 from typing import Iterable, Optional, Sequence
 
