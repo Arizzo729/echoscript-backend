@@ -76,6 +76,9 @@ class _MemoryCache:
 
     def set(self, key: str, value: Any, ex: Optional[int] = None) -> None:
         with self._lock:
+            if not isinstance(value, (str, bytes, int, float)):
+                import json
+                value = json.dumps(value)
             exp_ts = time.time() + ex if ex else None
             self._store[key] = (value, exp_ts)
 
