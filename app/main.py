@@ -41,9 +41,9 @@ app.add_middleware(
 def root_ok() -> str:
     return "ok"
 
-@app.get("/api/healthz", response_class=PlainTextResponse)
-def api_health_ok() -> str:
-    return "ok"
+@app.get("/api/healthz")
+def api_health_ok() -> dict[str, str]:
+    return {"status": "ok"}
 
 @app.get("/v1/healthz", response_class=PlainTextResponse)
 def v1_health_ok() -> str:
