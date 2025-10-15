@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 try:
     from app.config import settings
 except Exception:
-    # ultra-safe defaults if config import goes sideways
     class _S: APP_NAME="EchoScript API"; API_PREFIX="/api"; CORS_ALLOW_ORIGINS=["*"]
     settings=_S()
 
-from app.routes.health import router as health_router
+# Use the minimal router that has ZERO third-party deps
+from app.routes.health_smoketest import router as health_router
 
 app = FastAPI(title=getattr(settings, "APP_NAME", "EchoScript API"))
 
