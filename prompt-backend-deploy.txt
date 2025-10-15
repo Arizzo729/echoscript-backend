@@ -1,48 +1,49 @@
-Goal: Make the EchoScript FastAPI backend build & run cleanly (Windows + Railway) with zero startup ImportErrors.
+Goal: Make the EchoScript FastAPI backend build & run cleanly (Windows + Railway) with zero startup ImportErrors and green /api/healthz.
 
 HARD REQUIREMENTS
-- Remove any dependency on lxml unless absolutely mandatory; prefer pure-Python alternatives. If needed only for email/html, replace with stdlib html/parser or minimal vendor code.
-- Replace psycopg2 or psycopg2-binary with psycopg[binary]>=3.1,<4
-- Ensure requirements include (min): fastapi>=0.115, uvicorn[standard]>=0.30, SQLAlchemy>=2.0, alembic>=1.13,
-  pydantic>=2.7, pydantic-settings>=2.4, redis>=5, httpx>=0.27, passlib[bcrypt]>=1.7, python-jose[cryptography]>=3.3,
-  python-dotenv>=1.0, email-validator>=2.1, loguru>=0.7
-- Database URL MUST use postgresql+psycopg:// (NOT asyncpg/psycopg2)
-- No route should ImportError at module import time. If a route needs DB/Redis, import inside the function (lazy import).
-- Keep /api/healthz DB-agnostic; DB and Redis checks are /api/healthz/db and /api/healthz/redis and must not crash the app if unavailable.
-- Mount routers at /api and /v1; mount compat endpoints without prefix (as in previous logs).
-- Provide .env.example with placeholders for DATABASE_URL (postgresql+psycopg://...), REDIS_URL, JWT_SECRET, CORS_ALLOW_ORIGINS, etc.
-- Alembic must be configured and "alembic upgrade head" works when DATABASE_URL is valid.
+- Remove any dependency on lxml unless absolutely mandatory; prefer pure-Python alternatives.
+- Replace psycopg2 / psycopg2-binary with psycopg[binary]>=3.1,<4
+- requirements.txt must include at least:
+  fastapi>=0.115
+  uvicorn[standard]>=0.30
+  SQLAlchemy>=2.0
+  alembic>=1.13
+  pydantic>=2.7
+  pydantic-settings>=2.4
+  redis>=5.0
+  httpx>=0.27
+  passlib[bcrypt]>=1.7
+  python-jose[cryptography]>=3.3
+  python-dotenv>=1.0
+  email-validator>=2.1
+  loguru>=0.7
+  psycopg[binary]>=3.1,<4
+- DATABASE_URL MUST use postgresql+psycopg://…
+- No route should ImportError at module import time. Do lazy imports for DB/Redis inside functions.
+- /api/healthz must be DB-agnostic. /api/healthz/db and /api/healthz/redis return graceful JSON when unavailable.
+- Routers mounted at /api and /v1; compat endpoints mounted without prefix (as your logs showed).
+- Provide .env.example with DATABASE_URL (postgresql+psycopg://...), REDIS_URL, JWT_SECRET, CORS_ALLOW_ORIGINS, etc.
+- Alembic configured for SQLAlchemy 2.x and alembic upgrade head works when DATABASE_URL is valid.
 
-FILES TO ENSURE/UPDATE (full contents, no diffs):
-- requirements.txt (cleaned and complete as above; no lxml, no psycopg2*)
-- app/main.py (FastAPI app, CORS, include routers /api and /v1, compat mount)
-- app/config.py (pydantic-settings Settings)
-- app/db.py (SQLAlchemy 2 engine + SessionLocal + get_db)
-- app/models.py (User, TranscriptionHistory, NewsletterSubscriber)
-- app/schemas.py (pydantic v2 models)
-- app/routes/health.py (healthz, healthz/db, healthz/redis)
-- app/routes/auth.py (signup, login, me; JWT via passlib+jose)
-- app/routes/newsletter.py (subscribe + list stub)
-- app/routes/history.py (secure list/create)
-- app/routes/paypal.py, app/routes/paypal_health.py (stubs that never crash if keys missing)
-- app/routes/compat.py (compat endpoints without prefix)
-- middleware/cors.py (from env list)
-- alembic/ (env.py configured for SQLAlchemy 2.x) + initial migration
-- .env.example (as described)
-- Dockerfile (python:3.12-slim; pip install -r requirements.txt; CMD uvicorn app.main:app --host 0.0.0.0 --port 8080)
-- README.md with run instructions (venv, install, alembic, uvicorn)
+FILES TO CREATE/OVERWRITE (full contents, not diffs):
+- requirements.txt (clean; no lxml; no psycopg2*)
+- app/main.py, app/config.py, app/db.py, app/models.py, app/schemas.py
+- app/routes/health.py, auth.py, newsletter.py, history.py, paypal.py, paypal_health.py, compat.py
+- middleware/cors.py
+- alembic/ (env.py + initial migration)
+- .env.example
+- Dockerfile (python:3.12-slim; uvicorn app.main:app --host 0.0.0.0 --port 8080)
+- README.md (run instructions)
 
 ACCEPTANCE (must pass locally):
-- pip install -r requirements.txt succeeds with no wheel build for lxml or psycopg2.
-- uvicorn app.main:app --host 127.0.0.1 --port 8080 starts with NO Skipping  No module named 'psycopg'.
+- pip install -r requirements.txt succeeds (no lxml / psycopg2 build).
+- uvicorn app.main:app --host 127.0.0.1 --port 8080 starts with NO Skipping  psycopg.
 - GET /api/healthz  200 {"ok": true}
-- GET /api/healthz/db  200 when DB reachable; returns graceful JSON if not configured.
-- GET /api/healthz/redis  200 when Redis reachable; graceful JSON if not.
-- /api/auth signuploginme flow works.
-- /api/newsletter/subscribe works idempotently.
-- /api/history is secured and functional.
-- Duplicate router mounts exist at /v1; compat endpoints work without prefix.
+- GET /api/healthz/db  200 when DB reachable; otherwise graceful JSON.
+- GET /api/healthz/redis  200 when Redis reachable; otherwise graceful JSON.
+- signuploginme works; newsletter subscribe idempotent; history secured.
+- Duplicate mounts at /v1; compat endpoints work without prefix.
 
 OUTPUT FORMAT
-For every created/changed file, output FULL file content in fenced code blocks named with the filename comment (e.g., "# app/main.py").
-Then output a Runbook with exact commands to run locally and notes for Railway.
+For every changed/created file, output FULL file content in fenced code blocks named with # filename.
+After files, output a Runbook with exact local run + Railway deploy steps.
