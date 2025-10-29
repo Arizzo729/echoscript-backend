@@ -1,0 +1,60 @@
+# === API / ASGI ===
+fastapi
+uvicorn[standard]
+fastapi-crudrouter
+python-multipart
+
+# === Authentication & Security ===
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator
+
+# === Configuration & Utilities ===
+python-dotenv
+redis
+httpx
+loguru
+
+# === Database & Migrations ===
+SQLAlchemy
+alembic
+psycopg2-binary
+
+# === Payment Integration ===
+stripe
+
+# === Email & Notifications ===
+sendgrid
+
+# === AI / ML & Audio Processing ===
+faster-whisper
+ctranslate2
+pyannote.audio
+webrtcvad
+ffmpeg-python
+librosa
+noisereduce
+
+# === NLP & GPT Integration ===
+openai
+tiktoken
+sentence-transformers
+sentencepiece
+tokenizers
+safetensors
+transformers
+
+# === Document Export ===
+python-docx
+fpdf
+
+# === Testing & Development ===
+pytest
+pytest-asyncio
+
+# === Linting & Formatting (dev) ===
+mypy
+flake8
+black
+isort
+bandit
