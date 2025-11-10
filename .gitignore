@@ -2,14 +2,18 @@
 __pycache__/
 *.py[cod]
 *.so
-.venv/
-venv/
 .env
 .env.*
 *.db
 *.sqlite
 
-# App dirs
+# Virtualenvs
+.venv/
+.venv*/
+venv/
+venv*/
+
+# Artifacts
 logs/
 storage/
 uploads/
@@ -21,5 +25,5 @@ exports/
 .idea/
 .DS_Store
 
-# If any Node stuff lives here
+# (if any Node stuff)
 node_modules/
