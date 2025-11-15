@@ -11,15 +11,14 @@ lxml==5.2.1
 
 # Auth
 python-jose[cryptography]==3.3.0
-bcrypt==4.0.1
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.1
+bcrypt==4.2.0
 
-# DB / migrations (psycopg2-binary is fine on Railway)
+# DB / migrations
 sqlalchemy==2.0.34
 alembic==1.13.2
 psycopg2-binary==2.9.11
-
 
 # Payments
 stripe==11.*
@@ -34,15 +33,12 @@ python-docx==0.8.11
 fpdf==1.7.2
 ffmpeg-python==0.2.0
 
-# --- Optional: enable real transcription (uncomment to use Whisper) ---
-# faster-whisper==1.0.3
-faster-whisper[default]
-ctranslate2==4.6.0
+# Whisper — WORKING versions for Railway
+faster-whisper==1.0.3
+ctranslate2==4.4.0
 sentencepiece==0.2.0
 tokenizers==0.19.1
 numpy==1.26.4
+
+# Other
 email-validator==2.2.0
-
-
-
-
