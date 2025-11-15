@@ -36,12 +36,13 @@ ffmpeg-python==0.2.0
 
 # --- Optional: enable real transcription (uncomment to use Whisper) ---
 # faster-whisper==1.0.3
-faster-whisper[default] --no-binary :all:
-ctranslate2==4.5.0
+faster-whisper[default]
+ctranslate2==4.6.0
 sentencepiece==0.2.0
 tokenizers==0.19.1
 numpy==1.26.4
 email-validator==2.2.0
+
 
 
 
