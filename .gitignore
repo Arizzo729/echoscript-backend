@@ -1,0 +1,20 @@
+# Ignore nested frontend folder
+/echoscript-web/
+
+# Env files
+.env*
+
+# Zip files
+*.zip
+
+# Log files
+logs/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+.idea/.env

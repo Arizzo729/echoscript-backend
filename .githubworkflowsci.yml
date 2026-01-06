@@ -1,0 +1,59 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Compile requirements
+        run: pip-compile requirements.in --output-file requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install dev tools
+        run: |
+          pip install pre-commit
+          pre-commit install --install-hooks
+
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
+
+      - name: Run Flake8
+        run: flake8 .
+
+      - name: Run MyPy
+        run: mypy --ignore-missing-imports app
+
+      - name: Run Bandit security scan
+        run: bandit -r app
+
+      - name: Run tests
+        run: pytest --maxfail=1 --disable-warnings -q
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: .coverage

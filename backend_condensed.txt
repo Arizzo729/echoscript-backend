@@ -1,0 +1,1046 @@
+===== START app/main.py =====
+# app/main.py
+import os
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# Payments
+from app.routers import paypal as paypal_router
+from app.routers.stripe_checkout import router as stripe_checkout_router
+
+# Routers (keep the ones you actually have in your repo)
+from app.routes.auth import router as auth_router
+from app.routes.contact import router as contact_router
+from app.routes.export import router as export_router
+from app.routes.feedback import router as feedback_router
+from app.routes.history import router as history_router
+from app.routes.newsletter import router as newsletter_router
+from app.routes.password_reset import router as password_reset_router
+from app.routes.signup import router as signup_router
+from app.routes.stripe_webhook import router as stripe_webhook_router
+from app.routes.transcribe import router as transcribe_router
+from app.routes.transcripts import router as transcripts_router
+from app.routes.verify_email import router as verify_email_router
+from app.routes.video_task import router as video_task_router
+
+
+def _allowed_origins() -> list[str]:
+    raw = os.getenv("API_ALLOWED_ORIGINS", "*").strip()
+    if raw == "*" or raw == "":
+        return ["*"]
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+app = FastAPI(title="EchoScript API", version=os.getenv("GIT_SHA", "local"))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount all routers
+app.include_router(auth_router)
+app.include_router(contact_router)
+app.include_router(export_router)
+app.include_router(feedback_router)
+app.include_router(history_router)
+app.include_router(newsletter_router)
+app.include_router(password_reset_router)
+app.include_router(signup_router)
+app.include_router(stripe_webhook_router)
+app.include_router(transcribe_router)
+app.include_router(transcripts_router)
+app.include_router(verify_email_router)
+app.include_router(video_task_router)
+
+# payments
+app.include_router(paypal_router.router)
+app.include_router(stripe_checkout_router)
+
+
+@app.get("/")
+def root():
+    return {"ok": True, "service": "echoscript-api"}
+
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+def readyz():
+    return {"ready": True}
+
+
+@app.get("/version")
+def version():
+    return {"version": os.getenv("GIT_SHA", "local")}
+===== END app/main.py =====
+
+===== START app/config.py =====
+import logging
+import os
+import secrets  # [^3]
+
+import redis
+from dotenv import load_dotenv
+
+# Load environment variables from .env (for local/dev convenience)  [^4]
+load_dotenv()
+
+# Module-level logger
+t_logger = logging.getLogger(__name__)
+
+
+class Config:
+    """
+    Centralized configuration for EchoScript.AI, driven entirely by environment variables.
+    """
+
+    def __init__(self):
+        # — Application settings —
+        self.APP_NAME: str = os.getenv("APP_NAME", "EchoScript.AI")
+        self.DEBUG: bool = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
+        self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "DEBUG")
+
+        # — Whisper defaults —
+        self.DEFAULT_LANGUAGE: str = os.getenv("DEFAULT_LANGUAGE", "en")
+        self.WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "medium")
+
+        # — API keys and tokens —
+        self.OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+        self.HF_TOKEN: str = os.getenv("HF_TOKEN", "")
+        self.STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
+        self.STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+        self.FRONTEND_URL: str = os.getenv("FRONTEND_URL", "*")
+
+        # — JWT configuration —
+        env_secret = os.getenv("JWT_SECRET_KEY")
+        if env_secret:
+            # Use the explicitly provided secret
+            self.JWT_SECRET_KEY: str = env_secret
+        elif self.DEBUG:
+            # DEBUG fallback: generate a strong random key at runtime  [^1]
+            self.JWT_SECRET_KEY = secrets.token_urlsafe(32)
+            t_logger.warning(
+                "JWT_SECRET_KEY not set; generated a random key for DEBUG mode"
+            )
+        else:
+            # In production, fail fast if no secret is provided  [^2]
+            raise RuntimeError(
+                "Environment variable JWT_SECRET_KEY is required in production"
+            )
+        self.JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+
+        # — SMTP settings for email —
+        self.EMAIL_ADDRESS: str = os.getenv("EMAIL_ADDRESS", "")
+        self.EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD", "")
+        self.SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        self.SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+
+        # — Persistence and caching —
+        self.DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./db.sqlite3")
+        self.REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+        # — CORS origins —
+        origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
+        if origins and origins != "*":
+            self.CORS_ALLOW_ORIGINS: list[str] = [o.strip() for o in origins.split(",")]
+        else:
+            self.CORS_ALLOW_ORIGINS: list[str] = ["*"]
+
+        # — File system paths —
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.BASE_DIR: str = base_dir
+        self.UPLOAD_FOLDER: str = os.getenv(
+            "UPLOAD_FOLDER", os.path.join(base_dir, "static", "uploads")
+        )
+        self.STORAGE_DIR: str = os.getenv(
+            "STORAGE_DIR", os.path.join(base_dir, "transcripts")
+        )
+        self.EXPORT_DIR: str = os.getenv(
+            "EXPORT_DIR", os.path.join(base_dir, "exports")
+        )
+        self.LOG_DIR: str = os.getenv("LOG_DIR", os.path.join(base_dir, "logs"))
+
+        # — Upload settings —
+        self.ALLOWED_EXTENSIONS: set[str] = {
+            ".mp3",
+            ".wav",
+            ".m4a",
+            ".mp4",
+            ".flac",
+            ".ogg",
+            ".webm",
+            ".mov",
+        }
+
+
+# Instantiate global configuration
+config = Config()
+
+# Initialize Redis client (properly handling None) and log the outcome
+redis_client: redis.Redis | None = None
+
+try:
+    client = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)
+    client.ping()
+    redis_client = client
+    t_logger.info(f"Connected to Redis at {config.REDIS_URL}")
+except Exception as e:
+    t_logger.warning(f"Could not connect to Redis at {config.REDIS_URL}: {e}")
+===== END app/config.py =====
+
+===== START app/core/settings.py =====
+# app/core/settings.py
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # ignore any keys we don't explicitly model
+    )
+
+    # General
+    env: str = "development"
+    api_host: str = "127.0.0.1"
+    api_port: int = 8000
+
+    # CORS (comma-separated list in .env)
+    cors_origins: str | None = None
+
+    # Auth/JWT
+    secret_key: str | None = None
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+    jwt_secret_key: str | None = None
+    jwt_algorithm: str = "HS256"
+
+    # Stripe
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_public_key: str | None = None
+    stripe_price_pro: str | None = None
+    stripe_price_premium: str | None = None
+
+    # ASR / ML
+    asr_model: str | None = None
+    whisper_model_size: str | None = None
+    whisper_device: str | None = None
+    whisper_compute: str | None = None
+    huggingface_token: str | None = None
+    pyannote_pipeline: str | None = None
+    openai_api_key: str | None = None
+
+    # Email / misc
+    from_email: str | None = None
+    vite_api_base: str | None = None
+    smtp_key: str | None = None
+
+
+settings = Settings()
+===== END app/core/settings.py =====
+
+===== START app/db.py =====
+# app/db.py
+from collections.abc import Generator
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+    DATABASE_URL: str = "sqlite:///./db.sqlite3"
+
+
+settings = Settings()
+
+Base = declarative_base()
+
+engine = create_engine(
+    settings.DATABASE_URL,
+    future=True,
+    echo=False,
+    pool_pre_ping=True,
+    connect_args=(
+        {"check_same_thread": False}
+        if settings.DATABASE_URL.startswith("sqlite")
+        else {}
+    ),
+)
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+
+def get_db() -> Generator[Session, None, None]:
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+db_session: Session = SessionLocal()
+===== END app/db.py =====
+
+===== START asgi_dev.py =====
+import os
+import uuid
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import jwt
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+
+# ASR
+from faster_whisper import WhisperModel
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from sqlalchemy import Column, DateTime, String, Text, create_engine, select
+from sqlalchemy import text as sqla_text
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
+# ---------- config ----------
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+ALLOW_ORIGINS = [o.strip() for o in os.getenv("ALLOW_ORIGINS", "*").split(",")]
+
+STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "data")).resolve()
+MODEL_SIZE = os.getenv(
+    "WHISPER_MODEL_SIZE", "small"
+)  # tiny/base/small/medium/large-v3/distil-large-v3/turbo
+ENV_DEVICE = os.getenv("WHISPER_DEVICE")  # force device if set
+ENV_COMPUTE = os.getenv("WHISPER_COMPUTE")  # force compute if set
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
+Base = declarative_base()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# ---------- models ----------
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    plan = Column(String, nullable=False, server_default="free")
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=sqla_text("now()")
+    )
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+    id = Column(String, primary_key=True)
+    filename = Column(String, nullable=False)
+    status = Column(String, nullable=False, server_default="queued")
+    transcript = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=sqla_text("now()")
+    )
+
+
+# ---------- schemas ----------
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class JobOut(BaseModel):
+    job_id: str
+    status: str
+    filename: str
+    transcript: str | None = None
+
+
+# ---------- helpers ----------
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+
+def create_access_token(
+    sub: str, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES
+) -> str:
+    expire = datetime.now(UTC) + timedelta(minutes=expires_minutes)
+    payload = {"sub": sub, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def pick_device_and_compute() -> tuple[str, str]:
+    # Respect explicit env overrides first
+    if ENV_DEVICE:
+        return ENV_DEVICE, (
+            ENV_COMPUTE or ("float16" if ENV_DEVICE == "cuda" else "int8")
+        )
+    # Auto-pick: CUDA if CTranslate2 sees GPUs, else CPU
+    try:
+        import ctranslate2 as ct2
+
+        if getattr(ct2, "get_cuda_device_count", lambda: 0)() > 0:
+            return "cuda", "float16"  # fastest/accurate on GPU
+    except Exception:
+        pass
+    return "cpu", "int8"  # fastest sensible default on CPU
+
+
+def has_onnxruntime() -> bool:
+    try:
+        import onnxruntime  # noqa: F401
+
+        return True
+    except Exception:
+        return False
+
+
+# ---------- app ----------
+app = FastAPI(title="EchoScript API", version="0.5")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if ALLOW_ORIGINS == ["*"] else ALLOW_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+WHISPER: WhisperModel | None = None
+VAD_ENABLED: bool = False
+DEVICE: str = "cpu"
+COMPUTE: str = "int8"
+
+
+@app.on_event("startup")
+def on_startup():
+    global WHISPER, VAD_ENABLED, DEVICE, COMPUTE
+    STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    Base.metadata.create_all(bind=engine)
+
+    DEVICE, COMPUTE = pick_device_and_compute()
+    VAD_ENABLED = has_onnxruntime()  # only enable if ORT imports
+
+    # Model loads automatically from HF Hub on first use
+    WHISPER = WhisperModel(
+        MODEL_SIZE,
+        device=DEVICE,
+        compute_type=ENV_COMPUTE or COMPUTE,
+    )
+
+
+@app.get("/healthz")
+def healthz():
+    with engine.connect() as conn:
+        conn.execute(sqla_text("select 1"))
+    if WHISPER is None:
+        raise HTTPException(status_code=500, detail="whisper_not_loaded")
+    return {
+        "status": "ok",
+        "model": MODEL_SIZE,
+        "device": DEVICE,
+        "compute_type": ENV_COMPUTE or COMPUTE,
+        "vad": VAD_ENABLED,
+    }
+
+
+@app.get("/__whoami")
+def whoami():
+    return {"file": __file__, "version": app.version}
+
+
+@app.post("/api/auth/login", response_model=Token)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
+    row = (
+        db.execute(select(User).where(User.email == form_data.username.lower()))
+        .scalars()
+        .first()
+    )
+    if not row or not verify_password(form_data.password, row.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_credentials"
+        )
+    return Token(access_token=create_access_token(sub=row.id))
+
+
+# ---------- transcription ----------
+def _transcribe_file(audio_path: Path, language: str | None = "en") -> str:
+    assert WHISPER is not None, "Whisper model not loaded"
+    # Faster-Whisper decodes with PyAV (bundled FFmpeg) -> accepts most media containers
+    # Use beam search for accuracy; enable VAD only if ORT is present
+    segments, info = WHISPER.transcribe(
+        str(audio_path),
+        beam_size=5,
+        best_of=1,
+        vad_filter=VAD_ENABLED,
+        language=language,  # force if you know it; else None for auto
+        temperature=0.0,
+        condition_on_previous_text=True,
+    )
+    parts: list[str] = [
+        seg.text.strip() for seg in segments if getattr(seg, "text", "").strip()
+    ]
+    return (" ".join(parts)).strip() or "(empty transcript)"
+
+
+@app.post("/api/v1/transcribe", response_model=JobOut)
+async def transcribe(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    language: str | None = "en",
+):
+    ext = Path(file.filename).suffix.lower() or ".bin"
+    job_id = str(uuid.uuid4())
+    target = STORAGE_DIR / f"{job_id}{ext}"
+
+    # stream to disk to support large files without memory spikes
+    with target.open("wb") as out:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            out.write(chunk)
+
+    db.add(Job(id=job_id, filename=target.name, status="processing", transcript=None))
+    db.commit()
+
+    try:
+        text = _transcribe_file(target, language=language)
+        db.execute(
+            sqla_text("UPDATE jobs SET status=:s, transcript=:t WHERE id=:i"),
+            {"s": "done", "t": text, "i": job_id},
+        )
+        db.commit()
+        return JobOut(
+            job_id=job_id, status="done", filename=target.name, transcript=text
+        )
+    except Exception as e:
+        import logging
+
+        logging.exception(f"transcription_failed for job {job_id}")
+        db.execute(
+            sqla_text("UPDATE jobs SET status=:s, transcript=:t WHERE id=:i"),
+            {"s": "error", "t": f"transcription_error: {e}", "i": job_id},
+        )
+        db.commit()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "transcription_failed",
+                "job_id": job_id,
+                "error": str(e),
+            },
+        )
+
+
+@app.get("/api/v1/jobs/{job_id}", response_model=JobOut)
+def get_job(job_id: str, db: Session = Depends(get_db)):
+    row = db.execute(select(Job).where(Job.id == job_id)).scalars().first()
+    if not row:
+        raise HTTPException(status_code=404, detail="job_not_found")
+    return JobOut(
+        job_id=row.id,
+        status=row.status,
+        filename=row.filename,
+        transcript=row.transcript,
+    )
+===== END asgi_dev.py =====
+
+===== START app/routes/auth.py =====
+# app/routes/auth.py
+import logging
+from datetime import timedelta
+from typing import cast
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.db import get_db
+from app.models import User
+from app.schemas.auth import LoginRequest, RefreshRequest, Token
+from app.utils.auth_utils import create_access_token, decode_access_token, verify_password
+from app.utils.db_utils import get_user_by_email
+
+logger = logging.getLogger("echoscript")
+router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+ACCESS_TOKEN_EXPIRE_HOURS = 12
+REFRESH_TOKEN_EXPIRE_DAYS = 30
+
+
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Login with email & password to receive access/refresh tokens",
+)
+def login(req: LoginRequest, db: Session = Depends(get_db)) -> Token:
+    user = get_user_by_email(db, req.email)
+    if user is None or not verify_password(req.password, cast(str, user.password)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
+
+    access = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS),
+    )
+    refresh = create_access_token(
+        data={"sub": str(user.id), "type": "refresh"},
+        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+
+    return Token(access_token=access, refresh_token=refresh, token_type="bearer")
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Exchange a valid refresh token for new tokens",
+)
+def refresh_token(req: RefreshRequest, db: Session = Depends(get_db)) -> Token:
+    payload = decode_access_token(req.refresh_token)
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
+        )
+    user_id = payload.get("sub")
+    user: User | None = db.query(User).filter(User.id == int(user_id)).one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    new_access = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS),
+    )
+    new_refresh = create_access_token(
+        data={"sub": str(user.id), "type": "refresh"},
+        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+    return Token(
+        access_token=new_access, refresh_token=new_refresh, token_type="bearer"
+    )
+===== END app/routes/auth.py =====
+
+===== START app/routes/transcribe.py =====
+# app/routes/transcribe.py
+import os
+import shutil
+import tempfile
+import uuid
+from typing import Optional
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+
+router = APIRouter(prefix="/api/v1", tags=["transcription"])
+
+# Toggle: demo (fast stub) vs real model
+DEMO = os.getenv("DEMO_TRANSCRIBE", "1") == "1"
+
+_model = None  # singleton model
+
+
+def _get_model():
+    """
+    Create/reuse a CPU-friendly faster-whisper model.
+    """
+    global _model
+    if _model is not None:
+        return _model
+
+    # CPU-only defaults to avoid GPU DLL issues on Windows
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+    os.environ.setdefault("ORT_DISABLE_GPU", "1")
+
+    try:
+        from faster_whisper import WhisperModel  # type: ignore
+    except Exception as e:
+        raise RuntimeError(
+            "faster-whisper import failed. Install deps:\n"
+            "  pip install faster-whisper ctranslate2 tokenizers sentencepiece numpy\n"
+            f"Original error: {e}"
+        )
+
+    model_name = os.getenv("ASR_MODEL", "base.en")
+    compute_type = os.getenv("ASR_COMPUTE_TYPE", "int8")  # fast on CPU
+    try:
+        _model = WhisperModel(model_name, device="cpu", compute_type=compute_type)
+    except Exception:
+        # Fallback if int8 not supported in your environment
+        _model = WhisperModel(model_name, device="cpu", compute_type="int16")
+    return _model
+
+
+@router.post("/transcribe/warmup")
+def warmup():
+    """
+    Preload the ASR model so the first real request is fast.
+    In demo mode, just report ok.
+    """
+    if DEMO:
+        return {"ok": True, "mode": "demo"}
+    _ = _get_model()
+    return {"ok": True, "mode": "real"}
+
+
+@router.post("/transcribe")
+async def transcribe(
+    file: UploadFile = File(...),
+    diarize: Optional[bool] = False,  # kept for API compatibility; not applied here
+    vad: Optional[bool] = False,
+    language: Optional[str] = "en",
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    # Save upload to a temp file
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "bin"
+    tmp_path = os.path.join(
+        tempfile.gettempdir(), f"echoscript_{uuid.uuid4().hex}.{ext}"
+    )
+    with open(tmp_path, "wb") as out:
+        shutil.copyfileobj(file.file, out)
+
+    if DEMO:
+        # Fast stub response for wiring the UI
+        return JSONResponse(
+            {
+                "filename": file.filename,
+                "tmp_path": tmp_path,
+                "language": language,
+                "diarize": bool(diarize),
+                "vad": bool(vad),
+                "text": f"(demo) Received '{file.filename}', diarize={bool(diarize)}, vad={bool(vad)}, lang={language}.",
+            }
+        )
+
+    # Real transcription via faster-whisper
+    try:
+        model = _get_model()
+        segments, info = model.transcribe(
+            tmp_path,
+            language=language or None,
+            vad_filter=bool(vad),
+        )
+        text = "".join(seg.text for seg in segments)
+        return JSONResponse(
+            {
+                "filename": file.filename,
+                "language": (language or info.language or "en"),
+                "diarize": False,
+                "vad": bool(vad),
+                "text": text,
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+===== END app/routes/transcribe.py =====
+
+===== START app/models/user.py =====
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
+
+from .base import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    # NOTE: matches your current DB column name ("password") used by your seeder
+    password = Column(String, nullable=False)
+
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_verified = Column(Boolean, nullable=False, default=True)
+
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+===== END app/models/user.py =====
+
+===== START app/models/subscription.py =====
+from enum import Enum as PyEnum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, func
+
+from .base import Base
+
+
+class SubscriptionStatus(str, PyEnum):
+    ACTIVE = "active"
+    TRIALING = "trialing"
+    PAST_DUE = "past_due"
+    CANCELED = "canceled"
+    INCOMPLETE = "incomplete"
+    UNPAID = "unpaid"
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    status = Column(
+        Enum(SubscriptionStatus, name="subscription_status"),
+        nullable=False,
+        default=SubscriptionStatus.TRIALING,
+    )
+
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
+
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+===== END app/models/subscription.py =====
+
+===== START requirements.txt =====
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pydantic-settings==2.6.0
+sqlalchemy==2.0.34
+python-multipart==0.0.9
+python-jose==3.3.0
+redis==5.0.8
+
+# in-use
+passlib[bcrypt]==1.7.4
+email-validator==2.1.0.post1
+python-dotenv==1.0.1
+stripe==9.10.0
+httpx==0.27.2
+loguru==0.7.2
+
+# optional postgres/migrations
+alembic==1.13.2
+psycopg2-binary==2.9.9
+===== END requirements.txt =====
+
+===== START Dockerfile =====
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p static/uploads transcripts exports logs
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "asgi_dev:app", "--host", "0.0.0.0", "--port", "8000"]
+===== END Dockerfile =====
+
+===== START docker-compose.yml =====
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./db.sqlite3
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./transcripts:/app/transcripts
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+===== END docker-compose.yml =====
+
+===== START .gitignore =====
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+data/
+transcripts/
+exports/
+logs/
+*.mp3
+*.wav
+*.m4a
+*.mp4
+*.flac
+*.ogg
+*.webm
+*.mov
+===== END .gitignore =====

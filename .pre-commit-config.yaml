@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        name: bandit (app only)
+        args:
+          - "-q"
+          - "-r"
+          - "app"                     # scan only your source, not the whole repo
+          - "-x"
+          - "tests,migrations,examples"
+          - "-s"
+          - "B106,B110"               # skip hardcoded password funcarg + try/except/pass
+        files: ^app/.*\.py$
+        exclude: ^(node_modules|\.venv|dist|build|\.mypy_cache|\.pytest_cache|\.ruff_cache)/
+        pass_filenames: false
+
