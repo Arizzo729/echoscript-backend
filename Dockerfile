@@ -1,13 +1,13 @@
 FROM python:3.11
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    CTRANSLATE2_CUDA_ARCH_LIST="" \
-    CTRANSLATE2_USE_MKL=0
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System dependencies required to BUILD ctranslate2 safely
+# ===============================
+# System dependencies (BUILD)
+# ===============================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -20,20 +20,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip & tools
+# ===============================
+# Python build tools
+# ===============================
 RUN python -m pip install --upgrade pip setuptools wheel
 
-# ⛔ IMPORTANT: install ctranslate2 FROM SOURCE (no prebuilt wheels)
-RUN pip install --no-binary=ctranslate2 ctranslate2
+# ===============================
+# 🔥 BUILD CTRANSLATE2 FROM SOURCE (NO WHEELS)
+# ===============================
+RUN pip install \
+    git+https://github.com/OpenNMT/CTranslate2.git@v4.4.0
 
+# ===============================
 # Install faster-whisper AFTER ctranslate2
+# ===============================
 RUN pip install faster-whisper
 
-# Install remaining dependencies
+# ===============================
+# Other app dependencies
+# ===============================
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy application code
+# ===============================
+# App code
+# ===============================
 COPY . /app
 
 ENV PORT=8000
