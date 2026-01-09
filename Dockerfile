@@ -22,7 +22,7 @@ RUN pip install --upgrade pip
 # ✅ Install Whisper stack FIRST (correct order)
 RUN pip install --no-cache-dir \
     faster-whisper==1.0.3 \
-    ctranslate2==4.4.0
+    ctranslate2==4.5.0
 
 # Copy requirements
 COPY requirements.txt .
