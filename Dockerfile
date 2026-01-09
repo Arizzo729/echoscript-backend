@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -6,11 +6,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 
-# System deps
+# System dependencies
 RUN apt-get update && apt-get install -y \
     python3.10 \
-    python3-pip \
     python3.10-dev \
+    python3-pip \
     build-essential \
     ffmpeg \
     git \
@@ -20,22 +20,22 @@ RUN apt-get update && apt-get install -y \
     libxslt1-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Use python3.10 explicitly
-RUN ln -s /usr/bin/python3.10 /usr/bin/python
+# Make python point to python3.10
+RUN ln -sf /usr/bin/python3.10 /usr/bin/python
 
 # Upgrade pip
 RUN python -m pip install --upgrade pip
 
-# Install Whisper stack FIRST (CRITICAL)
+# Install Whisper stack FIRST (critical)
 RUN pip install --no-cache-dir \
     ctranslate2==4.4.0 \
     faster-whisper==1.0.3
 
-# Install rest of your deps
+# Install remaining dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# App code
+# Copy application code
 COPY . .
 
 ENV PORT=8000

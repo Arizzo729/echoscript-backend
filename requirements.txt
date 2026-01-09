@@ -37,9 +37,9 @@ fpdf2==2.7.9
 ffmpeg-python==0.2.0
 
 # --- Optional: enable real transcription (uncomment to use Whisper) ---
-faster-whisper==1.0.3
-# ctranslate2==4.5.0
-ctranslate2==4.4.0
+# faster-whisper==1.0.3
+# # ctranslate2==4.5.0
+# ctranslate2==4.4.0
 # ctranslate2==4.3.1
 sentencepiece==0.2.0
 tokenizers==0.19.1
