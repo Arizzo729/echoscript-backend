@@ -1,0 +1,204 @@
+﻿Backend
+├── .audit
+├── .audit_bundle_20250917_163813
+├── .mypy_cache
+│   ├── 3.10
+│   │   ├── _pytest
+│   │   ├── _typeshed
+│   │   ├── aiohappyeyeballs
+│   │   ├── aiohttp
+│   │   ├── aiosignal
+│   │   ├── alembic
+│   │   ├── annotated_types
+│   │   ├── anyio
+│   │   ├── app
+│   │   ├── async_timeout
+│   │   ├── asyncio
+│   │   ├── attr
+│   │   ├── attrs
+│   │   ├── av
+│   │   ├── certifi
+│   │   ├── click
+│   │   ├── collections
+│   │   ├── colorlog
+│   │   ├── concurrent
+│   │   ├── ctypes
+│   │   ├── cycler
+│   │   ├── distro
+│   │   ├── docx
+│   │   ├── dotenv
+│   │   ├── einops
+│   │   ├── email
+│   │   ├── exceptiongroup
+│   │   ├── fastapi
+│   │   ├── filelock
+│   │   ├── fpdf
+│   │   ├── frozenlist
+│   │   ├── h11
+│   │   ├── html
+│   │   ├── http
+│   │   ├── httpcore
+│   │   ├── httpx
+│   │   ├── huggingface_hub
+│   │   ├── idna
+│   │   ├── importlib
+│   │   ├── iniconfig
+│   │   ├── jinja2
+│   │   ├── jiter
+│   │   ├── jose
+│   │   ├── json
+│   │   ├── librosa
+│   │   ├── logging
+│   │   ├── markdown_it
+│   │   ├── markupsafe
+│   │   ├── matplotlib
+│   │   ├── mdurl
+│   │   ├── multidict
+│   │   ├── multiprocessing
+│   │   ├── numpy
+│   │   ├── openai
+│   │   ├── optuna
+│   │   ├── os
+│   │   ├── packaging
+│   │   ├── passlib
+│   │   ├── pathlib
+│   │   ├── PIL
+│   │   ├── pkg_resources
+│   │   ├── platformdirs
+│   │   ├── pluggy
+│   │   ├── propcache
+│   │   ├── pydantic
+│   │   ├── pydantic_core
+│   │   ├── pyexpat
+│   │   ├── pyparsing
+│   │   ├── pytest
+│   │   ├── python_multipart
+│   │   ├── redis
+│   │   ├── rich
+│   │   ├── safetensors
+│   │   ├── setuptools
+│   │   ├── sniffio
+│   │   ├── sqlalchemy
+│   │   ├── sqlite3
+│   │   ├── starlette
+│   │   ├── string
+│   │   ├── stripe
+│   │   ├── sys
+│   │   ├── tests
+│   │   ├── tiktoken
+│   │   ├── torch
+│   │   ├── transformers
+│   │   ├── typing_inspection
+│   │   ├── unittest
+│   │   ├── urllib
+│   │   ├── websockets
+│   │   ├── xml
+│   │   ├── yarl
+│   │   ├── zipfile
+│   │   └── zoneinfo
+│   └── 3.11
+│       ├── _pytest
+│       ├── _typeshed
+│       ├── annotated_types
+│       ├── anyio
+│       ├── app
+│       ├── async_timeout
+│       ├── asyncio
+│       ├── collections
+│       ├── concurrent
+│       ├── ctypes
+│       ├── distutils
+│       ├── dotenv
+│       ├── email
+│       ├── fastapi
+│       ├── html
+│       ├── http
+│       ├── idna
+│       ├── importlib
+│       ├── iniconfig
+│       ├── json
+│       ├── logging
+│       ├── multiprocessing
+│       ├── os
+│       ├── packaging
+│       ├── pluggy
+│       ├── pydantic
+│       ├── pydantic_core
+│       ├── pydantic_settings
+│       ├── pytest
+│       ├── redis
+│       ├── sniffio
+│       ├── sqlalchemy
+│       ├── starlette
+│       ├── sys
+│       ├── tests
+│       ├── unittest
+│       ├── urllib
+│       ├── zipfile
+│       └── zoneinfo
+├── .ruff_cache
+│   └── 0.6.8
+├── .venv_audit
+│   ├── Include
+│   │   └── site
+│   ├── Lib
+│   │   └── site-packages
+│   └── Scripts
+├── app
+│   ├── core
+│   ├── dependencies
+│   ├── exports
+│   ├── logs
+│   ├── models
+│   ├── routers
+│   ├── routes
+│   ├── schemas
+│   ├── services
+│   ├── static
+│   │   └── uploads
+│   ├── transcripts
+│   ├── utils
+│   └── ws
+├── data
+├── echoscript_backend_20250915_153911
+│   ├── app
+│   │   ├── core
+│   │   ├── exports
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── schemas
+│   │   ├── services
+│   │   ├── static
+│   │   ├── transcripts
+│   │   ├── utils
+│   │   └── ws
+│   ├── data
+│   ├── echoscript_backend_20250915_153911
+│   │   ├── app
+│   │   ├── data
+│   │   └── echoscript-web
+│   ├── echoscript-web
+│   │   ├── .react-router
+│   │   ├── app
+│   │   └── public
+│   ├── scripts
+│   ├── tests
+│   ├── transcripts
+│   └── web_dist
+│       └── assets
+├── echoscript-web
+│   ├── .react-router
+│   │   └── types
+│   ├── app
+│   │   ├── routes
+│   │   └── welcome
+│   ├── public
+│   └── src
+│       └── components
+├── logs
+├── scripts
+├── tests
+├── tools
+├── transcripts
+└── web_dist
+    └── assets

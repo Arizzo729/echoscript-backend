@@ -1,0 +1,14 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, A002, A003, B009, B010
+exclude =
+    .git,
+    .venv,
+    node_modules,
+    dist,
+    build,
+    .mypy_cache,
+    .pytest_cache,
+    .ruff_cache
+per-file-ignores =
+    app/__init__.py:F401
