@@ -147,7 +147,7 @@ def _allowed_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=_allowed_origins(),
-    allow_origins=["https://www.echoscript.ai"],
+    allow_origins=["https://www.echoscript.ai/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
