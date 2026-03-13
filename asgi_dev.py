@@ -9,7 +9,8 @@ import os
 import uuid
 import logging
 import importlib
-from datetime import UTC, datetime, timedelta
+# from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -100,8 +101,10 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
+# def create_access_token(sub: int | str, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
+#     expire = datetime.now(UTC) + timedelta(minutes=expires_minutes)
 def create_access_token(sub: int | str, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
-    expire = datetime.now(UTC) + timedelta(minutes=expires_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload = {"sub": str(sub), "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
@@ -147,7 +150,11 @@ def _allowed_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=_allowed_origins(),
-    allow_origins=["https://www.echoscript.ai/"],
+    # allow_origins=["https://www.echoscript.ai/"],
+    allow_origins=[
+        "https://www.echoscript.ai",
+        "https://echoscript.ai"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
