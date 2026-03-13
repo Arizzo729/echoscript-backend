@@ -1,31 +1,32 @@
-FROM ubuntu:22.04
+FROM python:3.10-bullseye
 
-# Install Python 3.11 + system dependencies (NO PPA)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3.11-venv python3.11-distutils python3-pip \
-    ffmpeg git curl build-essential \
-    libpq-dev libxml2-dev libxslt1-dev \
- && rm -rf /var/lib/apt/lists/*
-
-# Set python aliases
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
- && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN python -m pip install --upgrade pip \
- && pip install -r /app/requirements.txt
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    git \
+    curl \
+    build-essential \
+    libpq-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libstdc++6 \
+    libgcc1 \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+RUN pip install --upgrade pip
 
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh && sed -i 's/\r$//' /entrypoint.sh
+RUN pip install --no-cache-dir \
+    faster-whisper==1.0.3 \
+    ctranslate2==4.5.0
 
-ENV PORT=8000
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
 EXPOSE 8000
-
-HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=12 \
-  CMD curl -fsS "http://127.0.0.1:${PORT}/api/healthz" || exit 1
-
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["uvicorn", "asgi_dev:app", "--host", "0.0.0.0", "--port", "8000"]
