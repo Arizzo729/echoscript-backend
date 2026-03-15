@@ -152,6 +152,7 @@ app.add_middleware(
     # allow_origins=_allowed_origins(),
     # allow_origins=["https://www.echoscript.ai/"],
     allow_origins=[
+        "*",
         "https://www.echoscript.ai",
         "https://echoscript.ai"
     ],
