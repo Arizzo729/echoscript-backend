@@ -151,8 +151,7 @@ app.add_middleware(
     CORSMiddleware,
     # allow_origins=_allowed_origins(),
     # allow_origins=["https://www.echoscript.ai/"],
-    allow_origins=[
-        "*",
+    allow_origins=[        
         "https://www.echoscript.ai",
         "https://echoscript.ai"
     ],
