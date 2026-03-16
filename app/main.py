@@ -34,11 +34,18 @@ def startup_event():
     """Initialize database tables on startup"""
     try:
         from app.db import Base, engine
+        from app.models import User, Subscription, Transcript
         log.info("Creating database tables...")
         Base.metadata.create_all(bind=engine)
         log.info("✅ Database tables initialized successfully")
+        # Verify tables were created
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        log.info(f"Existing tables: {tables}")
     except Exception as e:
         log.error("❌ Database initialization failed: %s", e)
+        raise
 
 app.add_middleware(
     CORSMiddleware,

@@ -56,15 +56,12 @@ ENV_DEVICE = os.getenv("WHISPER_DEVICE")
 ENV_COMPUTE = os.getenv("WHISPER_COMPUTE")
 
 # ---------- db ----------
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
-Base = declarative_base()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use Base from app.db so all models (User, Transcript, etc.) are registered
+from app.db import Base, engine, SessionLocal
+# Import all models so they're registered with the Base
+from app.models import User, Transcript, Subscription
 
-# ---------- models ----------
-# Import actual models from app.models instead of defining them here
-from app.models import User, Transcript
-# Note: Job is not in app.models, defining locally only if needed
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Remove old Job class if it's not being used, or keep as comment:
 class Job(Base):
@@ -196,9 +193,14 @@ def on_startup():
     
     # Initialize DB tables if possible, but don't crash startup on DB errors
     try:
-        log.info("Initializing database...")
+        log.info("Initializing database tables...")
         Base.metadata.create_all(bind=engine)
-        log.info("Database initialized successfully")
+        
+        # Verify tables were created
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        log.info(f"✅ Database tables created successfully. Tables: {tables}")
     except Exception as e:
         log.exception("Database initialization failed during startup; continuing without DB: %s", e)
 
@@ -288,8 +290,10 @@ def _mount_all_routes():
         "app.routes.paypal_health",
         "app.routes.assistant",
         "app.routes.transcripts",
-        "app.routes.user",            # new user/profile/avatar endpoints
+        "app.routes.profile",        # ✅ PROFILE ENDPOINT
+        "app.routes.user",
         "app.routes.usage",
+        "app.routes.edu_verify",     # ✅ EDU VERIFY ENDPOINT
     ]
     for prefix in ["/api/v1", "/v1"]:
         for mod in modules:

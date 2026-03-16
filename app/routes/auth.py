@@ -147,24 +147,32 @@ def logout(request: Request, response: Response):
 
 @router.get("/me", response_model=MeOut)
 def me(request: Request, db: Session = Depends(get_db)) -> MeOut:
-    token = _token_from_request(request)
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    data = _verify_jwt(token)
-    user_id = int(data["sub"])
-    user = db.query(User).filter(User.id == user_id).one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return MeOut(
-        id=user.id, 
-        email=user.email, 
-        name=getattr(user, "username", None),
-        username=getattr(user, "username", None),
-        plan=getattr(user, "plan", "Free") or "Free",
-        avatar_url=getattr(user, "avatar_url", None),
-        mode="jwt"
-    )
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        token = _token_from_request(request)
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        data = _verify_jwt(token)
+        user_id = int(data["sub"])
+        user = db.query(User).filter(User.id == user_id).one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return MeOut(
+            id=user.id, 
+            email=user.email, 
+            name=getattr(user, "username", None),
+            username=getattr(user, "username", None),
+            plan=getattr(user, "plan", "Free") or "Free",
+            avatar_url=getattr(user, "avatar_url", None),
+            mode="jwt"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.exception(f"Error in /me endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 @router.post("/signin", response_model=LoginOut)
 def signin(payload: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)) -> LoginOut:
