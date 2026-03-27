@@ -1,4 +1,4 @@
-# app/main.py  (full file with the only change: added app.routes.usage to modules)
+# app/main.py  (full file with CORS fix applied)
 from __future__ import annotations
 import os, logging, importlib
 from typing import Optional
@@ -23,9 +23,18 @@ APP_VERSION = os.getenv("GIT_SHA", "local")
 
 def _allowed_origins() -> list[str]:
     raw = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
-    if not raw or raw == "*":
-        return ["*"]
-    return [o.strip() for o in raw.split(",") if o.strip()]
+
+    if raw and raw != "*":
+        return [o.strip() for o in raw.split(",") if o.strip()]
+
+    return [
+        "https://www.echoscript.ai",
+        "https://echoscript.ai",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
 app = FastAPI(title="EchoScript API", version=APP_VERSION)
 
