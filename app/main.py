@@ -1,11 +1,11 @@
-# app/main.py  (full file with CORS fix applied)
 from __future__ import annotations
 import os, logging, importlib
 from typing import Optional
-from fastapi import FastAPI, BackgroundTasks, HTTPException, APIRouter, status
+from fastapi import FastAPI, BackgroundTasks, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
 from pydantic import BaseModel
+
 # EmailStr moved between pydantic versions; try common locations then fall back to plain str
 try:
     from pydantic import EmailStr  # type: ignore
@@ -15,11 +15,13 @@ except Exception:
     except Exception:
         # Fallback: accept plain strings where email validation isn't available
         EmailStr = str  # type: ignore
+
 from app.utils.send_email import send_email, EmailError
 
 log = logging.getLogger("echoscript")
 logging.basicConfig(level=logging.INFO)
 APP_VERSION = os.getenv("GIT_SHA", "local")
+
 
 def _allowed_origins() -> list[str]:
     raw = (os.getenv("API_ALLOWED_ORIGINS") or "").strip()
@@ -36,6 +38,7 @@ def _allowed_origins() -> list[str]:
         "http://127.0.0.1:3000",
     ]
 
+
 app = FastAPI(title="EchoScript API", version=APP_VERSION)
 
 app.add_middleware(
@@ -46,19 +49,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/", response_class=PlainTextResponse)
 def root_ok() -> str:
     return "ok"
+
 
 @app.get("/api/healthz")
 def api_health_ok() -> dict[str, str]:
     return {"status": "ok"}
 
+
 @app.get("/v1/healthz", response_class=PlainTextResponse)
 def v1_health_ok() -> str:
     return "ok"
 
+
 CONTACT_ROUTER_MOUNTED = False
+
 
 def include_group(prefix: str) -> None:
     global CONTACT_ROUTER_MOUNTED
@@ -76,8 +84,8 @@ def include_group(prefix: str) -> None:
         "app.routes.paypal_health",
         "app.routes.assistant",
         "app.routes.transcripts",
-        # NEW: provides /api/usage/summary and /api/users/usage (and /v1/...)
         "app.routes.usage",
+        "app.routes.transcribe",
     ]
     for mod in modules:
         try:
@@ -90,8 +98,24 @@ def include_group(prefix: str) -> None:
         except Exception as e:
             log.warning("Skipping %s: %s", mod, e)
 
+
 include_group("/api/v1")
 include_group("/v1")
+
+# Legacy mounts for frontend paths like /api/auth/me and /api/transcribe/...
+try:
+    from app.routes.auth import router as auth_router
+    app.include_router(auth_router, prefix="/api")
+    log.info("Mounted auth router at /api/auth")
+except Exception as e:
+    log.warning("Auth /api mount failed: %s", e)
+
+try:
+    from app.routes.transcribe import router as transcribe_router
+    app.include_router(transcribe_router, prefix="/api")
+    log.info("Mounted transcribe router at /api/transcribe")
+except Exception as e:
+    log.warning("Transcribe /api mount failed: %s", e)
 
 # Compat routes that already have absolute paths
 try:
@@ -140,7 +164,6 @@ if not CONTACT_ROUTER_MOUNTED:
         hp: Optional[str] = None
         to: Optional[EmailStr] = None
 
-    from fastapi import BackgroundTasks
     def _contact_to_default() -> str:
         return os.getenv("RESEND_TO") or os.getenv("SMTP_TO") or os.getenv("CONTACT_TO") or "support@echoscript.ai"
 
@@ -177,13 +200,15 @@ if not CONTACT_ROUTER_MOUNTED:
         bg.add_task(_send_contact_email, body.model_dump())
         return {"ok": True, "status": "accepted"}
 
+
 # Diagnostics
 diag = APIRouter(prefix="/_diag", tags=["diag"])
+
 
 @diag.get("/email")
 def diag_email():
     have_resend = bool(os.getenv("RESEND_API_KEY"))
-    have_smtp = all(bool(os.getenv(k)) for k in ["SMTP_HOST","SMTP_PORT","SMTP_USER","SMTP_PASS","SMTP_FROM"])
+    have_smtp = all(bool(os.getenv(k)) for k in ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM"])
     mode = "HTTP" if have_resend else ("SMTP" if have_smtp else "NONE")
     return {
         "mode": mode,
@@ -193,7 +218,9 @@ def diag_email():
         "from": os.getenv("EMAIL_FROM") or os.getenv("RESEND_FROM") or os.getenv("SMTP_FROM") or "noreply@onresend.com",
     }
 
+
 app.include_router(diag, prefix="/api")
+
 
 # Built-in email test
 @app.post("/api/contact/test")
