@@ -1,24 +1,29 @@
 # app/db.py
 from collections.abc import Generator
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-# Import models here so SQLAlchemy knows about them
-from app.models import User, Subscription  # Make sure all models are imported
-
 Base = declarative_base()
 
-# Hardcoded SQLite URL (no .env needed)
-DATABASE_URL = "sqlite:///./db.sqlite3"
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("DATABASE_URI")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 
+# Neon/Postgres-friendly engine options
 engine = create_engine(
     DATABASE_URL,
     future=True,
-    echo=False,
-    connect_args={"check_same_thread": False},  # SQLite specific
+    pool_pre_ping=True,
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    future=True,
+)
 
 def get_db() -> Generator[Session, None, None]:
     db: Session = SessionLocal()
@@ -27,21 +32,9 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         db.close()
 
-db_session: Session = SessionLocal()
+def init_db() -> None:
+    # Import models here so all tables are registered on Base before create_all
+    from app.models import User, Subscription  # noqa: F401
 
-# Automatically create tables
-def init_db():
-    Base.metadata.create_all(bind=engine)
-    print("✅ Tables created successfully")
-
-# Run table creation if executed directly
-if __name__ == "__main__":
-    init_db()
-
-# app/db.py (add at the bottom)
-from app.models import User, Subscription  # make sure all models are imported
-
-def init_db():
-    """Create all tables in the database"""
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created")
